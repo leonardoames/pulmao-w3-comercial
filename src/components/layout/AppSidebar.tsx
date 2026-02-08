@@ -1,12 +1,9 @@
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Users,
-  Calendar,
   DollarSign,
-  Settings,
   LogOut,
-  TrendingUp,
+  ClipboardList,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -17,10 +14,8 @@ import { ROLE_LABELS } from '@/types/crm';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/leads', icon: Users, label: 'Leads' },
-  { path: '/calls', icon: Calendar, label: 'Calls' },
   { path: '/vendas', icon: DollarSign, label: 'Vendas' },
-  { path: '/performance', icon: TrendingUp, label: 'Performance' },
+  { path: '/meu-fechamento', icon: ClipboardList, label: 'Meu Fechamento' },
 ];
 
 export function AppSidebar() {

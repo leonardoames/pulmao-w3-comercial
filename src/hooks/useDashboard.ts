@@ -1,45 +1,48 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
 
-export type DateFilter = 'today' | '7days' | 'month';
+export type DateFilter = 'today' | 'yesterday' | '7days' | 'month' | '30days' | 'custom';
 
-function getDateRange(filter: DateFilter) {
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+export function getDateRange(filter: DateFilter, customRange?: DateRange): DateRange {
   const now = new Date();
   
   switch (filter) {
     case 'today':
       return { start: startOfDay(now), end: endOfDay(now) };
+    case 'yesterday':
+      const yesterday = subDays(now, 1);
+      return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
     case '7days':
       return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) };
     case 'month':
       return { start: startOfMonth(now), end: endOfMonth(now) };
+    case '30days':
+      return { start: startOfDay(subDays(now, 29)), end: endOfDay(now) };
+    case 'custom':
+      return customRange || { start: startOfDay(now), end: endOfDay(now) };
   }
 }
 
-export function useDashboardStats(filter: DateFilter) {
-  const { start, end } = getDateRange(filter);
+export function useDashboardStats(filter: DateFilter, customRange?: DateRange) {
+  const { start, end } = getDateRange(filter, customRange);
 
   return useQuery({
-    queryKey: ['dashboard-stats', filter],
+    queryKey: ['dashboard-stats', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString()],
     queryFn: async () => {
-      // Leads novos no período
-      const { data: leads, error: leadsError } = await supabase
-        .from('leads')
-        .select('id, status_funil')
-        .gte('criado_em', start.toISOString())
-        .lte('criado_em', end.toISOString());
+      // Fechamentos no período
+      const { data: fechamentos, error: fechamentosError } = await supabase
+        .from('fechamentos')
+        .select('calls_realizadas, no_show')
+        .gte('data', start.toISOString().split('T')[0])
+        .lte('data', end.toISOString().split('T')[0]);
 
-      if (leadsError) throw leadsError;
-
-      // Calls no período
-      const { data: calls, error: callsError } = await supabase
-        .from('calls')
-        .select('id, status')
-        .gte('data_hora', start.toISOString())
-        .lte('data_hora', end.toISOString());
-
-      if (callsError) throw callsError;
+      if (fechamentosError) throw fechamentosError;
 
       // Vendas no período
       const { data: vendas, error: vendasError } = await supabase
@@ -50,40 +53,79 @@ export function useDashboardStats(filter: DateFilter) {
 
       if (vendasError) throw vendasError;
 
-      const leadsNovos = leads?.length || 0;
-      const callsAgendadas = calls?.filter(c => c.status === 'Agendada').length || 0;
-      const callsRealizadas = calls?.filter(c => c.status === 'Realizada').length || 0;
-      const noShows = calls?.filter(c => c.status === 'No-show').length || 0;
+      const callsRealizadas = fechamentos?.reduce((sum, f) => sum + f.calls_realizadas, 0) || 0;
+      const noShows = fechamentos?.reduce((sum, f) => sum + f.no_show, 0) || 0;
+      const callsAgendadas = callsRealizadas + noShows;
+      const percentNoShow = callsAgendadas > 0 ? (noShows / callsAgendadas) * 100 : 0;
+      
       const totalVendas = vendas?.length || 0;
-      const faturamento = vendas?.reduce((sum, v) => sum + Number(v.valor_total), 0) || 0;
-      const ticketMedio = totalVendas > 0 ? faturamento / totalVendas : 0;
+      const volumeVendas = vendas?.reduce((sum, v) => sum + Number(v.valor_total), 0) || 0;
+      const ticketMedio = totalVendas > 0 ? volumeVendas / totalVendas : 0;
       const taxaConversao = callsRealizadas > 0 ? (totalVendas / callsRealizadas) * 100 : 0;
-      const taxaNoShow = (callsAgendadas + callsRealizadas + noShows) > 0 
-        ? (noShows / (callsAgendadas + callsRealizadas + noShows)) * 100 
-        : 0;
+      const faturamentoPorCall = callsRealizadas > 0 ? volumeVendas / callsRealizadas : 0;
 
       return {
-        leadsNovos,
-        callsAgendadas,
         callsRealizadas,
         noShows,
+        callsAgendadas,
+        percentNoShow,
         totalVendas,
-        faturamento,
+        volumeVendas,
         ticketMedio,
         taxaConversao,
-        taxaNoShow,
+        faturamentoPorCall,
       };
     }
   });
 }
 
-export function useCloserRanking(filter: DateFilter) {
-  const { start, end } = getDateRange(filter);
+export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
+  const { start, end } = getDateRange(filter, customRange);
+  const now = new Date();
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
   return useQuery({
-    queryKey: ['closer-ranking', filter],
+    queryKey: ['closer-rankings', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString()],
     queryFn: async () => {
-      const { data: vendas, error } = await supabase
+      // Vendas do dia
+      const { data: vendasDia } = await supabase
+        .from('vendas')
+        .select(`
+          closer_user_id,
+          valor_total,
+          closer:profiles!vendas_closer_user_id_fkey(id, nome)
+        `)
+        .gte('data_fechamento', todayStart.toISOString().split('T')[0])
+        .lte('data_fechamento', todayEnd.toISOString().split('T')[0]);
+
+      // Vendas da semana
+      const { data: vendasSemana } = await supabase
+        .from('vendas')
+        .select(`
+          closer_user_id,
+          valor_total,
+          closer:profiles!vendas_closer_user_id_fkey(id, nome)
+        `)
+        .gte('data_fechamento', weekStart.toISOString().split('T')[0])
+        .lte('data_fechamento', weekEnd.toISOString().split('T')[0]);
+
+      // Fechamentos para cálculo de conversão e no-show (período selecionado)
+      const { data: fechamentos } = await supabase
+        .from('fechamentos')
+        .select(`
+          closer_user_id,
+          calls_realizadas,
+          no_show,
+          closer:profiles!fechamentos_closer_user_id_fkey(id, nome)
+        `)
+        .gte('data', start.toISOString().split('T')[0])
+        .lte('data', end.toISOString().split('T')[0]);
+
+      // Vendas do período para conversão
+      const { data: vendasPeriodo } = await supabase
         .from('vendas')
         .select(`
           closer_user_id,
@@ -93,56 +135,102 @@ export function useCloserRanking(filter: DateFilter) {
         .gte('data_fechamento', start.toISOString().split('T')[0])
         .lte('data_fechamento', end.toISOString().split('T')[0]);
 
-      if (error) throw error;
-
-      // Agrupar por closer
-      const closerMap = new Map<string, { nome: string; vendas: number; faturamento: number }>();
-      
-      vendas?.forEach(v => {
-        const closerId = v.closer_user_id;
-        const closerNome = (v.closer as any)?.nome || 'Desconhecido';
-        
-        if (!closerMap.has(closerId)) {
-          closerMap.set(closerId, { nome: closerNome, vendas: 0, faturamento: 0 });
-        }
-        
-        const current = closerMap.get(closerId)!;
-        current.vendas += 1;
-        current.faturamento += Number(v.valor_total);
+      // Agregar top closer do dia
+      const closerDiaMap = new Map<string, { nome: string; volume: number }>();
+      vendasDia?.forEach(v => {
+        const id = v.closer_user_id;
+        const nome = (v.closer as any)?.nome || 'Desconhecido';
+        const current = closerDiaMap.get(id) || { nome, volume: 0 };
+        current.volume += Number(v.valor_total);
+        closerDiaMap.set(id, current);
       });
-
-      return Array.from(closerMap.entries())
+      const topCloserDia = Array.from(closerDiaMap.entries())
         .map(([id, data]) => ({ id, ...data }))
-        .sort((a, b) => b.faturamento - a.faturamento);
-    }
-  });
-}
+        .sort((a, b) => b.volume - a.volume)[0] || null;
 
-export function useFunilStats() {
-  return useQuery({
-    queryKey: ['funil-stats'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('status_funil');
+      // Agregar top closer da semana
+      const closerSemanaMap = new Map<string, { nome: string; volume: number }>();
+      vendasSemana?.forEach(v => {
+        const id = v.closer_user_id;
+        const nome = (v.closer as any)?.nome || 'Desconhecido';
+        const current = closerSemanaMap.get(id) || { nome, volume: 0 };
+        current.volume += Number(v.valor_total);
+        closerSemanaMap.set(id, current);
+      });
+      const topCloserSemana = Array.from(closerSemanaMap.entries())
+        .map(([id, data]) => ({ id, ...data }))
+        .sort((a, b) => b.volume - a.volume)[0] || null;
 
-      if (error) throw error;
+      // Agregar métricas por closer para conversão e no-show
+      const closerMetricsMap = new Map<string, { 
+        nome: string; 
+        callsRealizadas: number; 
+        noShow: number; 
+        vendas: number;
+        volume: number;
+      }>();
 
-      const counts: Record<string, number> = {
-        Novo: 0,
-        ContatoFeito: 0,
-        CallAgendada: 0,
-        CallRealizada: 0,
-        NoShow: 0,
-        Perdido: 0,
-        Ganho: 0,
-      };
-
-      data?.forEach(lead => {
-        counts[lead.status_funil] = (counts[lead.status_funil] || 0) + 1;
+      fechamentos?.forEach(f => {
+        const id = f.closer_user_id;
+        const nome = (f.closer as any)?.nome || 'Desconhecido';
+        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, noShow: 0, vendas: 0, volume: 0 };
+        current.callsRealizadas += f.calls_realizadas;
+        current.noShow += f.no_show;
+        closerMetricsMap.set(id, current);
       });
 
-      return counts;
+      vendasPeriodo?.forEach(v => {
+        const id = v.closer_user_id;
+        const nome = (v.closer as any)?.nome || 'Desconhecido';
+        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, noShow: 0, vendas: 0, volume: 0 };
+        current.vendas += 1;
+        current.volume += Number(v.valor_total);
+        closerMetricsMap.set(id, current);
+      });
+
+      // Top conversão
+      const closersConversao = Array.from(closerMetricsMap.entries())
+        .map(([id, data]) => ({ 
+          id, 
+          ...data, 
+          taxaConversao: data.callsRealizadas > 0 ? (data.vendas / data.callsRealizadas) * 100 : 0 
+        }))
+        .filter(c => c.callsRealizadas > 0)
+        .sort((a, b) => b.taxaConversao - a.taxaConversao);
+      const topConversao = closersConversao[0] || null;
+
+      // Menor no-show
+      const closersNoShow = Array.from(closerMetricsMap.entries())
+        .map(([id, data]) => ({ 
+          id, 
+          ...data, 
+          percentNoShow: (data.callsRealizadas + data.noShow) > 0 
+            ? (data.noShow / (data.callsRealizadas + data.noShow)) * 100 
+            : 0 
+        }))
+        .filter(c => (c.callsRealizadas + c.noShow) > 0)
+        .sort((a, b) => a.percentNoShow - b.percentNoShow);
+      const menorNoShow = closersNoShow[0] || null;
+
+      // Ranking geral por volume
+      const rankingGeral = Array.from(closerMetricsMap.entries())
+        .map(([id, data]) => ({ 
+          id, 
+          ...data,
+          taxaConversao: data.callsRealizadas > 0 ? (data.vendas / data.callsRealizadas) * 100 : 0,
+          percentNoShow: (data.callsRealizadas + data.noShow) > 0 
+            ? (data.noShow / (data.callsRealizadas + data.noShow)) * 100 
+            : 0
+        }))
+        .sort((a, b) => b.volume - a.volume);
+
+      return {
+        topCloserDia,
+        topCloserSemana,
+        topConversao,
+        menorNoShow,
+        rankingGeral,
+      };
     }
   });
 }
