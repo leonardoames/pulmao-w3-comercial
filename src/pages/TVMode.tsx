@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react';
 import { useDashboardStats, useCloserRankings, DateFilter } from '@/hooks/useDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Trophy, TrendingUp, Target, Phone, Settings } from 'lucide-react';
+import { X, Trophy, TrendingUp, Target, Phone, Settings, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/components/theme-provider';
 
 export default function TVModePage() {
   const [filter] = useState<DateFilter>('month');
   const [metaSemanal, setMetaSemanal] = useState<number>(100000);
   const [showSettings, setShowSettings] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const { theme, setTheme } = useTheme();
 
   const { data: stats, refetch: refetchStats } = useDashboardStats(filter);
   const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter);
@@ -51,6 +53,13 @@ export default function TVModePage() {
           <p className="text-sm text-muted-foreground">
             Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}
           </p>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          >
+            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)}>
             <Settings className="h-5 w-5" />
           </Button>
@@ -221,8 +230,8 @@ export default function TVModePage() {
                 <div className={cn(
                   'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl',
                   index === 0 && 'bg-primary text-primary-foreground',
-                  index === 1 && 'bg-gray-300 text-gray-700',
-                  index === 2 && 'bg-amber-600 text-amber-100',
+                  index === 1 && 'medal-silver',
+                  index === 2 && 'medal-bronze',
                   index > 2 && 'bg-muted text-muted-foreground'
                 )}>
                   {index + 1}

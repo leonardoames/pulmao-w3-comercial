@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { ROLE_LABELS } from '@/types/crm';
 
 const navItems = [
@@ -68,6 +69,7 @@ export function AppSidebar() {
               <p className="text-sm font-medium truncate">{profile.nome}</p>
               <p className="text-xs text-sidebar-foreground/60">{ROLE_LABELS[profile.role]}</p>
             </div>
+            <ThemeToggle />
           </div>
           <Button
             variant="ghost"

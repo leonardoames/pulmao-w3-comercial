@@ -121,10 +121,10 @@ export default function DashboardPage() {
           icon={<TrendingUp className="h-5 w-5" />}
         />
         <StatCard
-          title="Calls Realizadas"
-          value={stats?.callsRealizadas ?? 0}
-          subtitle={`${stats?.callsAgendadas ?? 0} agendadas`}
-          icon={<Phone className="h-5 w-5" />}
+          title="Taxa de Conversão"
+          value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
+          subtitle="Vendas / Calls realizadas"
+          icon={<Target className="h-5 w-5" />}
           variant="success"
         />
         <StatCard
@@ -137,25 +137,50 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards - Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
-          title="Taxa de Conversão"
-          value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
-          subtitle="Vendas / Calls realizadas"
-          icon={<Target className="h-5 w-5" />}
+          title="Valor em Pix"
+          value={formatCurrency(stats?.valorPix ?? 0)}
+          icon={<DollarSign className="h-5 w-5" />}
+          variant="success"
+        />
+        <StatCard
+          title="Valor em Cartão"
+          value={formatCurrency(stats?.valorCartao ?? 0)}
+          icon={<DollarSign className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Valor em Boleto"
+          value={formatCurrency(stats?.valorBoleto ?? 0)}
+          icon={<DollarSign className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Caixa do Mês"
+          value={formatCurrency(stats?.caixaDoMes ?? 0)}
+          subtitle={`${(stats?.proporcaoCaixa ?? 0).toFixed(0)}% do volume`}
+          icon={<BarChart3 className="h-5 w-5" />}
           variant="primary"
+        />
+      </div>
+
+      {/* Stats Cards - Row 3 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard
+          title="Calls Realizadas"
+          value={stats?.callsRealizadas ?? 0}
+          icon={<Phone className="h-5 w-5" />}
+          variant="success"
         />
         <StatCard
           title="Faturamento por Call"
           value={formatCurrency(stats?.faturamentoPorCall ?? 0)}
           subtitle="Volume / Calls realizadas"
-          icon={<BarChart3 className="h-5 w-5" />}
+          icon={<TrendingUp className="h-5 w-5" />}
         />
         <StatCard
           title="Vendas Realizadas"
           value={stats?.totalVendas ?? 0}
           icon={<Users className="h-5 w-5" />}
-          variant="success"
         />
       </div>
 
@@ -228,8 +253,8 @@ export default function DashboardPage() {
                       <div className={cn(
                         'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm',
                         index === 0 && 'bg-primary text-primary-foreground',
-                        index === 1 && 'bg-gray-300 text-gray-700',
-                        index === 2 && 'bg-amber-600 text-amber-100',
+                        index === 1 && 'medal-silver',
+                        index === 2 && 'medal-bronze',
                         index > 2 && 'bg-muted text-muted-foreground'
                       )}>
                         {index + 1}

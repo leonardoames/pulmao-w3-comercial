@@ -47,7 +47,7 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange) {
       // Vendas no período
       const { data: vendas, error: vendasError } = await supabase
         .from('vendas')
-        .select('id, valor_total, closer_user_id')
+        .select('id, valor_total, valor_pix, valor_cartao, valor_boleto_parcela, quantidade_parcelas_boleto, closer_user_id')
         .gte('data_fechamento', start.toISOString().split('T')[0])
         .lte('data_fechamento', end.toISOString().split('T')[0]);
 
@@ -60,6 +60,12 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange) {
       
       const totalVendas = vendas?.length || 0;
       const volumeVendas = vendas?.reduce((sum, v) => sum + Number(v.valor_total), 0) || 0;
+      const valorPix = vendas?.reduce((sum, v) => sum + Number(v.valor_pix), 0) || 0;
+      const valorCartao = vendas?.reduce((sum, v) => sum + Number(v.valor_cartao), 0) || 0;
+      const valorBoleto = vendas?.reduce((sum, v) => sum + (Number(v.valor_boleto_parcela) * Number(v.quantidade_parcelas_boleto)), 0) || 0;
+      const caixaDoMes = valorPix + valorCartao;
+      const proporcaoCaixa = volumeVendas > 0 ? (caixaDoMes / volumeVendas) * 100 : 0;
+      
       const ticketMedio = totalVendas > 0 ? volumeVendas / totalVendas : 0;
       const taxaConversao = callsRealizadas > 0 ? (totalVendas / callsRealizadas) * 100 : 0;
       const faturamentoPorCall = callsRealizadas > 0 ? volumeVendas / callsRealizadas : 0;
@@ -71,6 +77,11 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange) {
         percentNoShow,
         totalVendas,
         volumeVendas,
+        valorPix,
+        valorCartao,
+        valorBoleto,
+        caixaDoMes,
+        proporcaoCaixa,
         ticketMedio,
         taxaConversao,
         faturamentoPorCall,
