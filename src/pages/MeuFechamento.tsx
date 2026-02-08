@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useMeuFechamento, useFechamentos, useUpsertFechamento } from '@/hooks/useFechamentos';
 import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
+import { useCanEditAnyFechamento } from '@/hooks/useUserRoles';
 import { CalendarIcon, Save, Phone, PhoneOff, Clock } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,11 +25,8 @@ export default function MeuFechamentoPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   
-  // Determine if user can select other closers
-  const canSelectCloser = profile?.role === 'SDR' || 
-                          profile?.role === 'GestorComercial' || 
-                          profile?.role === 'CEO' || 
-                          profile?.role === 'Founder';
+  // Use the new role-based permission check
+  const canSelectCloser = useCanEditAnyFechamento();
   
   const [selectedCloserId, setSelectedCloserId] = useState<string>(profile?.id || '');
   

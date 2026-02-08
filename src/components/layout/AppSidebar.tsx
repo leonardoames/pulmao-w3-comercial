@@ -5,9 +5,11 @@ import {
   LogOut,
   ClipboardList,
   ChevronRight,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useCanManageUsers } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -22,6 +24,12 @@ const navItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
+  const canManageUsers = useCanManageUsers();
+
+  // Build nav items dynamically based on permissions
+  const allNavItems = canManageUsers 
+    ? [...navItems, { path: '/usuarios', icon: Users, label: 'Usuários' }]
+    : navItems;
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col">
@@ -35,7 +43,7 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
+        {allNavItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link

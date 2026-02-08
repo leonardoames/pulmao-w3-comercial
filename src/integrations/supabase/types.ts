@@ -88,6 +88,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vendas: {
         Row: {
           atualizado_em: string
@@ -171,9 +195,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_any_fechamento: { Args: never; Returns: boolean }
       can_edit_comercial: { Args: never; Returns: boolean }
+      can_edit_vendas: { Args: never; Returns: boolean }
+      can_manage_users: { Args: never; Returns: boolean }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_master: { Args: never; Returns: boolean }
     }
     Enums: {
+      app_role: "MASTER" | "CEO" | "GESTOR_COMERCIAL" | "SDR" | "CLOSER"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
         | "Agendada"
@@ -335,6 +375,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["MASTER", "CEO", "GESTOR_COMERCIAL", "SDR", "CLOSER"],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],
       call_status: [
         "Agendada",
