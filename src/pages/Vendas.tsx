@@ -15,15 +15,20 @@ import { useVendas, useCreateVenda, useUpdateVenda } from '@/hooks/useVendas';
 import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { VendaStatus, VENDA_STATUS_LABELS, Venda } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 export default function VendasPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [closerFilter, setCloserFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVenda, setEditingVenda] = useState<Venda | null>(null);
+  const [dataVenda, setDataVenda] = useState<Date>(new Date());
+  const [calendarOpen, setCalendarOpen] = useState(false);
   
   const { data: vendas, isLoading } = useVendas();
   const { data: closers } = useClosers();
@@ -34,7 +39,12 @@ export default function VendasPage() {
   const filteredVendas = vendas?.filter(venda => {
     const matchesStatus = statusFilter === 'all' || venda.status === statusFilter;
     const matchesCloser = closerFilter === 'all' || venda.closer_user_id === closerFilter;
-    return matchesStatus && matchesCloser;
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || 
+      venda.nome_lead.toLowerCase().includes(searchLower) ||
+      venda.nome_empresa.toLowerCase().includes(searchLower) ||
+      (venda.closer as any)?.nome?.toLowerCase().includes(searchLower);
+    return matchesStatus && matchesCloser && matchesSearch;
   });
 
   const totalFaturamento = filteredVendas?.reduce((sum, v) => sum + Number(v.valor_total), 0) || 0;
@@ -50,11 +60,13 @@ export default function VendasPage() {
 
   const handleOpenNew = () => {
     setEditingVenda(null);
+    setDataVenda(new Date());
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (venda: Venda) => {
     setEditingVenda(venda);
+    setDataVenda(new Date(venda.data_fechamento + 'T12:00:00'));
     setDialogOpen(true);
   };
 
@@ -85,13 +97,14 @@ export default function VendasPage() {
         await updateVenda.mutateAsync({
           id: editingVenda.id,
           ...data,
+          data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
           status: formData.get('status') as VendaStatus,
         });
       } else {
         await createVenda.mutateAsync({
           ...data,
           closer_user_id: profile!.id,
-          data_fechamento: new Date().toISOString().split('T')[0],
+          data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
         });
       }
       setDialogOpen(false);
@@ -120,6 +133,43 @@ export default function VendasPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="data_venda">Data da Venda</Label>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start gap-2">
+                          <CalendarIcon className="h-4 w-4" />
+                          {format(dataVenda, "dd/MM/yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dataVenda}
+                          onSelect={(date) => {
+                            if (date) {
+                              setDataVenda(date);
+                              setCalendarOpen(false);
+                            }
+                          }}
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duracao_contrato_meses">Duração do Contrato (meses)</Label>
+                    <Input 
+                      id="duracao_contrato_meses" 
+                      name="duracao_contrato_meses" 
+                      type="number"
+                      min="1"
+                      defaultValue={editingVenda?.duracao_contrato_meses ?? 12}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
                     <Label htmlFor="nome_lead">Nome do Lead *</Label>
                     <Input 
                       id="nome_lead" 
@@ -137,17 +187,6 @@ export default function VendasPage() {
                       required 
                     />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="duracao_contrato_meses">Duração do Contrato (meses)</Label>
-                  <Input 
-                    id="duracao_contrato_meses" 
-                    name="duracao_contrato_meses" 
-                    type="number"
-                    min="1"
-                    defaultValue={editingVenda?.duracao_contrato_meses ?? 12}
-                  />
                 </div>
 
                 <div className="border rounded-lg p-4 space-y-4">
@@ -310,6 +349,15 @@ export default function VendasPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar lead, empresa ou closer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Status" />

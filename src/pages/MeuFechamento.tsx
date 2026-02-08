@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMeuFechamento, useFechamentos, useUpsertFechamento } from '@/hooks/useFechamentos';
+import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { CalendarIcon, Save, Phone, PhoneOff, Clock } from 'lucide-react';
 import { format, subDays } from 'date-fns';
@@ -18,13 +20,30 @@ import { cn } from '@/lib/utils';
 
 export default function MeuFechamentoPage() {
   const { profile } = useAuth();
+  const { data: closers } = useClosers();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   
+  // Determine if user can select other closers
+  const canSelectCloser = profile?.role === 'SDR' || 
+                          profile?.role === 'GestorComercial' || 
+                          profile?.role === 'CEO' || 
+                          profile?.role === 'Founder';
+  
+  const [selectedCloserId, setSelectedCloserId] = useState<string>(profile?.id || '');
+  
+  // Update selectedCloserId when profile loads
+  useEffect(() => {
+    if (profile?.id && !selectedCloserId) {
+      setSelectedCloserId(profile.id);
+    }
+  }, [profile?.id, selectedCloserId]);
+  
+  const activeCloserId = selectedCloserId || profile?.id || '';
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
-  const { data: fechamento, isLoading } = useMeuFechamento(profile?.id || '', dateStr);
+  const { data: fechamento, isLoading } = useMeuFechamento(activeCloserId, dateStr);
   const { data: meusFechamentos } = useFechamentos({ 
-    closer_id: profile?.id,
+    closer_id: activeCloserId,
     startDate: subDays(new Date(), 30),
     endDate: new Date()
   });
@@ -34,8 +53,16 @@ export default function MeuFechamentoPage() {
   const [noShow, setNoShow] = useState<number>(0);
   const [observacoes, setObservacoes] = useState<string>('');
 
-  // Atualizar form quando fechamento carregar
-  useState(() => {
+  // Atualizar form quando a data mudar
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setCalendarOpen(false);
+    }
+  };
+
+  // Reset form when fechamento data loads or closer changes
+  useEffect(() => {
     if (fechamento) {
       setCallsRealizadas(fechamento.calls_realizadas);
       setNoShow(fechamento.no_show);
@@ -45,29 +72,14 @@ export default function MeuFechamentoPage() {
       setNoShow(0);
       setObservacoes('');
     }
-  });
-
-  // Update form when date changes or data loads
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-      setCalendarOpen(false);
-    }
-  };
-
-  // Reset form when fechamento data loads
-  if (fechamento && callsRealizadas === 0 && noShow === 0 && !observacoes) {
-    setCallsRealizadas(fechamento.calls_realizadas);
-    setNoShow(fechamento.no_show);
-    setObservacoes(fechamento.observacoes || '');
-  }
+  }, [fechamento, activeCloserId, dateStr]);
 
   const handleSave = async () => {
-    if (!profile) return;
+    if (!activeCloserId) return;
     
     await upsertFechamento.mutateAsync({
       data: dateStr,
-      closer_user_id: profile.id,
+      closer_user_id: activeCloserId,
       calls_realizadas: callsRealizadas,
       no_show: noShow,
       observacoes: observacoes || undefined,
@@ -88,9 +100,22 @@ export default function MeuFechamentoPage() {
   return (
     <AppLayout>
       <PageHeader
-        title="Meu Fechamento"
-        description="Registre suas calls diárias"
-      />
+        title={canSelectCloser ? "Fechamento" : "Meu Fechamento"}
+        description={canSelectCloser ? "Registre fechamentos diários dos closers" : "Registre suas calls diárias"}
+      >
+        {canSelectCloser && closers && closers.length > 0 && (
+          <Select value={selectedCloserId} onValueChange={setSelectedCloserId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Selecione o closer" />
+            </SelectTrigger>
+            <SelectContent>
+              {closers.map(closer => (
+                <SelectItem key={closer.id} value={closer.id}>{closer.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </PageHeader>
 
       {/* Stats últimos 30 dias */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

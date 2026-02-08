@@ -157,4 +157,13 @@
   .tv-stat-label {
     @apply text-xl md:text-2xl text-muted-foreground font-medium;
   }
+
+  /* Medal colors for rankings */
+  .medal-silver {
+    @apply bg-neutral-300 text-neutral-700 dark:bg-neutral-500 dark:text-neutral-100;
+  }
+
+  .medal-bronze {
+    @apply bg-amber-600 text-amber-100;
+  }
 }
