@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useDashboardStats, useCloserRankings, DateFilter, DateRange, getDateRange } from '@/hooks/useDashboard';
-import { Phone, PhoneOff, DollarSign, TrendingUp, Target, Trophy, Tv, CalendarIcon, BarChart3, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
+import { useClosers } from '@/hooks/useProfiles';
+import { Phone, PhoneOff, DollarSign, TrendingUp, Target, Trophy, Tv, CalendarIcon, BarChart3, Users, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -30,8 +32,10 @@ export default function DashboardPage() {
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedCloser, setSelectedCloser] = useState<string>('all');
 
-  const { data: stats, isLoading } = useDashboardStats(filter, customRange);
-  const { data: rankings } = useCloserRankings(filter, customRange);
+  const { data: closers } = useClosers();
+  const { data: stats, isLoading } = useDashboardStats(filter, customRange, selectedCloser);
+  const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
+  const { data: noShowByCloser } = useNoShowByCloser(filter, customRange);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -64,7 +68,22 @@ export default function DashboardPage() {
         title="Dashboard Comercial"
         description="Visão geral do desempenho de vendas"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Closer Filter */}
+          <Select value={selectedCloser} onValueChange={setSelectedCloser}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por closer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Closers</SelectItem>
+              {closers?.map((closer) => (
+                <SelectItem key={closer.id} value={closer.id}>
+                  {closer.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <div className="flex gap-1 p-1 bg-muted rounded-lg flex-wrap">
             {filterOptions.map((option) => (
               <Button
@@ -244,6 +263,43 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* No-Show Panel by Closer (only when "Todos" is selected) */}
+      {selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              No-Show por Closer
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {noShowByCloser.map((closer) => (
+                <div
+                  key={closer.id}
+                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
+                >
+                  <div>
+                    <p className="font-medium">{closer.nome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {closer.noShow} no-shows de {closer.callsAgendadas} agendadas
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "text-lg font-bold px-3 py-1 rounded-full",
+                    closer.percentNoShow > 30 ? "bg-destructive/20 text-destructive" :
+                    closer.percentNoShow > 15 ? "bg-warning/20 text-warning" :
+                    "bg-success/20 text-success"
+                  )}>
+                    {closer.percentNoShow.toFixed(1)}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Full Ranking */}
       <div className="grid grid-cols-1 gap-6">

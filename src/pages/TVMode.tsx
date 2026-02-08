@@ -1,22 +1,27 @@
 import { useState, useEffect } from 'react';
-import { useDashboardStats, useCloserRankings, DateFilter, DateRange, getDateRange } from '@/hooks/useDashboard';
+import { useDashboardStats, useCloserRankings, DateFilter, DateRange } from '@/hooks/useDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Trophy, Target, Phone, Settings, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { TVDateFilter } from '@/components/tv/TVDateFilter';
 import { OteTVPanel } from '@/components/ote/OteTVPanel';
+import { useClosers } from '@/hooks/useProfiles';
 import { format, startOfMonth } from 'date-fns';
 
 export default function TVModePage() {
   const [filter, setFilter] = useState<DateFilter>('month');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [selectedCloser, setSelectedCloser] = useState<string>('all');
   const [metaSemanal, setMetaSemanal] = useState<number>(100000);
   const [showSettings, setShowSettings] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { theme, setTheme } = useTheme();
+
+  const { data: closers } = useClosers();
 
   // Derive month for OTE from filter
   const getMonthRefFromFilter = (): string => {
@@ -28,8 +33,8 @@ export default function TVModePage() {
 
   const monthRef = getMonthRefFromFilter();
 
-  const { data: stats, refetch: refetchStats } = useDashboardStats(filter, customRange);
-  const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter, customRange);
+  const { data: stats, refetch: refetchStats } = useDashboardStats(filter, customRange, selectedCloser);
+  const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter, customRange, selectedCloser);
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -86,13 +91,29 @@ export default function TVModePage() {
           </div>
         </div>
         
-        {/* Date Filter */}
-        <TVDateFilter
-          filter={filter}
-          onFilterChange={setFilter}
-          customRange={customRange}
-          onCustomRangeChange={setCustomRange}
-        />
+        {/* Date Filter and Closer Filter */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <Select value={selectedCloser} onValueChange={setSelectedCloser}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por closer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Closers</SelectItem>
+              {closers?.map((closer) => (
+                <SelectItem key={closer.id} value={closer.id}>
+                  {closer.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <TVDateFilter
+            filter={filter}
+            onFilterChange={setFilter}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+          />
+        </div>
       </div>
 
       {/* Settings */}
@@ -177,7 +198,7 @@ export default function TVModePage() {
       {/* OTE Panel and Rankings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* OTE Panel */}
-        <OteTVPanel monthRef={monthRef} />
+        <OteTVPanel monthRef={monthRef} selectedCloser={selectedCloser} />
 
         {/* Rankings Grid */}
         <div className="grid grid-cols-2 gap-4">

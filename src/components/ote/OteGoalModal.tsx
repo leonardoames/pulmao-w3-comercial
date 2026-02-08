@@ -75,7 +75,7 @@ export function OteGoalModal({
     
     if (!closerId || !targetValue || !user) return;
 
-    const value = parseFloat(targetValue.replace(/[^\d.,]/g, '').replace(',', '.'));
+    const value = parseCurrencyToNumber(targetValue);
     if (isNaN(value) || value <= 0) {
       return;
     }
@@ -98,6 +98,7 @@ export function OteGoalModal({
   };
 
   const formatCurrencyInput = (value: string) => {
+    // Remove tudo exceto dígitos
     const numericValue = value.replace(/[^\d]/g, '');
     const number = parseInt(numericValue, 10) / 100;
     if (isNaN(number)) return '';
@@ -105,6 +106,18 @@ export function OteGoalModal({
       style: 'currency',
       currency: 'BRL',
     }).format(number);
+  };
+
+  const parseCurrencyToNumber = (value: string): number => {
+    // Remove símbolos de moeda e espaços
+    let cleaned = value.replace(/[R$\s]/g, '');
+    // Formato brasileiro: 142.400,00 -> pontos são milhares, vírgula é decimal
+    // Remove pontos de milhar
+    cleaned = cleaned.replace(/\./g, '');
+    // Substitui vírgula decimal por ponto
+    cleaned = cleaned.replace(',', '.');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
   };
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
