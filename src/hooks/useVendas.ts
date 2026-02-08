@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Venda, VendaStatus, VendaFormaPagamento } from '@/types/crm';
+import { Venda, VendaStatus } from '@/types/crm';
 import { toast } from 'sonner';
 
 export function useVendas(filters?: {
@@ -16,7 +16,6 @@ export function useVendas(filters?: {
         .from('vendas')
         .select(`
           *,
-          lead:leads(id, nome_pessoa, nome_empresa, email),
           closer:profiles!vendas_closer_user_id_fkey(id, nome)
         `)
         .order('data_fechamento', { ascending: false });
@@ -42,16 +41,17 @@ export function useVendas(filters?: {
 }
 
 interface CreateVendaInput {
-  lead_id: string;
   closer_user_id: string;
   data_fechamento: string;
-  plano_nome: string;
-  valor_total: number;
-  entrada_valor: number;
-  forma_pagamento: VendaFormaPagamento;
-  detalhes_pagamento?: string;
-  data_inicio: string;
-  data_fim: string;
+  nome_lead: string;
+  nome_empresa: string;
+  duracao_contrato_meses: number;
+  valor_pix: number;
+  valor_cartao: number;
+  valor_boleto_parcela: number;
+  quantidade_parcelas_boleto: number;
+  pago?: boolean;
+  contrato_assinado?: boolean;
   observacoes?: string;
 }
 
@@ -60,9 +60,13 @@ export function useCreateVenda() {
 
   return useMutation({
     mutationFn: async (venda: CreateVendaInput) => {
+      // Calculate valor_total
+      const valor_boleto_total = venda.valor_boleto_parcela * venda.quantidade_parcelas_boleto;
+      const valor_total = venda.valor_pix + venda.valor_cartao + valor_boleto_total;
+
       const { data, error } = await supabase
         .from('vendas')
-        .insert([venda])
+        .insert([{ ...venda, valor_total }])
         .select()
         .single();
       
@@ -71,28 +75,26 @@ export function useCreateVenda() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendas'] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Venda registrada com sucesso!');
     },
     onError: (error) => {
-      if (error.message.includes('unique')) {
-        toast.error('Este lead já possui uma venda registrada.');
-      } else {
-        toast.error('Erro ao registrar venda: ' + error.message);
-      }
+      toast.error('Erro ao registrar venda: ' + error.message);
     }
   });
 }
 
 interface UpdateVendaInput {
   id: string;
-  plano_nome?: string;
-  valor_total?: number;
-  entrada_valor?: number;
-  forma_pagamento?: VendaFormaPagamento;
-  detalhes_pagamento?: string;
-  data_inicio?: string;
-  data_fim?: string;
+  nome_lead?: string;
+  nome_empresa?: string;
+  duracao_contrato_meses?: number;
+  valor_pix?: number;
+  valor_cartao?: number;
+  valor_boleto_parcela?: number;
+  quantidade_parcelas_boleto?: number;
+  pago?: boolean;
+  contrato_assinado?: boolean;
   status?: VendaStatus;
   observacoes?: string;
 }
@@ -102,10 +104,24 @@ export function useUpdateVenda() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateVendaInput) => {
-      // Não permite alterar o closer após criação
+      // Recalculate valor_total if payment values changed
+      let valor_total: number | undefined;
+      if (updates.valor_pix !== undefined || updates.valor_cartao !== undefined || 
+          updates.valor_boleto_parcela !== undefined || updates.quantidade_parcelas_boleto !== undefined) {
+        // Need to get current values
+        const { data: current } = await supabase.from('vendas').select('*').eq('id', id).single();
+        if (current) {
+          const pix = updates.valor_pix ?? current.valor_pix;
+          const cartao = updates.valor_cartao ?? current.valor_cartao;
+          const parcela = updates.valor_boleto_parcela ?? current.valor_boleto_parcela;
+          const qtd = updates.quantidade_parcelas_boleto ?? current.quantidade_parcelas_boleto;
+          valor_total = pix + cartao + (parcela * qtd);
+        }
+      }
+
       const { data, error } = await supabase
         .from('vendas')
-        .update(updates)
+        .update({ ...updates, ...(valor_total !== undefined && { valor_total }) })
         .eq('id', id)
         .select()
         .single();
@@ -115,7 +131,7 @@ export function useUpdateVenda() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendas'] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Venda atualizada com sucesso!');
     },
     onError: (error) => {

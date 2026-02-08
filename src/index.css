@@ -5,31 +5,31 @@
 @layer base {
   :root {
     /* Background & Foreground */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 30 20% 98%;
+    --foreground: 20 14% 10%;
 
     /* Cards & Surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 20 14% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 20 14% 10%;
 
-    /* Primary - Deep Navy Blue */
-    --primary: 222 47% 20%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Vibrant Orange */
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Soft Gray */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* Secondary - Warm Gray */
+    --secondary: 30 10% 95%;
+    --secondary-foreground: 20 14% 10%;
 
     /* Muted */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 30 10% 95%;
+    --muted-foreground: 20 9% 46%;
 
-    /* Accent - Light Blue */
-    --accent: 212 100% 97%;
-    --accent-foreground: 222 47% 11%;
+    /* Accent - Light Orange */
+    --accent: 24 100% 96%;
+    --accent-foreground: 24 95% 35%;
 
     /* Destructive - Red */
     --destructive: 0 84% 60%;
@@ -48,60 +48,51 @@
     --info-foreground: 0 0% 100%;
 
     /* Border & Input */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 222 47% 20%;
+    --border: 30 13% 88%;
+    --input: 30 13% 88%;
+    --ring: 24 95% 53%;
 
     --radius: 0.5rem;
 
-    /* Sidebar - Dark theme for contrast */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 212 100% 60%;
+    /* Sidebar - Dark theme with orange accent */
+    --sidebar-background: 20 14% 10%;
+    --sidebar-foreground: 30 20% 98%;
+    --sidebar-primary: 24 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 18%;
-    --sidebar-ring: 212 100% 60%;
-
-    /* Custom CRM colors */
-    --funil-novo: 199 89% 48%;
-    --funil-contato: 280 67% 55%;
-    --funil-agendada: 38 92% 50%;
-    --funil-realizada: 142 76% 36%;
-    --funil-noshow: 0 84% 60%;
-    --funil-perdido: 0 0% 45%;
-    --funil-ganho: 142 76% 36%;
+    --sidebar-accent: 20 14% 16%;
+    --sidebar-accent-foreground: 30 20% 98%;
+    --sidebar-border: 20 14% 16%;
+    --sidebar-ring: 24 95% 53%;
 
     /* Chart colors */
-    --chart-1: 212 100% 50%;
+    --chart-1: 24 95% 53%;
     --chart-2: 142 76% 36%;
     --chart-3: 38 92% 50%;
-    --chart-4: 280 67% 55%;
+    --chart-4: 199 89% 48%;
     --chart-5: 0 84% 60%;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 20 14% 6%;
+    --foreground: 30 20% 98%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 20 14% 9%;
+    --card-foreground: 30 20% 98%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 20 14% 9%;
+    --popover-foreground: 30 20% 98%;
 
-    --primary: 212 100% 60%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 24 95% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 20 14% 15%;
+    --secondary-foreground: 30 20% 98%;
 
-    --muted: 222 47% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 20 14% 15%;
+    --muted-foreground: 30 10% 60%;
 
-    --accent: 222 47% 18%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 20 14% 18%;
+    --accent-foreground: 24 95% 60%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -115,18 +106,18 @@
     --info: 199 89% 55%;
     --info-foreground: 0 0% 0%;
 
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
-    --ring: 212 100% 60%;
+    --border: 20 14% 18%;
+    --input: 20 14% 18%;
+    --ring: 24 95% 55%;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 212 100% 60%;
+    --sidebar-background: 20 14% 6%;
+    --sidebar-foreground: 30 20% 98%;
+    --sidebar-primary: 24 95% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 12%;
-    --sidebar-ring: 212 100% 60%;
+    --sidebar-accent: 20 14% 12%;
+    --sidebar-accent-foreground: 30 20% 98%;
+    --sidebar-border: 20 14% 12%;
+    --sidebar-ring: 24 95% 55%;
   }
 }
 
@@ -150,43 +141,20 @@
     @apply bg-card rounded-xl border border-border p-6 shadow-sm transition-all hover:shadow-md;
   }
 
-  .funil-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full;
+  /* TV Mode styles */
+  .tv-mode {
+    @apply bg-background min-h-screen;
   }
 
-  .funil-novo {
-    @apply bg-info/15 text-info;
+  .tv-stat-card {
+    @apply bg-card rounded-2xl border border-border p-8 shadow-lg;
   }
 
-  .funil-contato {
-    @apply bg-purple-500/15 text-purple-600;
+  .tv-stat-value {
+    @apply text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight;
   }
 
-  .funil-agendada {
-    @apply bg-warning/15 text-amber-600;
-  }
-
-  .funil-realizada {
-    @apply bg-success/15 text-success;
-  }
-
-  .funil-noshow {
-    @apply bg-destructive/15 text-destructive;
-  }
-
-  .funil-perdido {
-    @apply bg-muted text-muted-foreground;
-  }
-
-  .funil-ganho {
-    @apply bg-success/15 text-success;
-  }
-
-  .kanban-column {
-    @apply flex flex-col min-w-[280px] max-w-[320px] bg-muted/50 rounded-xl p-3;
-  }
-
-  .kanban-card {
-    @apply bg-card rounded-lg border border-border p-4 shadow-sm cursor-pointer transition-all hover:shadow-md hover:border-primary/30;
+  .tv-stat-label {
+    @apply text-xl md:text-2xl text-muted-foreground font-medium;
   }
 }

@@ -4,13 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import AuthPage from "./pages/Auth";
-import DashboardPage from "./pages/Dashboard";
-import LeadsPage from "./pages/Leads";
-import LeadDetailPage from "./pages/LeadDetail";
-import CallsPage from "./pages/Calls";
-import VendasPage from "./pages/Vendas";
-import PerformancePage from "./pages/Performance";
+import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import Vendas from "./pages/Vendas";
+import MeuFechamento from "./pages/MeuFechamento";
+import TVMode from "./pages/TVMode";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,13 +50,11 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
-      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
-      <Route path="/leads/:id" element={<ProtectedRoute><LeadDetailPage /></ProtectedRoute>} />
-      <Route path="/calls" element={<ProtectedRoute><CallsPage /></ProtectedRoute>} />
-      <Route path="/vendas" element={<ProtectedRoute><VendasPage /></ProtectedRoute>} />
-      <Route path="/performance" element={<ProtectedRoute><PerformancePage /></ProtectedRoute>} />
+      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
+      <Route path="/meu-fechamento" element={<ProtectedRoute><MeuFechamento /></ProtectedRoute>} />
+      <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

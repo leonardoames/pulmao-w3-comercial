@@ -14,159 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
-      calls: {
+      fechamentos: {
         Row: {
           atualizado_em: string
-          atualizado_por: string | null
+          calls_realizadas: number
           closer_user_id: string
           criado_em: string
-          data_hora: string
+          data: string
           id: string
-          lead_id: string
-          link_reuniao: string | null
+          no_show: number
           observacoes: string | null
-          plataforma: Database["public"]["Enums"]["call_plataforma"]
-          sdr_user_id: string | null
-          status: Database["public"]["Enums"]["call_status"]
         }
         Insert: {
           atualizado_em?: string
-          atualizado_por?: string | null
+          calls_realizadas?: number
           closer_user_id: string
           criado_em?: string
-          data_hora: string
+          data: string
           id?: string
-          lead_id: string
-          link_reuniao?: string | null
+          no_show?: number
           observacoes?: string | null
-          plataforma?: Database["public"]["Enums"]["call_plataforma"]
-          sdr_user_id?: string | null
-          status?: Database["public"]["Enums"]["call_status"]
         }
         Update: {
           atualizado_em?: string
-          atualizado_por?: string | null
+          calls_realizadas?: number
           closer_user_id?: string
           criado_em?: string
-          data_hora?: string
+          data?: string
           id?: string
-          lead_id?: string
-          link_reuniao?: string | null
+          no_show?: number
           observacoes?: string | null
-          plataforma?: Database["public"]["Enums"]["call_plataforma"]
-          sdr_user_id?: string | null
-          status?: Database["public"]["Enums"]["call_status"]
         }
         Relationships: [
           {
-            foreignKeyName: "calls_atualizado_por_fkey"
-            columns: ["atualizado_por"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "calls_closer_user_id_fkey"
+            foreignKeyName: "fechamentos_closer_user_id_fkey"
             columns: ["closer_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "calls_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "calls_sdr_user_id_fkey"
-            columns: ["sdr_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      leads: {
-        Row: {
-          atualizado_em: string
-          atualizado_por: string | null
-          cidade: string | null
-          closer_responsavel_user_id: string | null
-          cnpj: string | null
-          criado_em: string
-          email: string
-          estado: string | null
-          id: string
-          instagram: string | null
-          motivo_perda: string | null
-          nome_empresa: string
-          nome_pessoa: string
-          observacoes: string | null
-          origem: Database["public"]["Enums"]["lead_origem"]
-          sdr_responsavel_user_id: string | null
-          status_funil: Database["public"]["Enums"]["lead_status_funil"]
-          telefone: string
-        }
-        Insert: {
-          atualizado_em?: string
-          atualizado_por?: string | null
-          cidade?: string | null
-          closer_responsavel_user_id?: string | null
-          cnpj?: string | null
-          criado_em?: string
-          email: string
-          estado?: string | null
-          id?: string
-          instagram?: string | null
-          motivo_perda?: string | null
-          nome_empresa: string
-          nome_pessoa: string
-          observacoes?: string | null
-          origem?: Database["public"]["Enums"]["lead_origem"]
-          sdr_responsavel_user_id?: string | null
-          status_funil?: Database["public"]["Enums"]["lead_status_funil"]
-          telefone: string
-        }
-        Update: {
-          atualizado_em?: string
-          atualizado_por?: string | null
-          cidade?: string | null
-          closer_responsavel_user_id?: string | null
-          cnpj?: string | null
-          criado_em?: string
-          email?: string
-          estado?: string | null
-          id?: string
-          instagram?: string | null
-          motivo_perda?: string | null
-          nome_empresa?: string
-          nome_pessoa?: string
-          observacoes?: string | null
-          origem?: Database["public"]["Enums"]["lead_origem"]
-          sdr_responsavel_user_id?: string | null
-          status_funil?: Database["public"]["Enums"]["lead_status_funil"]
-          telefone?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "leads_atualizado_por_fkey"
-            columns: ["atualizado_por"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leads_closer_responsavel_user_id_fkey"
-            columns: ["closer_responsavel_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leads_sdr_responsavel_user_id_fkey"
-            columns: ["sdr_responsavel_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -211,54 +93,60 @@ export type Database = {
           atualizado_em: string
           atualizado_por: string | null
           closer_user_id: string
+          contrato_assinado: boolean
           criado_em: string
           data_fechamento: string
-          data_fim: string
-          data_inicio: string
-          detalhes_pagamento: string | null
-          entrada_valor: number
-          forma_pagamento: Database["public"]["Enums"]["venda_forma_pagamento"]
+          duracao_contrato_meses: number
           id: string
-          lead_id: string
+          nome_empresa: string
+          nome_lead: string
           observacoes: string | null
-          plano_nome: string
+          pago: boolean
+          quantidade_parcelas_boleto: number
           status: Database["public"]["Enums"]["venda_status"]
+          valor_boleto_parcela: number
+          valor_cartao: number
+          valor_pix: number
           valor_total: number
         }
         Insert: {
           atualizado_em?: string
           atualizado_por?: string | null
           closer_user_id: string
+          contrato_assinado?: boolean
           criado_em?: string
           data_fechamento?: string
-          data_fim: string
-          data_inicio: string
-          detalhes_pagamento?: string | null
-          entrada_valor?: number
-          forma_pagamento?: Database["public"]["Enums"]["venda_forma_pagamento"]
+          duracao_contrato_meses?: number
           id?: string
-          lead_id: string
+          nome_empresa?: string
+          nome_lead?: string
           observacoes?: string | null
-          plano_nome: string
+          pago?: boolean
+          quantidade_parcelas_boleto?: number
           status?: Database["public"]["Enums"]["venda_status"]
+          valor_boleto_parcela?: number
+          valor_cartao?: number
+          valor_pix?: number
           valor_total: number
         }
         Update: {
           atualizado_em?: string
           atualizado_por?: string | null
           closer_user_id?: string
+          contrato_assinado?: boolean
           criado_em?: string
           data_fechamento?: string
-          data_fim?: string
-          data_inicio?: string
-          detalhes_pagamento?: string | null
-          entrada_valor?: number
-          forma_pagamento?: Database["public"]["Enums"]["venda_forma_pagamento"]
+          duracao_contrato_meses?: number
           id?: string
-          lead_id?: string
+          nome_empresa?: string
+          nome_lead?: string
           observacoes?: string | null
-          plano_nome?: string
+          pago?: boolean
+          quantidade_parcelas_boleto?: number
           status?: Database["public"]["Enums"]["venda_status"]
+          valor_boleto_parcela?: number
+          valor_cartao?: number
+          valor_pix?: number
           valor_total?: number
         }
         Relationships: [
@@ -274,13 +162,6 @@ export type Database = {
             columns: ["closer_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vendas_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: true
-            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]
