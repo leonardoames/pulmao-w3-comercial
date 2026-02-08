@@ -73,6 +73,7 @@ export function useUpdateProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['closers'] });
       toast.success('Usuário atualizado com sucesso!');
     },
     onError: (error) => {
@@ -124,18 +125,30 @@ export function useCreateUser() {
         console.error('Erro ao atualizar perfil:', profileError);
       }
 
-      // Update role
-      const { error: roleError } = await supabase
+      // Update role using update instead of upsert to avoid type issues
+      const { data: existingRole } = await supabase
         .from('user_roles')
-        .upsert({ 
-          user_id: authData.user.id, 
-          role 
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .maybeSingle();
 
-      if (roleError) {
-        console.error('Erro ao definir role:', roleError);
+      if (existingRole) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({ role })
+          .eq('user_id', authData.user.id);
+
+        if (roleError) {
+          console.error('Erro ao atualizar role:', roleError);
+        }
+      } else {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: authData.user.id, role });
+
+        if (roleError) {
+          console.error('Erro ao inserir role:', roleError);
+        }
       }
 
       return authData.user;
@@ -143,6 +156,7 @@ export function useCreateUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       queryClient.invalidateQueries({ queryKey: ['all-user-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['closers'] });
       toast.success('Usuário criado com sucesso!');
     },
     onError: (error) => {

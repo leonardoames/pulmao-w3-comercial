@@ -195,6 +195,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_admin_panel: { Args: never; Returns: boolean }
       can_edit_any_fechamento: { Args: never; Returns: boolean }
       can_edit_comercial: { Args: never; Returns: boolean }
       can_edit_vendas: { Args: never; Returns: boolean }
@@ -210,10 +211,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_closer: { Args: never; Returns: boolean }
       is_master: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "MASTER" | "CEO" | "GESTOR_COMERCIAL" | "SDR" | "CLOSER"
+      app_role: "MASTER" | "DIRETORIA" | "GESTOR_COMERCIAL" | "CLOSER"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
         | "Agendada"
@@ -375,7 +377,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["MASTER", "CEO", "GESTOR_COMERCIAL", "SDR", "CLOSER"],
+      app_role: ["MASTER", "DIRETORIA", "GESTOR_COMERCIAL", "CLOSER"],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],
       call_status: [
         "Agendada",

@@ -67,7 +67,7 @@ export default function UserManagement() {
     role: 'CLOSER' as AppRole
   });
 
-  // Redirect if not MASTER
+  // Redirect if not authorized to access admin panel
   if (!canManageUsers && !isLoading) {
     return <Navigate to="/" replace />;
   }
@@ -120,7 +120,7 @@ export default function UserManagement() {
     switch (role) {
       case 'MASTER':
         return 'destructive';
-      case 'CEO':
+      case 'DIRETORIA':
         return 'default';
       case 'GESTOR_COMERCIAL':
         return 'secondary';

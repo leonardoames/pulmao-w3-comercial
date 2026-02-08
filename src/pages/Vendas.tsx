@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -14,37 +13,40 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useVendas, useCreateVenda, useUpdateVenda } from '@/hooks/useVendas';
 import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
-import { VendaStatus, VENDA_STATUS_LABELS, Venda } from '@/types/crm';
+import { useIsCloser, useCanEditAnyFechamento } from '@/hooks/useUserRoles';
+import { Venda } from '@/types/crm';
 import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 export default function VendasPage() {
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [closerFilter, setCloserFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVenda, setEditingVenda] = useState<Venda | null>(null);
   const [dataVenda, setDataVenda] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedCloserId, setSelectedCloserId] = useState<string>('');
   
   const { data: vendas, isLoading } = useVendas();
   const { data: closers } = useClosers();
   const { profile, canEdit } = useAuth();
+  const isCloser = useIsCloser();
+  const canManageClosers = useCanEditAnyFechamento();
   const createVenda = useCreateVenda();
   const updateVenda = useUpdateVenda();
 
   const filteredVendas = vendas?.filter(venda => {
-    const matchesStatus = statusFilter === 'all' || venda.status === statusFilter;
     const matchesCloser = closerFilter === 'all' || venda.closer_user_id === closerFilter;
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = !searchQuery || 
       venda.nome_lead.toLowerCase().includes(searchLower) ||
       venda.nome_empresa.toLowerCase().includes(searchLower) ||
       (venda.closer as any)?.nome?.toLowerCase().includes(searchLower);
-    return matchesStatus && matchesCloser && matchesSearch;
+    return matchesCloser && matchesSearch;
   });
 
   const totalFaturamento = filteredVendas?.reduce((sum, v) => sum + Number(v.valor_total), 0) || 0;
@@ -61,18 +63,29 @@ export default function VendasPage() {
   const handleOpenNew = () => {
     setEditingVenda(null);
     setDataVenda(new Date());
+    // Se for closer, usa o próprio ID; se não, limpa para forçar seleção
+    setSelectedCloserId(isCloser ? (profile?.id || '') : '');
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (venda: Venda) => {
     setEditingVenda(venda);
     setDataVenda(new Date(venda.data_fechamento + 'T12:00:00'));
+    setSelectedCloserId(venda.closer_user_id);
     setDialogOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    
+    // Determinar o closer_user_id
+    const closerUserId = isCloser ? profile!.id : selectedCloserId;
+    
+    if (!closerUserId) {
+      toast.error('Selecione o closer responsável pela venda');
+      return;
+    }
     
     const data = {
       nome_lead: formData.get('nome_lead') as string,
@@ -97,13 +110,13 @@ export default function VendasPage() {
         await updateVenda.mutateAsync({
           id: editingVenda.id,
           ...data,
+          closer_user_id: closerUserId,
           data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
-          status: formData.get('status') as VendaStatus,
         });
       } else {
         await createVenda.mutateAsync({
           ...data,
-          closer_user_id: profile!.id,
+          closer_user_id: closerUserId,
           data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
         });
       }
@@ -111,6 +124,14 @@ export default function VendasPage() {
     } catch (error) {
       // Error handled by mutation
     }
+  };
+
+  // Get closer name for display
+  const getCloserName = (closerId: string) => {
+    if (isCloser && closerId === profile?.id) {
+      return profile?.nome || 'Você';
+    }
+    return closers?.find(c => c.id === closerId)?.nome || 'Selecione...';
   };
 
   return (
@@ -156,6 +177,34 @@ export default function VendasPage() {
                       </PopoverContent>
                     </Popover>
                   </div>
+                  
+                  {/* Campo Closer da Venda */}
+                  <div className="space-y-2">
+                    <Label htmlFor="closer">Closer da Venda *</Label>
+                    {isCloser ? (
+                      // Closer vê campo bloqueado com o próprio nome
+                      <Input 
+                        value={profile?.nome || ''} 
+                        disabled 
+                        className="bg-muted"
+                      />
+                    ) : (
+                      // Master/Diretoria/Gestor pode selecionar qualquer closer
+                      <Select value={selectedCloserId} onValueChange={setSelectedCloserId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o closer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {closers?.map(closer => (
+                            <SelectItem key={closer.id} value={closer.id}>{closer.nome}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="duracao_contrato_meses">Duração do Contrato (meses)</Label>
                     <Input 
@@ -264,22 +313,6 @@ export default function VendasPage() {
                   </div>
                 </div>
 
-                {editingVenda && (
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue={editingVenda.status}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(VENDA_STATUS_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
                 <div className="space-y-2">
                   <Label htmlFor="observacoes">Observações</Label>
                   <Textarea 
@@ -358,17 +391,6 @@ export default function VendasPage() {
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os status</SelectItem>
-            {Object.entries(VENDA_STATUS_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Select value={closerFilter} onValueChange={setCloserFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Closer" />
@@ -393,7 +415,6 @@ export default function VendasPage() {
                 <TableHead>Valor Total</TableHead>
                 <TableHead>Detalhes Pagamento</TableHead>
                 <TableHead>Closer</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead className="w-20">Flags</TableHead>
                 {canEdit && <TableHead className="w-10"></TableHead>}
               </TableRow>
@@ -401,13 +422,13 @@ export default function VendasPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={canEdit ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={canEdit ? 8 : 7} className="text-center py-8 text-muted-foreground">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : filteredVendas?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={canEdit ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={canEdit ? 8 : 7} className="text-center py-8 text-muted-foreground">
                     Nenhuma venda encontrada
                   </TableCell>
                 </TableRow>
@@ -426,11 +447,11 @@ export default function VendasPage() {
                         </div>
                       </TableCell>
                       <TableCell>{venda.duracao_contrato_meses} meses</TableCell>
-                      <TableCell>
-                        <p className="font-bold text-primary">{formatCurrency(venda.valor_total)}</p>
+                      <TableCell className="font-bold text-primary">
+                        {formatCurrency(venda.valor_total)}
                       </TableCell>
                       <TableCell>
-                        <div className="text-xs space-y-0.5">
+                        <div className="text-xs space-y-1">
                           {venda.valor_pix > 0 && <p>Pix: {formatCurrency(venda.valor_pix)}</p>}
                           {venda.valor_cartao > 0 && <p>Cartão: {formatCurrency(venda.valor_cartao)}</p>}
                           {valorBoletoTotal > 0 && (
@@ -440,19 +461,16 @@ export default function VendasPage() {
                       </TableCell>
                       <TableCell>{(venda.closer as any)?.nome}</TableCell>
                       <TableCell>
-                        <StatusBadge status={venda.status} type="venda" />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2" title={`Pago: ${venda.pago ? 'Sim' : 'Não'}, Assinado: ${venda.contrato_assinado ? 'Sim' : 'Não'}`}>
-                          {venda.pago ? (
-                            <Check className="h-4 w-4 text-success" />
-                          ) : (
-                            <X className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex gap-1">
+                          {venda.pago && (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-success/20 text-success" title="Pago">
+                              <Check className="h-3 w-3" />
+                            </span>
                           )}
-                          {venda.contrato_assinado ? (
-                            <Check className="h-4 w-4 text-success" />
-                          ) : (
-                            <X className="h-4 w-4 text-muted-foreground" />
+                          {venda.contrato_assinado && (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary" title="Contrato Assinado">
+                              <Edit2 className="h-3 w-3" />
+                            </span>
                           )}
                         </div>
                       </TableCell>

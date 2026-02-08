@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, UserRole } from '@/types/roles';
+import { AppRole, UserRole, canRoleManageClosers, canRoleAccessAdminPanel } from '@/types/roles';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
@@ -38,10 +38,21 @@ export function useCanManageUsers() {
   return userRole?.role === 'MASTER';
 }
 
+export function useCanAccessAdminPanel() {
+  const { data: userRole } = useCurrentUserRole();
+  if (!userRole) return false;
+  return canRoleAccessAdminPanel(userRole.role);
+}
+
 export function useCanEditAnyFechamento() {
   const { data: userRole } = useCurrentUserRole();
   if (!userRole) return false;
-  return ['MASTER', 'CEO', 'GESTOR_COMERCIAL', 'SDR'].includes(userRole.role);
+  return canRoleManageClosers(userRole.role);
+}
+
+export function useIsCloser() {
+  const { data: userRole } = useCurrentUserRole();
+  return userRole?.role === 'CLOSER';
 }
 
 export function useAllUserRoles() {
@@ -66,12 +77,10 @@ export function useUpdateUserRole() {
     mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
       const { data, error } = await supabase
         .from('user_roles')
-        .upsert({ 
-          user_id: userId, 
-          role: role 
-        }, {
-          onConflict: 'user_id'
-        })
+        .upsert(
+          { user_id: userId, role },
+          { onConflict: 'user_id' }
+        )
         .select()
         .single();
 
@@ -81,6 +90,7 @@ export function useUpdateUserRole() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-user-roles'] });
       queryClient.invalidateQueries({ queryKey: ['user-role'] });
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       toast.success('Role atualizado com sucesso!');
     },
     onError: (error) => {

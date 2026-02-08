@@ -57,7 +57,7 @@ function AppRoutes() {
       <Route path="/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
       <Route path="/meu-fechamento" element={<ProtectedRoute><MeuFechamento /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
-      <Route path="/usuarios" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+      <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
