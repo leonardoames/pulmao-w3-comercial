@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useDashboardStats, useCloserRankings, DateFilter, DateRange } from '@/hooks/useDashboard';
+import { useDashboardStats, useCloserRankings, DateFilter, DateRange, getDateRange } from '@/hooks/useDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Trophy, Target, Phone, Settings, Moon, Sun } from 'lucide-react';
@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
 import { TVDateFilter } from '@/components/tv/TVDateFilter';
+import { OteTVPanel } from '@/components/ote/OteTVPanel';
+import { format, startOfMonth } from 'date-fns';
 
 export default function TVModePage() {
   const [filter, setFilter] = useState<DateFilter>('month');
@@ -15,6 +17,16 @@ export default function TVModePage() {
   const [showSettings, setShowSettings] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { theme, setTheme } = useTheme();
+
+  // Derive month for OTE from filter
+  const getMonthRefFromFilter = (): string => {
+    if (filter === 'custom' && customRange) {
+      return format(customRange.start, 'yyyy-MM');
+    }
+    return format(startOfMonth(new Date()), 'yyyy-MM');
+  };
+
+  const monthRef = getMonthRefFromFilter();
 
   const { data: stats, refetch: refetchStats } = useDashboardStats(filter, customRange);
   const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter, customRange);
@@ -162,70 +174,76 @@ export default function TVModePage() {
         </div>
       </div>
 
-      {/* Rankings */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Top Closer do Dia */}
-        <div className="p-6 rounded-2xl bg-primary/10 border-2 border-primary/30">
-          <div className="flex items-center gap-3 mb-4">
-            <Trophy className="h-8 w-8 text-primary" />
-            <p className="text-xl font-medium">Top do Dia</p>
-          </div>
-          <p className="text-4xl font-bold mb-2">
-            {rankings?.topCloserDia?.nome || '-'}
-          </p>
-          {rankings?.topCloserDia && (
-            <p className="text-2xl text-primary font-medium">
-              {formatCurrency(rankings.topCloserDia.volume)}
-            </p>
-          )}
-        </div>
+      {/* OTE Panel and Rankings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* OTE Panel */}
+        <OteTVPanel monthRef={monthRef} />
 
-        {/* Top Closer da Semana */}
-        <div className="p-6 rounded-2xl bg-primary/10 border-2 border-primary/30">
-          <div className="flex items-center gap-3 mb-4">
-            <Trophy className="h-8 w-8 text-primary" />
-            <p className="text-xl font-medium">Top da Semana</p>
-          </div>
-          <p className="text-4xl font-bold mb-2">
-            {rankings?.topCloserSemana?.nome || '-'}
-          </p>
-          {rankings?.topCloserSemana && (
-            <p className="text-2xl text-primary font-medium">
-              {formatCurrency(rankings.topCloserSemana.volume)}
+        {/* Rankings Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Top Closer do Dia */}
+          <div className="p-6 rounded-2xl bg-primary/10 border-2 border-primary/30">
+            <div className="flex items-center gap-3 mb-4">
+              <Trophy className="h-8 w-8 text-primary" />
+              <p className="text-xl font-medium">Top do Dia</p>
+            </div>
+            <p className="text-3xl font-bold mb-2">
+              {rankings?.topCloserDia?.nome || '-'}
             </p>
-          )}
-        </div>
+            {rankings?.topCloserDia && (
+              <p className="text-xl text-primary font-medium">
+                {formatCurrency(rankings.topCloserDia.volume)}
+              </p>
+            )}
+          </div>
 
-        {/* Top Conversão */}
-        <div className="p-6 rounded-2xl bg-success/10 border-2 border-success/30">
-          <div className="flex items-center gap-3 mb-4">
-            <Target className="h-8 w-8 text-success" />
-            <p className="text-xl font-medium">Top Conversão</p>
-          </div>
-          <p className="text-4xl font-bold mb-2">
-            {rankings?.topConversao?.nome || '-'}
-          </p>
-          {rankings?.topConversao && (
-            <p className="text-2xl text-success font-medium">
-              {rankings.topConversao.taxaConversao.toFixed(1)}%
+          {/* Top Closer da Semana */}
+          <div className="p-6 rounded-2xl bg-primary/10 border-2 border-primary/30">
+            <div className="flex items-center gap-3 mb-4">
+              <Trophy className="h-8 w-8 text-primary" />
+              <p className="text-xl font-medium">Top da Semana</p>
+            </div>
+            <p className="text-3xl font-bold mb-2">
+              {rankings?.topCloserSemana?.nome || '-'}
             </p>
-          )}
-        </div>
+            {rankings?.topCloserSemana && (
+              <p className="text-xl text-primary font-medium">
+                {formatCurrency(rankings.topCloserSemana.volume)}
+              </p>
+            )}
+          </div>
 
-        {/* Menor No-Show */}
-        <div className="p-6 rounded-2xl bg-info/10 border-2 border-info/30">
-          <div className="flex items-center gap-3 mb-4">
-            <Phone className="h-8 w-8 text-info" />
-            <p className="text-xl font-medium">Menor No-Show</p>
-          </div>
-          <p className="text-4xl font-bold mb-2">
-            {rankings?.menorNoShow?.nome || '-'}
-          </p>
-          {rankings?.menorNoShow && (
-            <p className="text-2xl text-info font-medium">
-              {rankings.menorNoShow.percentNoShow.toFixed(1)}%
+          {/* Top Conversão */}
+          <div className="p-6 rounded-2xl bg-success/10 border-2 border-success/30">
+            <div className="flex items-center gap-3 mb-4">
+              <Target className="h-8 w-8 text-success" />
+              <p className="text-xl font-medium">Top Conversão</p>
+            </div>
+            <p className="text-3xl font-bold mb-2">
+              {rankings?.topConversao?.nome || '-'}
             </p>
-          )}
+            {rankings?.topConversao && (
+              <p className="text-xl text-success font-medium">
+                {rankings.topConversao.taxaConversao.toFixed(1)}%
+              </p>
+            )}
+          </div>
+
+          {/* Menor No-Show */}
+          <div className="p-6 rounded-2xl bg-info/10 border-2 border-info/30">
+            <div className="flex items-center gap-3 mb-4">
+              <Phone className="h-8 w-8 text-info" />
+              <p className="text-xl font-medium">Menor No-Show</p>
+            </div>
+            <p className="text-3xl font-bold mb-2">
+              {rankings?.menorNoShow?.nome || '-'}
+            </p>
+            {rankings?.menorNoShow && (
+              <p className="text-xl text-info font-medium">
+                {rankings.menorNoShow.percentNoShow.toFixed(1)}%
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

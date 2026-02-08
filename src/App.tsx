@@ -11,6 +11,7 @@ import Vendas from "./pages/Vendas";
 import MeuFechamento from "./pages/MeuFechamento";
 import TVMode from "./pages/TVMode";
 import UserManagement from "./pages/UserManagement";
+import OteTracking from "./pages/OteTracking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
       <Route path="/meu-fechamento" element={<ProtectedRoute><MeuFechamento /></ProtectedRoute>} />
+      <Route path="/meta-ote" element={<ProtectedRoute><OteTracking /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />

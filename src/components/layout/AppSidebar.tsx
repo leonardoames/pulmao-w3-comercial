@@ -6,6 +6,7 @@ import {
   ClipboardList,
   ChevronRight,
   Settings,
+  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +20,7 @@ const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/vendas', icon: DollarSign, label: 'Vendas' },
   { path: '/meu-fechamento', icon: ClipboardList, label: 'Meu Fechamento' },
+  { path: '/meta-ote', icon: Target, label: 'Meta OTE' },
 ];
 
 export function AppSidebar() {
