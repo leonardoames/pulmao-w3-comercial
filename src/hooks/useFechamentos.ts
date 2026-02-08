@@ -9,7 +9,7 @@ export function useFechamentos(filters?: {
   endDate?: Date;
 }) {
   return useQuery({
-    queryKey: ['fechamentos', filters],
+    queryKey: ['fechamentos', filters?.closer_id, filters?.startDate?.toISOString(), filters?.endDate?.toISOString()],
     queryFn: async () => {
       let query = supabase
         .from('fechamentos')
@@ -23,10 +23,13 @@ export function useFechamentos(filters?: {
         query = query.eq('closer_user_id', filters.closer_id);
       }
       if (filters?.startDate) {
-        query = query.gte('data', filters.startDate.toISOString().split('T')[0]);
+        // Use date-only string format to avoid timezone issues
+        const startStr = filters.startDate.toISOString().split('T')[0];
+        query = query.gte('data', startStr);
       }
       if (filters?.endDate) {
-        query = query.lte('data', filters.endDate.toISOString().split('T')[0]);
+        const endStr = filters.endDate.toISOString().split('T')[0];
+        query = query.lte('data', endStr);
       }
 
       const { data, error } = await query;
@@ -37,7 +40,8 @@ export function useFechamentos(filters?: {
         ...f,
         calls_agendadas: f.calls_realizadas + f.no_show
       }));
-    }
+    },
+    enabled: !filters?.closer_id || filters.closer_id.length > 0
   });
 }
 

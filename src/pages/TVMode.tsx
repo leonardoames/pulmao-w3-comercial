@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useDashboardStats, useCloserRankings, DateFilter } from '@/hooks/useDashboard';
+import { useDashboardStats, useCloserRankings, DateFilter, DateRange } from '@/hooks/useDashboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Trophy, TrendingUp, Target, Phone, Settings, Moon, Sun } from 'lucide-react';
+import { X, Trophy, Target, Phone, Settings, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/components/theme-provider';
+import { TVDateFilter } from '@/components/tv/TVDateFilter';
 
 export default function TVModePage() {
-  const [filter] = useState<DateFilter>('month');
+  const [filter, setFilter] = useState<DateFilter>('month');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [metaSemanal, setMetaSemanal] = useState<number>(100000);
   const [showSettings, setShowSettings] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { theme, setTheme } = useTheme();
 
-  const { data: stats, refetch: refetchStats } = useDashboardStats(filter);
-  const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter);
+  const { data: stats, refetch: refetchStats } = useDashboardStats(filter, customRange);
+  const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter, customRange);
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -42,33 +44,43 @@ export default function TVModePage() {
   return (
     <div className="tv-mode min-h-screen bg-background p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold">
-            <span className="text-primary">Pulmão</span> W3
-          </h1>
-          <p className="text-muted-foreground">Dashboard ao Vivo</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}
-          </p>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          >
-            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)}>
-            <Settings className="h-5 w-5" />
-          </Button>
-          <Link to="/">
-            <Button variant="outline" size="icon">
-              <X className="h-5 w-5" />
+      <div className="flex flex-col gap-4 mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold">
+              <span className="text-primary">Pulmão</span> W3
+            </h1>
+            <p className="text-muted-foreground">Dashboard ao Vivo</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}
+            </p>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            >
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
-          </Link>
+            <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)}>
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Link to="/">
+              <Button variant="outline" size="icon">
+                <X className="h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
+        
+        {/* Date Filter */}
+        <TVDateFilter
+          filter={filter}
+          onFilterChange={setFilter}
+          customRange={customRange}
+          onCustomRangeChange={setCustomRange}
+        />
       </div>
 
       {/* Settings */}

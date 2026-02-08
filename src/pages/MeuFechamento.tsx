@@ -40,9 +40,15 @@ export default function MeuFechamentoPage() {
   const activeCloserId = selectedCloserId || profile?.id || '';
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const { data: fechamento, isLoading } = useMeuFechamento(activeCloserId, dateStr);
+  
+  // Calculate start date for 30 days period
+  const thirtyDaysAgo = subDays(new Date(), 30);
+  const thirtyDaysAgoStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  
   const { data: meusFechamentos } = useFechamentos({ 
     closer_id: activeCloserId,
-    startDate: subDays(new Date(), 30),
+    startDate: thirtyDaysAgo,
     endDate: new Date()
   });
   const upsertFechamento = useUpsertFechamento();

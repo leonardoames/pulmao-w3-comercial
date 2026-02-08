@@ -70,7 +70,9 @@ export default function VendasPage() {
 
   const handleOpenEdit = (venda: Venda) => {
     setEditingVenda(venda);
-    setDataVenda(new Date(venda.data_fechamento + 'T12:00:00'));
+    // Parse date as YYYY-MM-DD string directly to avoid timezone issues
+    const [year, month, day] = venda.data_fechamento.split('-').map(Number);
+    setDataVenda(new Date(year, month - 1, day));
     setSelectedCloserId(venda.closer_user_id);
     setDialogOpen(true);
   };
@@ -438,7 +440,10 @@ export default function VendasPage() {
                   return (
                     <TableRow key={venda.id}>
                       <TableCell className="font-medium">
-                        {format(new Date(venda.data_fechamento), 'dd/MM/yyyy')}
+                        {(() => {
+                          const [year, month, day] = venda.data_fechamento.split('-').map(Number);
+                          return format(new Date(year, month - 1, day), 'dd/MM/yyyy');
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div>
