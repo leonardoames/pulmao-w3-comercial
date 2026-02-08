@@ -86,6 +86,7 @@ export function useCreateVenda() {
 
 interface UpdateVendaInput {
   id: string;
+  closer_user_id?: string;
   data_fechamento?: string;
   nome_lead?: string;
   nome_empresa?: string;

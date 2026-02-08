@@ -58,6 +58,7 @@ export const VENDA_STATUS_LABELS: Record<VendaStatus, string> = {
   Finalizado: 'Finalizado',
 };
 
+// Legacy role labels (for profiles.role field - not used in new system)
 export const ROLE_LABELS: Record<UserRole, string> = {
   CEO: 'CEO',
   Founder: 'Founder',
