@@ -55,6 +55,51 @@ export type Database = {
           },
         ]
       }
+      ote_goals: {
+        Row: {
+          atualizado_em: string
+          closer_user_id: string
+          created_by_user_id: string
+          criado_em: string
+          id: string
+          month_ref: string
+          ote_target_value: number
+        }
+        Insert: {
+          atualizado_em?: string
+          closer_user_id: string
+          created_by_user_id: string
+          criado_em?: string
+          id?: string
+          month_ref: string
+          ote_target_value?: number
+        }
+        Update: {
+          atualizado_em?: string
+          closer_user_id?: string
+          created_by_user_id?: string
+          criado_em?: string
+          id?: string
+          month_ref?: string
+          ote_target_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ote_goals_closer_user_id_fkey"
+            columns: ["closer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ote_goals_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           area: Database["public"]["Enums"]["user_area"]
@@ -199,6 +244,7 @@ export type Database = {
       can_edit_any_fechamento: { Args: never; Returns: boolean }
       can_edit_comercial: { Args: never; Returns: boolean }
       can_edit_vendas: { Args: never; Returns: boolean }
+      can_manage_ote_goals: { Args: never; Returns: boolean }
       can_manage_users: { Args: never; Returns: boolean }
       get_user_role: {
         Args: { _user_id: string }

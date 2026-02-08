@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { OteDashboardCard } from '@/components/ote/OteDashboardCard';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
+  const [selectedCloser, setSelectedCloser] = useState<string>('all');
 
   const { data: stats, isLoading } = useDashboardStats(filter, customRange);
   const { data: rankings } = useCloserRankings(filter, customRange);
@@ -184,10 +186,16 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* OTE Card and Rankings */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <OteDashboardCard
+          monthRef={format(new Date(), 'yyyy-MM')}
+          selectedCloser={selectedCloser}
+          onCloserChange={setSelectedCloser}
+        />
+        
         {/* Quick Rankings */}
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
@@ -235,8 +243,10 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Full Ranking */}
+      {/* Full Ranking */}
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Ranking de Closers</CardTitle>
