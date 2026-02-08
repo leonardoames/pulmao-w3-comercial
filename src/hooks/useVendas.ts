@@ -110,15 +110,21 @@ export function useUpdateVenda() {
       let valor_total: number | undefined;
       if (updates.valor_pix !== undefined || updates.valor_cartao !== undefined || 
           updates.valor_boleto_parcela !== undefined || updates.quantidade_parcelas_boleto !== undefined) {
-        // Need to get current values
-        const { data: current } = await supabase.from('vendas').select('*').eq('id', id).single();
-        if (current) {
-          const pix = updates.valor_pix ?? current.valor_pix;
-          const cartao = updates.valor_cartao ?? current.valor_cartao;
-          const parcela = updates.valor_boleto_parcela ?? current.valor_boleto_parcela;
-          const qtd = updates.quantidade_parcelas_boleto ?? current.quantidade_parcelas_boleto;
-          valor_total = pix + cartao + (parcela * qtd);
-        }
+        // Need to get current values - use maybeSingle to avoid error if not found
+        const { data: current, error: fetchError } = await supabase
+          .from('vendas')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (fetchError) throw fetchError;
+        if (!current) throw new Error('Venda não encontrada ou sem permissão para editar');
+        
+        const pix = updates.valor_pix ?? current.valor_pix;
+        const cartao = updates.valor_cartao ?? current.valor_cartao;
+        const parcela = updates.valor_boleto_parcela ?? current.valor_boleto_parcela;
+        const qtd = updates.quantidade_parcelas_boleto ?? current.quantidade_parcelas_boleto;
+        valor_total = pix + cartao + (parcela * qtd);
       }
 
       const { data, error } = await supabase
@@ -126,9 +132,11 @@ export function useUpdateVenda() {
         .update({ ...updates, ...(valor_total !== undefined && { valor_total }) })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) throw new Error('Venda não encontrada ou sem permissão para editar');
+      
       return data;
     },
     onSuccess: () => {

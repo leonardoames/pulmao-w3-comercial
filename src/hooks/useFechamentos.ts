@@ -76,7 +76,7 @@ export function useUpsertFechamento() {
         .from('fechamentos')
         .upsert([input], { onConflict: 'data,closer_user_id' })
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
