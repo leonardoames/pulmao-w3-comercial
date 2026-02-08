@@ -65,7 +65,7 @@ export default function MeuFechamentoPage() {
     }
   };
 
-  // Reset form when fechamento data loads or closer changes
+  // Reset form when fechamento data loads or date changes
   useEffect(() => {
     if (fechamento) {
       setCallsRealizadas(fechamento.calls_realizadas);
@@ -76,7 +76,7 @@ export default function MeuFechamentoPage() {
       setNoShow(0);
       setObservacoes('');
     }
-  }, [fechamento, activeCloserId, dateStr]);
+  }, [fechamento, dateStr]);
 
   const handleSave = async () => {
     if (!activeCloserId) return;

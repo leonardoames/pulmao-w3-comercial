@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 
 export type DateFilter = 'today' | 'yesterday' | '7days' | 'month' | '30days' | 'custom';
 
@@ -29,27 +29,39 @@ export function getDateRange(filter: DateFilter, customRange?: DateRange): DateR
   }
 }
 
-export function useDashboardStats(filter: DateFilter, customRange?: DateRange) {
+export function useDashboardStats(filter: DateFilter, customRange?: DateRange, closerId?: string) {
   const { start, end } = getDateRange(filter, customRange);
 
   return useQuery({
-    queryKey: ['dashboard-stats', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString()],
+    queryKey: ['dashboard-stats', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString(), closerId],
     queryFn: async () => {
       // Fechamentos no período
-      const { data: fechamentos, error: fechamentosError } = await supabase
+      let fechamentosQuery = supabase
         .from('fechamentos')
-        .select('calls_realizadas, no_show')
+        .select('calls_realizadas, no_show, closer_user_id')
         .gte('data', start.toISOString().split('T')[0])
         .lte('data', end.toISOString().split('T')[0]);
+      
+      if (closerId && closerId !== 'all') {
+        fechamentosQuery = fechamentosQuery.eq('closer_user_id', closerId);
+      }
+
+      const { data: fechamentos, error: fechamentosError } = await fechamentosQuery;
 
       if (fechamentosError) throw fechamentosError;
 
       // Vendas no período
-      const { data: vendas, error: vendasError } = await supabase
+      let vendasQuery = supabase
         .from('vendas')
         .select('id, valor_total, valor_pix, valor_cartao, valor_boleto_parcela, quantidade_parcelas_boleto, closer_user_id')
         .gte('data_fechamento', start.toISOString().split('T')[0])
         .lte('data_fechamento', end.toISOString().split('T')[0]);
+      
+      if (closerId && closerId !== 'all') {
+        vendasQuery = vendasQuery.eq('closer_user_id', closerId);
+      }
+
+      const { data: vendas, error: vendasError } = await vendasQuery;
 
       if (vendasError) throw vendasError;
 
@@ -90,7 +102,7 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange) {
   });
 }
 
-export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
+export function useCloserRankings(filter: DateFilter, customRange?: DateRange, closerId?: string) {
   const { start, end } = getDateRange(filter, customRange);
   const now = new Date();
   const todayStart = startOfDay(now);
@@ -99,10 +111,10 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
   return useQuery({
-    queryKey: ['closer-rankings', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString()],
+    queryKey: ['closer-rankings', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString(), closerId],
     queryFn: async () => {
       // Vendas do dia
-      const { data: vendasDia } = await supabase
+      let vendasDiaQuery = supabase
         .from('vendas')
         .select(`
           closer_user_id,
@@ -111,9 +123,15 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
         `)
         .gte('data_fechamento', todayStart.toISOString().split('T')[0])
         .lte('data_fechamento', todayEnd.toISOString().split('T')[0]);
+      
+      if (closerId && closerId !== 'all') {
+        vendasDiaQuery = vendasDiaQuery.eq('closer_user_id', closerId);
+      }
+      
+      const { data: vendasDia } = await vendasDiaQuery;
 
       // Vendas da semana
-      const { data: vendasSemana } = await supabase
+      let vendasSemanaQuery = supabase
         .from('vendas')
         .select(`
           closer_user_id,
@@ -122,9 +140,15 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
         `)
         .gte('data_fechamento', weekStart.toISOString().split('T')[0])
         .lte('data_fechamento', weekEnd.toISOString().split('T')[0]);
+      
+      if (closerId && closerId !== 'all') {
+        vendasSemanaQuery = vendasSemanaQuery.eq('closer_user_id', closerId);
+      }
+      
+      const { data: vendasSemana } = await vendasSemanaQuery;
 
       // Fechamentos para cálculo de conversão e no-show (período selecionado)
-      const { data: fechamentos } = await supabase
+      let fechamentosQuery = supabase
         .from('fechamentos')
         .select(`
           closer_user_id,
@@ -134,9 +158,15 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
         `)
         .gte('data', start.toISOString().split('T')[0])
         .lte('data', end.toISOString().split('T')[0]);
+      
+      if (closerId && closerId !== 'all') {
+        fechamentosQuery = fechamentosQuery.eq('closer_user_id', closerId);
+      }
+      
+      const { data: fechamentos } = await fechamentosQuery;
 
       // Vendas do período para conversão
-      const { data: vendasPeriodo } = await supabase
+      let vendasPeriodoQuery = supabase
         .from('vendas')
         .select(`
           closer_user_id,
@@ -145,6 +175,12 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
         `)
         .gte('data_fechamento', start.toISOString().split('T')[0])
         .lte('data_fechamento', end.toISOString().split('T')[0]);
+      
+      if (closerId && closerId !== 'all') {
+        vendasPeriodoQuery = vendasPeriodoQuery.eq('closer_user_id', closerId);
+      }
+      
+      const { data: vendasPeriodo } = await vendasPeriodoQuery;
 
       // Agregar top closer do dia
       const closerDiaMap = new Map<string, { nome: string; volume: number }>();
@@ -242,6 +278,57 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange) {
         menorNoShow,
         rankingGeral,
       };
+    }
+  });
+}
+
+export function useNoShowByCloser(filter: DateFilter, customRange?: DateRange) {
+  const { start, end } = getDateRange(filter, customRange);
+
+  return useQuery({
+    queryKey: ['noshow-by-closer', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString()],
+    queryFn: async () => {
+      const { data: fechamentos, error } = await supabase
+        .from('fechamentos')
+        .select(`
+          closer_user_id,
+          calls_realizadas,
+          no_show,
+          closer:profiles!fechamentos_closer_user_id_fkey(id, nome)
+        `)
+        .gte('data', start.toISOString().split('T')[0])
+        .lte('data', end.toISOString().split('T')[0]);
+
+      if (error) throw error;
+
+      // Agregar por closer
+      const closerMap = new Map<string, { 
+        nome: string; 
+        callsRealizadas: number; 
+        noShow: number; 
+      }>();
+
+      fechamentos?.forEach(f => {
+        const id = f.closer_user_id;
+        const nome = (f.closer as any)?.nome || 'Desconhecido';
+        const current = closerMap.get(id) || { nome, callsRealizadas: 0, noShow: 0 };
+        current.callsRealizadas += f.calls_realizadas;
+        current.noShow += f.no_show;
+        closerMap.set(id, current);
+      });
+
+      return Array.from(closerMap.entries())
+        .map(([id, data]) => {
+          const callsAgendadas = data.callsRealizadas + data.noShow;
+          return {
+            id,
+            nome: data.nome,
+            noShow: data.noShow,
+            callsAgendadas,
+            percentNoShow: callsAgendadas > 0 ? (data.noShow / callsAgendadas) * 100 : 0,
+          };
+        })
+        .sort((a, b) => b.percentNoShow - a.percentNoShow);
     }
   });
 }

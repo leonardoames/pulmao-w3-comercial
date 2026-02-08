@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 
 interface OteTVPanelProps {
   monthRef: string;
+  selectedCloser?: string;
 }
 
-export function OteTVPanel({ monthRef }: OteTVPanelProps) {
+export function OteTVPanel({ monthRef, selectedCloser }: OteTVPanelProps) {
   const { data: oteData, isLoading } = useOteRealized(monthRef);
 
   const formatCurrency = (value: number) => {
@@ -20,8 +21,11 @@ export function OteTVPanel({ monthRef }: OteTVPanelProps) {
     }).format(value);
   };
 
-  // Get top 5 performers
-  const topPerformers = oteData?.slice(0, 5) || [];
+  // Filter by closer if selected, then get top 5 performers
+  const filteredData = selectedCloser && selectedCloser !== 'all'
+    ? oteData?.filter(d => d.closerId === selectedCloser)
+    : oteData;
+  const topPerformers = filteredData?.slice(0, 5) || [];
 
   if (isLoading) {
     return (
