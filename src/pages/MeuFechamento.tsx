@@ -14,7 +14,7 @@ import { useMeuFechamento, useFechamentos, useUpsertFechamento } from '@/hooks/u
 import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useCanEditAnyFechamento } from '@/hooks/useUserRoles';
-import { CalendarIcon, Save, Phone, PhoneOff, Clock } from 'lucide-react';
+import { CalendarIcon, Save } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -92,15 +92,6 @@ export default function MeuFechamentoPage() {
 
   const callsAgendadas = callsRealizadas + noShow;
 
-  // Stats dos últimos 30 dias
-  const stats = meusFechamentos?.reduce((acc, f) => ({
-    callsRealizadas: acc.callsRealizadas + f.calls_realizadas,
-    noShow: acc.noShow + f.no_show,
-  }), { callsRealizadas: 0, noShow: 0 });
-
-  const totalAgendadas = (stats?.callsRealizadas || 0) + (stats?.noShow || 0);
-  const percentNoShow = totalAgendadas > 0 ? ((stats?.noShow || 0) / totalAgendadas) * 100 : 0;
-
   return (
     <AppLayout>
       <PageHeader
@@ -120,49 +111,6 @@ export default function MeuFechamentoPage() {
           </Select>
         )}
       </PageHeader>
-
-      {/* Stats últimos 30 dias */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Calls Realizadas (30d)</p>
-                <p className="text-2xl font-bold">{stats?.callsRealizadas || 0}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-success/10">
-                <Phone className="h-5 w-5 text-success" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">No-Shows (30d)</p>
-                <p className="text-2xl font-bold">{stats?.noShow || 0}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-destructive/10">
-                <PhoneOff className="h-5 w-5 text-destructive" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">% No-Show (30d)</p>
-                <p className="text-2xl font-bold">{percentNoShow.toFixed(1)}%</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Form */}
