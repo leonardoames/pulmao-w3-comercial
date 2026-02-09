@@ -120,7 +120,7 @@ export default function TVModePage() {
       {showSettings && (
         <div className="mb-8 p-4 rounded-lg bg-card border">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">Meta Mensal:</label>
+            <label className="text-sm font-medium">Meta Semanal:</label>
             <Input
               type="number"
               value={metaSemanal}
@@ -175,7 +175,7 @@ export default function TVModePage() {
       <div className="mb-8 p-6 rounded-2xl bg-card border">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-xl font-medium text-muted-foreground">Progresso da Meta Mensal</p>
+            <p className="text-xl font-medium text-muted-foreground">Progresso da Meta Semanal</p>
             <p className="text-3xl font-bold">
               {formatCurrency(stats?.volumeVendas || 0)} / {formatCurrency(metaSemanal)}
             </p>
