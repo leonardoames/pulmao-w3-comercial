@@ -7,13 +7,13 @@ export function useProfiles() {
     queryKey: ['profiles'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_safe' as any)
         .select('*')
         .eq('ativo', true)
         .order('nome');
 
       if (error) throw error;
-      return data as Profile[];
+      return data as unknown as Profile[];
     }
   });
 }
@@ -39,14 +39,14 @@ export function useClosers() {
 
       // Buscar profiles dos closers ativos
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles_safe' as any)
         .select('*')
         .eq('ativo', true)
         .in('id', closerIds)
         .order('nome');
 
       if (error) throw error;
-      return data as Profile[];
+      return data as unknown as Profile[];
     }
   });
 }
