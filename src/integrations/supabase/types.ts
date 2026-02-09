@@ -53,6 +53,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fechamentos_closer_user_id_fkey"
+            columns: ["closer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ote_goals: {
@@ -92,10 +99,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ote_goals_closer_user_id_fkey"
+            columns: ["closer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ote_goals_created_by_user_id_fkey"
             columns: ["created_by_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ote_goals_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -227,17 +248,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendas_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vendas_closer_user_id_fkey"
             columns: ["closer_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vendas_closer_user_id_fkey"
+            columns: ["closer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_safe: {
+        Row: {
+          area: Database["public"]["Enums"]["user_area"] | null
+          ativo: boolean | null
+          atualizado_em: string | null
+          criado_em: string | null
+          email: string | null
+          id: string | null
+          nome: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+        }
+        Insert: {
+          area?: Database["public"]["Enums"]["user_area"] | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          criado_em?: string | null
+          email?: never
+          id?: string | null
+          nome?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Update: {
+          area?: Database["public"]["Enums"]["user_area"] | null
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          criado_em?: string | null
+          email?: never
+          id?: string | null
+          nome?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_admin_panel: { Args: never; Returns: boolean }
