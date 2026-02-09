@@ -16,7 +16,14 @@ export default function TVModePage() {
   const [filter, setFilter] = useState<DateFilter>("month");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [selectedCloser, setSelectedCloser] = useState<string>("all");
-  const [metaMensal, setMetaMensal] = useState<number>(100000);
+  const [metaMensal, setMetaMensal] = useState<number>(() => {
+    const saved = localStorage.getItem("tv-meta-mensal");
+    return saved ? Number(saved) : 100000;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("tv-meta-mensal", String(metaMensal));
+  }, [metaMensal]);
   const [showSettings, setShowSettings] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { theme, setTheme } = useTheme();
