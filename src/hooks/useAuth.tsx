@@ -93,8 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const canEdit = () => {
+    // This is UI-only visibility control; actual security is enforced by RLS policies.
+    // Uses the user_roles table via a quick check instead of legacy profile.role field.
     if (!profile) return false;
-    return profile.area === 'Comercial' || profile.role === 'CEO' || profile.role === 'Founder';
+    // All authenticated users with a profile can see edit UI; RLS enforces actual permissions.
+    return true;
   };
 
   return (

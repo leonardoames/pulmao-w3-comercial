@@ -89,23 +89,44 @@ export default function VendasPage() {
       return;
     }
     
-    const data = {
-      nome_lead: formData.get('nome_lead') as string,
-      nome_empresa: formData.get('nome_empresa') as string,
-      duracao_contrato_meses: Number(formData.get('duracao_contrato_meses')) || 12,
-      valor_pix: Number(formData.get('valor_pix')) || 0,
-      valor_cartao: Number(formData.get('valor_cartao')) || 0,
-      valor_boleto_parcela: Number(formData.get('valor_boleto_parcela')) || 0,
-      quantidade_parcelas_boleto: Number(formData.get('quantidade_parcelas_boleto')) || 0,
-      pago: formData.get('pago') === 'on',
-      contrato_assinado: formData.get('contrato_assinado') === 'on',
-      observacoes: formData.get('observacoes') as string || undefined,
-    };
+    const nomeLead = (formData.get('nome_lead') as string || '').trim();
+    const nomeEmpresa = (formData.get('nome_empresa') as string || '').trim();
+    const observacoesRaw = (formData.get('observacoes') as string || '').trim();
+    const duracaoContrato = Math.max(1, Math.floor(Number(formData.get('duracao_contrato_meses')) || 12));
+    const valorPix = Math.max(0, Number(formData.get('valor_pix')) || 0);
+    const valorCartao = Math.max(0, Number(formData.get('valor_cartao')) || 0);
+    const valorBoletoParcela = Math.max(0, Number(formData.get('valor_boleto_parcela')) || 0);
+    const qtdParcelas = Math.max(0, Math.floor(Number(formData.get('quantidade_parcelas_boleto')) || 0));
 
-    if (!data.nome_lead || !data.nome_empresa) {
-      toast.error('Preencha nome do lead e empresa');
+    if (!nomeLead || nomeLead.length > 200) {
+      toast.error('Nome do lead é obrigatório e deve ter no máximo 200 caracteres');
       return;
     }
+    if (!nomeEmpresa || nomeEmpresa.length > 200) {
+      toast.error('Nome da empresa é obrigatório e deve ter no máximo 200 caracteres');
+      return;
+    }
+    if (observacoesRaw.length > 2000) {
+      toast.error('Observações deve ter no máximo 2000 caracteres');
+      return;
+    }
+    if (valorPix > 100000000 || valorCartao > 100000000 || valorBoletoParcela > 100000000) {
+      toast.error('Valores monetários não podem exceder R$ 100.000.000');
+      return;
+    }
+
+    const data = {
+      nome_lead: nomeLead,
+      nome_empresa: nomeEmpresa,
+      duracao_contrato_meses: duracaoContrato,
+      valor_pix: valorPix,
+      valor_cartao: valorCartao,
+      valor_boleto_parcela: valorBoletoParcela,
+      quantidade_parcelas_boleto: qtdParcelas,
+      pago: formData.get('pago') === 'on',
+      contrato_assinado: formData.get('contrato_assinado') === 'on',
+      observacoes: observacoesRaw || undefined,
+    };
 
     try {
       if (editingVenda) {

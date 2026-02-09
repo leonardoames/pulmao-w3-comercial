@@ -80,13 +80,24 @@ export default function MeuFechamentoPage() {
 
   const handleSave = async () => {
     if (!activeCloserId) return;
+
+    const safeCallsRealizadas = Math.max(0, Math.floor(callsRealizadas));
+    const safeNoShow = Math.max(0, Math.floor(noShow));
+    const safeObservacoes = (observacoes || '').trim();
+
+    if (safeCallsRealizadas > 1000 || safeNoShow > 1000) {
+      return;
+    }
+    if (safeObservacoes.length > 2000) {
+      return;
+    }
     
     await upsertFechamento.mutateAsync({
       data: dateStr,
       closer_user_id: activeCloserId,
-      calls_realizadas: callsRealizadas,
-      no_show: noShow,
-      observacoes: observacoes || undefined,
+      calls_realizadas: safeCallsRealizadas,
+      no_show: safeNoShow,
+      observacoes: safeObservacoes || undefined,
     });
   };
 
