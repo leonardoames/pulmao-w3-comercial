@@ -13,6 +13,7 @@ import TVMode from "./pages/TVMode";
 import UserManagement from "./pages/UserManagement";
 import OteTracking from "./pages/OteTracking";
 import NotFound from "./pages/NotFound";
+import SharedDashboard from "./pages/SharedDashboard";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ function AppRoutes() {
       <Route path="/meta-ote" element={<ProtectedRoute><OteTracking /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+      <Route path="/shared/:token" element={<SharedDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

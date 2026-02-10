@@ -154,6 +154,33 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          token?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           atualizado_em: string
