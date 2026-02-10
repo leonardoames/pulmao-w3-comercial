@@ -30,12 +30,17 @@ export default function MeuFechamentoPage() {
   
   const [selectedCloserId, setSelectedCloserId] = useState<string>(profile?.id || '');
   
-  // Update selectedCloserId when profile loads
+  // Update selectedCloserId when profile/closers load
   useEffect(() => {
-    if (profile?.id && !selectedCloserId) {
+    if (selectedCloserId) return;
+    if (canSelectCloser && closers && closers.length > 0) {
+      // Gestor/Master: select first closer from list
+      setSelectedCloserId(closers[0].id);
+    } else if (profile?.id) {
+      // Closer: use own id
       setSelectedCloserId(profile.id);
     }
-  }, [profile?.id, selectedCloserId]);
+  }, [profile?.id, selectedCloserId, canSelectCloser, closers]);
   
   const activeCloserId = selectedCloserId || profile?.id || '';
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
