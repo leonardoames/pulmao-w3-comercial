@@ -115,6 +115,16 @@ export default function TVModePage() {
     }).format(value);
   };
 
+  const formatCurrencyCompact = (value: number) => {
+    if (value >= 1_000_000) {
+      return `R$ ${(value / 1_000_000).toFixed(1).replace('.', ',')}M`;
+    }
+    if (value >= 1_000) {
+      return `R$ ${(value / 1_000).toFixed(0)}K`;
+    }
+    return formatCurrency(value);
+  };
+
   const progressoMeta = metaMensal > 0 ? ((stats?.volumeVendas || 0) / metaMensal) * 100 : 0;
 
   return (
@@ -192,7 +202,7 @@ export default function TVModePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="tv-stat-card overflow-hidden">
           <p className="tv-stat-label mb-2">Volume de Vendas</p>
-          <p className="tv-stat-value text-primary truncate">{formatCurrency(stats?.volumeVendas || 0)}</p>
+          <p className="tv-stat-value text-primary truncate">{formatCurrencyCompact(stats?.volumeVendas || 0)}</p>
           <p className="text-lg text-muted-foreground mt-2">{stats?.totalVendas || 0} vendas</p>
         </div>
 
@@ -221,7 +231,7 @@ export default function TVModePage() {
           <div>
             <p className="text-xl font-medium text-muted-foreground">Progresso da Meta Mensal</p>
             <p className="text-3xl font-bold">
-              {formatCurrency(stats?.volumeVendas || 0)} / {formatCurrency(metaMensal)}
+              {formatCurrencyCompact(stats?.volumeVendas || 0)} / {formatCurrencyCompact(metaMensal)}
             </p>
           </div>
           <p className="text-5xl font-bold text-primary">{progressoMeta.toFixed(0)}%</p>
