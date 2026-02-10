@@ -15,10 +15,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { OteDashboardCard } from '@/components/ote/OteDashboardCard';
-import { OteProgressBar } from '@/components/ote/OteProgressBar';
 import { ShareDashboardDialog } from '@/components/dashboard/ShareDashboardDialog';
 import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
-import { useOteRealized, useOteTeamStats } from '@/hooks/useOteGoals';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -41,16 +39,6 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useDashboardStats(filter, customRange, selectedCloser);
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
   const { data: noShowByCloser } = useNoShowByCloser(filter, customRange);
-
-  const currentMonth = format(new Date(), 'yyyy-MM');
-  const oteCloserId = selectedCloser === 'all' ? undefined : selectedCloser;
-  const { data: oteData } = useOteRealized(currentMonth, oteCloserId);
-  const { data: teamStats } = useOteTeamStats(currentMonth);
-
-  const oteDisplay = selectedCloser !== 'all' && oteData?.[0]
-    ? { target: oteData[0].oteTarget, percent: oteData[0].percentAchieved }
-    : { target: teamStats?.totalTarget || 0, percent: teamStats?.percentAchieved || 0 };
-  const hasOteGoal = oteDisplay.target > 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -151,16 +139,7 @@ export default function DashboardPage() {
           subtitle={`${stats?.totalVendas ?? 0} vendas`}
           icon={<DollarSign className="h-5 w-5" />}
           variant="primary"
-        >
-          {hasOteGoal && (
-            <div className="mt-3 space-y-1.5">
-              <p className="text-xs text-muted-foreground">
-                Meta: {formatCurrency(oteDisplay.target)} ({oteDisplay.percent.toFixed(0)}%)
-              </p>
-              <OteProgressBar percentAchieved={oteDisplay.percent} height="sm" showMarkers={false} />
-            </div>
-          )}
-        </StatCard>
+        />
         <StatCard
           title="Ticket Médio"
           value={formatCurrency(stats?.ticketMedio ?? 0)}
@@ -187,20 +166,17 @@ export default function DashboardPage() {
         <StatCard
           title="Valor em Pix"
           value={formatCurrency(stats?.valorPix ?? 0)}
-          subtitle={stats?.volumeVendas ? `${((stats.valorPix / stats.volumeVendas) * 100).toFixed(1)}% do volume total` : undefined}
           icon={<DollarSign className="h-5 w-5" />}
           variant="success"
         />
         <StatCard
           title="Valor em Cartão"
           value={formatCurrency(stats?.valorCartao ?? 0)}
-          subtitle={stats?.volumeVendas ? `${((stats.valorCartao / stats.volumeVendas) * 100).toFixed(1)}% do volume total` : undefined}
           icon={<DollarSign className="h-5 w-5" />}
         />
         <StatCard
           title="Valor em Boleto"
           value={formatCurrency(stats?.valorBoleto ?? 0)}
-          subtitle={stats?.volumeVendas ? `${((stats.valorBoleto / stats.volumeVendas) * 100).toFixed(1)}% do volume total` : undefined}
           icon={<DollarSign className="h-5 w-5" />}
         />
         <StatCard

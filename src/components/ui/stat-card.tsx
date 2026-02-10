@@ -12,7 +12,6 @@ interface StatCardProps {
   };
   className?: string;
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'destructive';
-  children?: ReactNode;
 }
 
 export function StatCard({
@@ -22,8 +21,7 @@ export function StatCard({
   icon,
   trend,
   className,
-  variant = 'default',
-  children
+  variant = 'default'
 }: StatCardProps) {
   return (
     <div className={cn(
@@ -50,7 +48,6 @@ export function StatCard({
               <span>{Math.abs(trend.value)}%</span>
             </div>
           )}
-          {children}
         </div>
         {icon && (
           <div className={cn(
