@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Venda, VendaStatus } from '@/types/crm';
 import { toast } from 'sonner';
+import { vendaSchema, updateVendaSchema } from '@/schemas/validation';
 
 export function useVendas(filters?: {
   status?: VendaStatus;
@@ -60,6 +61,8 @@ export function useCreateVenda() {
 
   return useMutation({
     mutationFn: async (venda: CreateVendaInput) => {
+      // Validate input
+      vendaSchema.parse(venda);
       // Calculate valor_total
       const valor_boleto_total = venda.valor_boleto_parcela * venda.quantidade_parcelas_boleto;
       const valor_total = venda.valor_pix + venda.valor_cartao + valor_boleto_total;
@@ -106,6 +109,8 @@ export function useUpdateVenda() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateVendaInput) => {
+      // Validate input
+      updateVendaSchema.parse({ id, ...updates });
       // Recalculate valor_total if payment values changed
       let valor_total: number | undefined;
       if (updates.valor_pix !== undefined || updates.valor_cartao !== undefined || 
