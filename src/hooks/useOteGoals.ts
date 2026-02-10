@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OteGoal, OteRealized, calculateOteRealized, getOteBadge } from '@/types/ote';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, parse } from 'date-fns';
+import { oteGoalSchema, updateOteGoalSchema } from '@/schemas/validation';
 
 // Hook para buscar metas OTE
 export function useOteGoals(monthRef?: string, closerId?: string) {
@@ -65,6 +66,7 @@ export function useCreateOteGoal() {
 
   return useMutation({
     mutationFn: async (goal: CreateOteGoalInput) => {
+      oteGoalSchema.parse(goal);
       const { data, error } = await supabase
         .from('ote_goals')
         .insert([goal])
@@ -100,6 +102,7 @@ export function useUpdateOteGoal() {
 
   return useMutation({
     mutationFn: async ({ id, ote_target_value }: UpdateOteGoalInput) => {
+      updateOteGoalSchema.parse({ id, ote_target_value });
       const { data, error } = await supabase
         .from('ote_goals')
         .update({ ote_target_value })

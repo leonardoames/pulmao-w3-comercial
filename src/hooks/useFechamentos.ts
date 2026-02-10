@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Fechamento } from '@/types/crm';
 import { toast } from 'sonner';
+import { fechamentoSchema } from '@/schemas/validation';
 
 export function useFechamentos(filters?: {
   closer_id?: string;
@@ -76,6 +77,8 @@ export function useUpsertFechamento() {
 
   return useMutation({
     mutationFn: async (input: UpsertFechamentoInput) => {
+      // Validate input
+      fechamentoSchema.parse(input);
       const { data, error } = await supabase
         .from('fechamentos')
         .upsert([input], { onConflict: 'data,closer_user_id' })
