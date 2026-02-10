@@ -147,11 +147,11 @@
   }
 
   .tv-stat-card {
-    @apply bg-card rounded-2xl border border-border p-8 shadow-lg;
+    @apply bg-card rounded-2xl border border-border p-8 shadow-lg overflow-hidden;
   }
 
   .tv-stat-value {
-    @apply text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight;
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight truncate;
   }
 
   .tv-stat-label {

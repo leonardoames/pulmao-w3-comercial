@@ -190,9 +190,9 @@ export default function TVModePage() {
 
       {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="tv-stat-card">
+        <div className="tv-stat-card overflow-hidden">
           <p className="tv-stat-label mb-2">Volume de Vendas</p>
-          <p className="tv-stat-value text-primary">{formatCurrency(stats?.volumeVendas || 0)}</p>
+          <p className="tv-stat-value text-primary truncate">{formatCurrency(stats?.volumeVendas || 0)}</p>
           <p className="text-lg text-muted-foreground mt-2">{stats?.totalVendas || 0} vendas</p>
         </div>
 
