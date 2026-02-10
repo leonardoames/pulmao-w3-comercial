@@ -231,7 +231,7 @@ export default function TVModePage() {
           <div>
             <p className="text-xl font-medium text-muted-foreground">Progresso da Meta Mensal</p>
             <p className="text-3xl font-bold">
-              {formatCurrencyCompact(stats?.volumeVendas || 0)} / {formatCurrencyCompact(metaMensal)}
+              {formatCurrency(stats?.volumeVendas || 0)} / {formatCurrency(metaMensal)}
             </p>
           </div>
           <p className="text-5xl font-bold text-primary">{progressoMeta.toFixed(0)}%</p>
