@@ -3,7 +3,7 @@ import { useDashboardStats, useCloserRankings, DateFilter, DateRange } from "@/h
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Trophy, Target, Phone, Settings, Moon, Sun } from "lucide-react";
+import { X, Trophy, Target, Phone, Settings, Moon, Sun, Save } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
@@ -11,19 +11,71 @@ import { TVDateFilter } from "@/components/tv/TVDateFilter";
 import { OteTVPanel } from "@/components/ote/OteTVPanel";
 import { useClosers } from "@/hooks/useProfiles";
 import { format, startOfMonth } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+function useTvMetaMensal() {
+  return useQuery({
+    queryKey: ["tv-settings", "meta_mensal"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tv_settings")
+        .select("value")
+        .eq("key", "meta_mensal")
+        .maybeSingle();
+      if (error) throw error;
+      return data ? Number(data.value) : 100000;
+    },
+  });
+}
+
+function useSaveTvMetaMensal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (value: number) => {
+      const { error } = await supabase
+        .from("tv_settings")
+        .update({ value: String(value), updated_at: new Date().toISOString() })
+        .eq("key", "meta_mensal");
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tv-settings", "meta_mensal"] });
+      toast.success("Meta mensal salva com sucesso!");
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao salvar meta: " + err.message);
+    },
+  });
+}
 
 export default function TVModePage() {
   const [filter, setFilter] = useState<DateFilter>("month");
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [selectedCloser, setSelectedCloser] = useState<string>("all");
-  const [metaMensal, setMetaMensal] = useState<number>(() => {
-    const saved = localStorage.getItem("tv-meta-mensal");
-    return saved ? Number(saved) : 100000;
-  });
 
+  const { data: metaMensalDb } = useTvMetaMensal();
+  const saveMeta = useSaveTvMetaMensal();
+  const [metaMensal, setMetaMensal] = useState<number>(100000);
+  const [metaDirty, setMetaDirty] = useState(false);
+
+  // Sync from DB
   useEffect(() => {
-    localStorage.setItem("tv-meta-mensal", String(metaMensal));
-  }, [metaMensal]);
+    if (metaMensalDb !== undefined && !metaDirty) {
+      setMetaMensal(metaMensalDb);
+    }
+  }, [metaMensalDb, metaDirty]);
+
+  const handleMetaChange = (value: number) => {
+    setMetaMensal(value);
+    setMetaDirty(true);
+  };
+
+  const handleSaveMeta = () => {
+    saveMeta.mutate(metaMensal, { onSuccess: () => setMetaDirty(false) });
+  };
+
   const [showSettings, setShowSettings] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { theme, setTheme } = useTheme();
@@ -125,9 +177,13 @@ export default function TVModePage() {
             <Input
               type="number"
               value={metaMensal}
-              onChange={(e) => setMetaMensal(Number(e.target.value) || 0)}
+              onChange={(e) => handleMetaChange(Number(e.target.value) || 0)}
               className="w-40"
             />
+            <Button onClick={handleSaveMeta} disabled={saveMeta.isPending || !metaDirty} size="sm">
+              <Save className="h-4 w-4 mr-2" />
+              {saveMeta.isPending ? "Salvando..." : "Salvar"}
+            </Button>
           </div>
         </div>
       )}
