@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,15 +48,14 @@ export default function MeuFechamentoPage() {
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const { data: fechamento, isLoading } = useMeuFechamento(activeCloserId, dateStr);
   
-  // Calculate start date for 30 days period
-  const thirtyDaysAgo = subDays(new Date(), 30);
-  const thirtyDaysAgoStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  // Calculate stable date strings for 30 days period (avoid new Date() in render)
+  const today = useMemo(() => new Date(), []);
+  const thirtyDaysAgo = useMemo(() => subDays(today, 30), [today]);
   
   const { data: meusFechamentos } = useFechamentos({ 
     closer_id: activeCloserId,
     startDate: thirtyDaysAgo,
-    endDate: new Date()
+    endDate: today
   });
   const upsertFechamento = useUpsertFechamento();
 
