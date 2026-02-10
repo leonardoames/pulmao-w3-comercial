@@ -9,58 +9,58 @@ import { Target, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-
 interface OteDashboardCardProps {
   monthRef?: string;
   selectedCloser?: string;
   onCloserChange?: (closerId: string) => void;
   showCloserFilter?: boolean;
 }
-
-export function OteDashboardCard({ 
+export function OteDashboardCard({
   monthRef = format(new Date(), 'yyyy-MM'),
   selectedCloser = 'all',
   onCloserChange,
-  showCloserFilter = true,
+  showCloserFilter = true
 }: OteDashboardCardProps) {
-  const { data: userRole } = useCurrentUserRole();
+  const {
+    data: userRole
+  } = useCurrentUserRole();
   const isCloser = userRole?.role === 'CLOSER';
-  const { data: closers } = useClosers();
-  
+  const {
+    data: closers
+  } = useClosers();
   const closerId = selectedCloser === 'all' ? undefined : selectedCloser;
-  const { data: oteData, isLoading } = useOteRealized(monthRef, closerId);
-  const { data: teamStats } = useOteTeamStats(monthRef);
-
+  const {
+    data: oteData,
+    isLoading
+  } = useOteRealized(monthRef, closerId);
+  const {
+    data: teamStats
+  } = useOteTeamStats(monthRef);
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(value);
   };
 
   // Use individual closer data if one is selected, otherwise use team stats
-  const displayData = selectedCloser !== 'all' && oteData?.[0]
-    ? {
-        target: oteData[0].oteTarget,
-        realized: oteData[0].oteRealized,
-        percentAchieved: oteData[0].percentAchieved,
-        badge: oteData[0].badge,
-        label: oteData[0].closerNome,
-      }
-    : {
-        target: teamStats?.totalTarget || 0,
-        realized: teamStats?.totalRealized || 0,
-        percentAchieved: teamStats?.percentAchieved || 0,
-        badge: teamStats?.badge || null,
-        label: 'Time',
-      };
-
+  const displayData = selectedCloser !== 'all' && oteData?.[0] ? {
+    target: oteData[0].oteTarget,
+    realized: oteData[0].oteRealized,
+    percentAchieved: oteData[0].percentAchieved,
+    badge: oteData[0].badge,
+    label: oteData[0].closerNome
+  } : {
+    target: teamStats?.totalTarget || 0,
+    realized: teamStats?.totalRealized || 0,
+    percentAchieved: teamStats?.percentAchieved || 0,
+    badge: teamStats?.badge || null,
+    label: 'Time'
+  };
   const hasGoal = displayData.target > 0;
-
-  return (
-    <Card>
+  return <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -68,28 +68,21 @@ export function OteDashboardCard({
             Meta OTE do Mês
           </CardTitle>
           
-          {showCloserFilter && !isCloser && onCloserChange && (
-            <Select value={selectedCloser} onValueChange={onCloserChange}>
+          {showCloserFilter && !isCloser && onCloserChange && <Select value={selectedCloser} onValueChange={onCloserChange}>
               <SelectTrigger className="w-[140px] h-8 text-xs">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                {closers?.map((closer) => (
-                  <SelectItem key={closer.id} value={closer.id}>
+                {closers?.map(closer => <SelectItem key={closer.id} value={closer.id}>
                     {closer.nome}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
-            </Select>
-          )}
+            </Select>}
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Carregando...</p>
-        ) : hasGoal ? (
-          <div className="space-y-4">
+        {isLoading ? <p className="text-sm text-muted-foreground">Carregando...</p> : hasGoal ? <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">{displayData.label}</p>
@@ -110,7 +103,7 @@ export function OteDashboardCard({
               </div>
             </div>
             
-            <div className="pb-4">
+            <div className="py-0 my-[3px] pb-[30px]">
               <OteProgressBar percentAchieved={displayData.percentAchieved} height="md" />
             </div>
 
@@ -120,9 +113,7 @@ export function OteDashboardCard({
                 Ver detalhes
               </Button>
             </Link>
-          </div>
-        ) : (
-          <div className="text-center py-4">
+          </div> : <div className="text-center py-4">
             <p className="text-sm text-muted-foreground mb-3">
               Nenhuma meta cadastrada para este mês.
             </p>
@@ -131,9 +122,7 @@ export function OteDashboardCard({
                 Ir para Metas OTE
               </Button>
             </Link>
-          </div>
-        )}
+          </div>}
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
