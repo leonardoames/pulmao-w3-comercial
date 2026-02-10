@@ -15,6 +15,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { OteDashboardCard } from '@/components/ote/OteDashboardCard';
+import { ShareDashboardDialog } from '@/components/dashboard/ShareDashboardDialog';
+import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedCloser, setSelectedCloser] = useState<string>('all');
 
+  const canShare = useCanAccessAdminPanel();
   const { data: closers } = useClosers();
   const { data: stats, isLoading } = useDashboardStats(filter, customRange, selectedCloser);
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
@@ -118,6 +121,7 @@ export default function DashboardPage() {
               </div>
             </PopoverContent>
           </Popover>
+          {canShare && <ShareDashboardDialog />}
           <Link to="/tv">
             <Button variant="outline" className="gap-2">
               <Tv className="h-4 w-4" />
