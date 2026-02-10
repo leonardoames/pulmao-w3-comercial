@@ -1,54 +1,49 @@
 
 
-## Link Compartilhavel de Dashboard (Somente Visualizacao)
+## Enriquecer Cards do Dashboard com Meta OTE e Percentuais
 
-### Objetivo
-Criar uma rota publica `/dashboard/share/:token` que permite visualizar o dashboard sem login, usando um token unico gerado pelo admin/gestor.
+### O que muda
 
-### Como vai funcionar
+**1. Card "Volume de Vendas"** -- adicionar meta OTE e barra de progresso
 
-1. **Geracao do link**: No Dashboard, um botao "Compartilhar" gera um token unico (UUID) e salva no banco com data de expiracao opcional
-2. **Rota publica**: Uma nova rota `/shared/:token` renderiza o dashboard em modo somente leitura (sem sidebar, sem acoes)
-3. **Validacao**: O token e validado via uma edge function que retorna os dados sem exigir autenticacao
+Abaixo do valor principal de volume, vai aparecer em texto menor:
+- "Meta: R$ XX.XXX" (valor da meta OTE do mes)
+- Uma barra de progresso visual (reutilizando o componente `OteProgressBar` ja existente) mostrando o percentual atingido
+- Se nao houver meta cadastrada, nao mostra nada extra
 
-### Etapas de Implementacao
+**2. Cards "Valor em Pix", "Valor em Cartao", "Valor em Boleto"** -- mostrar % do total
 
-**1. Tabela `shared_links` no banco**
-- Campos: `id`, `token` (UUID unico), `created_by` (user_id), `expires_at` (timestamp opcional), `is_active` (boolean), `created_at`
-- RLS: somente usuarios autenticados podem criar/gerenciar; leitura publica por token
+Cada card vai exibir no subtitle qual percentual aquele valor representa do Volume Total de Vendas. Exemplo:
+- "42% do volume total"
 
-**2. Edge Function `validate-share-token`**
-- Recebe o token, valida se existe e esta ativo/nao expirado
-- Retorna os dados do dashboard (stats, rankings, no-show) diretamente, sem exigir auth
-- Isso evita expor as tabelas publicamente
-
-**3. Nova pagina `SharedDashboard.tsx`**
-- Rota publica: `/shared/:token`
-- Layout limpo (sem sidebar, sem navegacao)
-- Exibe os mesmos cards e rankings do dashboard normal, porem somente leitura
-- Header com logo "Pulmao W3" e indicacao "Visualizacao Compartilhada"
-
-**4. Botao "Compartilhar" no Dashboard**
-- Visivel apenas para Master/Gestor
-- Abre um dialog com:
-  - Botao para gerar novo link
-  - Campo com o link gerado para copiar
-  - Opcao de definir expiracao (24h, 7 dias, 30 dias, sem expiracao)
-  - Lista de links ativos com opcao de desativar
-
-**5. Rota no App.tsx**
-- Adicionar rota publica (sem `ProtectedRoute`): `<Route path="/shared/:token" element={<SharedDashboard />} />`
+---
 
 ### Detalhes Tecnicos
 
-- O token sera um UUID v4 gerado via `crypto.randomUUID()`
-- A edge function consulta as tabelas `vendas`, `fechamentos`, `profiles` e `ote_goals` internamente usando a service role key, retornando apenas dados agregados (nunca dados brutos sensiveis)
-- O link gerado tera o formato: `https://pulmao-w3-comercial.lovable.app/shared/abc123-uuid`
-- Nenhuma alteracao nas telas existentes alem do botao "Compartilhar" no header do Dashboard
+**Arquivo: `src/components/ui/stat-card.tsx`**
+- Adicionar prop opcional `children?: ReactNode` ao componente `StatCard`
+- Renderizar `{children}` abaixo do conteudo principal (depois de subtitle/trend) quando fornecido
+- Isso permite inserir conteudo customizado (meta + progress bar) sem quebrar os outros cards
 
-### Seguranca
-- Dados retornados sao apenas agregados (totais, percentuais, rankings) — sem emails ou dados pessoais
-- Tokens podem ser desativados a qualquer momento
-- Expiracao automatica configuravel
-- Sem acesso direto as tabelas via RLS — tudo passa pela edge function
+**Arquivo: `src/pages/Dashboard.tsx`**
+- Importar `useOteRealized` ou `useOteTeamStats` de `@/hooks/useOteGoals` para buscar a meta do mes atual
+- Importar `OteProgressBar` de `@/components/ote/OteProgressBar`
+- No card "Volume de Vendas": passar como `children` um bloco com:
+  - Texto "Meta: R$ XX.XXX" em tamanho menor (`text-xs text-muted-foreground`)
+  - Componente `OteProgressBar` com `height="sm"` e `showMarkers={false}`
+  - O calculo de progresso usara: `percentAchieved` vindo do hook OTE (que ja leva em conta os multiplicadores PIX*1.2, CARD*1.0, BOLETO*0.5)
+- Nos cards "Valor em Pix", "Valor em Cartao", "Valor em Boleto": calcular o percentual como `(valor / volumeVendas) * 100` e passar como `subtitle` (ex: `"42.3% do volume total"`)
+
+**Nenhuma alteracao no banco de dados** -- os dados de meta OTE ja existem na tabela `ote_goals` e os hooks ja estao implementados.
+
+### Logica de exibicao da meta
+
+- Quando `selectedCloser === 'all'`: mostra a meta total do time (soma de todas as metas) via `useOteTeamStats`
+- Quando um closer especifico esta selecionado: mostra a meta individual daquele closer via `useOteRealized`
+- Quando nao ha meta cadastrada para o periodo: o card "Volume de Vendas" permanece como esta, sem a secao extra
+
+### Arquivos modificados
+
+1. `src/components/ui/stat-card.tsx` -- adicionar prop `children`
+2. `src/pages/Dashboard.tsx` -- integrar meta OTE no card de volume e percentuais nos cards de pagamento
 
