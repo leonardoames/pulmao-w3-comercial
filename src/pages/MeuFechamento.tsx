@@ -30,13 +30,15 @@ export default function MeuFechamentoPage() {
   
   const [selectedCloserId, setSelectedCloserId] = useState<string>(profile?.id || '');
   
-  // Update selectedCloserId when profile/closers load
+  // Update selectedCloserId when profile/closers/role loads
   useEffect(() => {
-    if (selectedCloserId) return;
     if (canSelectCloser && closers && closers.length > 0) {
-      // Gestor/Master: select first closer from list
-      setSelectedCloserId(closers[0].id);
-    } else if (profile?.id) {
+      // Gestor/Master: if current selection is not in closers list, pick first closer
+      const isValidCloser = closers.some(c => c.id === selectedCloserId);
+      if (!isValidCloser) {
+        setSelectedCloserId(closers[0].id);
+      }
+    } else if (!canSelectCloser && profile?.id && !selectedCloserId) {
       // Closer: use own id
       setSelectedCloserId(profile.id);
     }
