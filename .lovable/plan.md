@@ -1,49 +1,105 @@
 
 
-## Enriquecer Cards do Dashboard com Meta OTE e Percentuais
+# Nova Seção: Social Selling
 
-### O que muda
-
-**1. Card "Volume de Vendas"** -- adicionar meta OTE e barra de progresso
-
-Abaixo do valor principal de volume, vai aparecer em texto menor:
-- "Meta: R$ XX.XXX" (valor da meta OTE do mes)
-- Uma barra de progresso visual (reutilizando o componente `OteProgressBar` ja existente) mostrando o percentual atingido
-- Se nao houver meta cadastrada, nao mostra nada extra
-
-**2. Cards "Valor em Pix", "Valor em Cartao", "Valor em Boleto"** -- mostrar % do total
-
-Cada card vai exibir no subtitle qual percentual aquele valor representa do Volume Total de Vendas. Exemplo:
-- "42% do volume total"
+## Resumo
+Criar uma nova página completa de **Social Selling** com formulário diário, histórico filtrado, gráfico de evolução e indicadores de meta. A estrutura segue os mesmos padrões já usados em "Meu Fechamento" e "Dashboard".
 
 ---
 
-### Detalhes Tecnicos
+## 1. Banco de Dados
 
-**Arquivo: `src/components/ui/stat-card.tsx`**
-- Adicionar prop opcional `children?: ReactNode` ao componente `StatCard`
-- Renderizar `{children}` abaixo do conteudo principal (depois de subtitle/trend) quando fornecido
-- Isso permite inserir conteudo customizado (meta + progress bar) sem quebrar os outros cards
+Criar a tabela `social_selling` com as seguintes colunas:
 
-**Arquivo: `src/pages/Dashboard.tsx`**
-- Importar `useOteRealized` ou `useOteTeamStats` de `@/hooks/useOteGoals` para buscar a meta do mes atual
-- Importar `OteProgressBar` de `@/components/ote/OteProgressBar`
-- No card "Volume de Vendas": passar como `children` um bloco com:
-  - Texto "Meta: R$ XX.XXX" em tamanho menor (`text-xs text-muted-foreground`)
-  - Componente `OteProgressBar` com `height="sm"` e `showMarkers={false}`
-  - O calculo de progresso usara: `percentAchieved` vindo do hook OTE (que ja leva em conta os multiplicadores PIX*1.2, CARD*1.0, BOLETO*0.5)
-- Nos cards "Valor em Pix", "Valor em Cartao", "Valor em Boleto": calcular o percentual como `(valor / volumeVendas) * 100` e passar como `subtitle` (ex: `"42.3% do volume total"`)
+| Coluna | Tipo | Detalhes |
+|--------|------|----------|
+| id | uuid | PK, default gen_random_uuid() |
+| data | date | NOT NULL |
+| closer_user_id | uuid | NOT NULL |
+| conversas_iniciadas | integer | NOT NULL, default 0 |
+| convites_enviados | integer | NOT NULL, default 0 |
+| agendamentos | integer | NOT NULL, default 0 |
+| observacoes | text | nullable |
+| criado_em | timestamptz | default now() |
+| atualizado_em | timestamptz | default now() |
 
-**Nenhuma alteracao no banco de dados** -- os dados de meta OTE ja existem na tabela `ote_goals` e os hooks ja estao implementados.
+- Constraint UNIQUE em (data, closer_user_id) para upsert
+- Trigger de update em `atualizado_em`
+- RLS: mesmas políticas de `fechamentos` (SELECT para todos autenticados, INSERT/UPDATE restrito ao próprio closer ou gestores)
 
-### Logica de exibicao da meta
+---
 
-- Quando `selectedCloser === 'all'`: mostra a meta total do time (soma de todas as metas) via `useOteTeamStats`
-- Quando um closer especifico esta selecionado: mostra a meta individual daquele closer via `useOteRealized`
-- Quando nao ha meta cadastrada para o periodo: o card "Volume de Vendas" permanece como esta, sem a secao extra
+## 2. Metas Diárias (fixas)
 
-### Arquivos modificados
+| Métrica | Meta/dia |
+|---------|----------|
+| Conversas Iniciadas | 100 |
+| Convites Enviados | 30 |
+| Agendamentos | 10 |
 
-1. `src/components/ui/stat-card.tsx` -- adicionar prop `children`
-2. `src/pages/Dashboard.tsx` -- integrar meta OTE no card de volume e percentuais nos cards de pagamento
+Serão constantes no código (sem tabela extra).
+
+---
+
+## 3. Arquivos a Criar/Editar
+
+### Novos arquivos:
+- **`src/pages/SocialSelling.tsx`** -- Página principal com:
+  - Formulário de registro diário (data picker, 3 campos numéricos, observações, botão salvar)
+  - Filtros de período (hoje, ontem, 7 dias, este mês, 30 dias, personalizado) reutilizando o padrão do Dashboard
+  - Tabela de histórico filtrado por período
+  - Cards de resumo com progresso vs meta (total no período / dias no período vs meta diária)
+  - Gráfico de linha (recharts) mostrando as 3 métricas dia a dia com linhas de meta
+
+- **`src/hooks/useSocialSelling.ts`** -- Hook com:
+  - `useSocialSellingEntries(filters)` -- busca registros filtrados
+  - `useSocialSellingEntry(userId, date)` -- busca registro específico para o form
+  - `useUpsertSocialSelling()` -- mutation de upsert
+
+### Arquivos editados:
+- **`src/components/layout/AppSidebar.tsx`** -- Adicionar item "Social Selling" na navegação
+- **`src/App.tsx`** -- Adicionar rota `/social-selling`
+- **`src/types/crm.ts`** -- Adicionar interface `SocialSelling`
+- **`src/schemas/validation.ts`** -- Adicionar schema zod para validação
+
+---
+
+## 4. Layout da Página
+
+```text
++--------------------------------------------------+
+| Social Selling         [Seletor Closer] (gestores)|
+|                                                    |
+| [Hoje] [Ontem] [7 dias] [Este mês] [30d] [Custom] |
++--------------------------------------------------+
+|                                                    |
+| +-- Formulário ------+  +-- Resumo do Período ---+ |
+| | Data: [dd/mm/yyyy]  |  | Conversas: 450/500    | |
+| | Conversas:  [___]   |  | ████████░░ 90%        | |
+| | Convites:   [___]   |  | Convites:  120/150    | |
+| | Agendamentos:[___]  |  | ████████░░ 80%        | |
+| | Obs: [__________]   |  | Agendamentos: 40/50   | |
+| | [Salvar]            |  | ████████░░ 80%        | |
+| +---------------------+  +-----------------------+ |
+|                                                    |
+| +-- Gráfico de Evolução -------------------------+ |
+| | (LineChart com 3 séries + 3 linhas de meta)     | |
+| +------------------------------------------------+ |
+|                                                    |
+| +-- Histórico ------------------------------------+ |
+| | Data | Conversas | Convites | Agendamentos      | |
+| | ...                                             | |
+| +------------------------------------------------+ |
++--------------------------------------------------+
+```
+
+---
+
+## 5. Detalhes Técnicos
+
+- **Upsert** com `onConflict: 'data,closer_user_id'` (mesmo padrão de fechamentos)
+- **Permissões**: Closer registra apenas para si; gestores/MASTER podem selecionar qualquer closer
+- **Gráfico**: Recharts `LineChart` com 3 `Line` (conversas, convites, agendamentos) + 3 `ReferenceLine` horizontais nas metas (100, 30, 10)
+- **Filtros**: Reutilizar `DateFilter` e `getDateRange` de `useDashboard.ts`
+- **Cards de meta**: Calculam a média diária no período e comparam com a meta fixa
 
