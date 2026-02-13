@@ -230,7 +230,7 @@ export function useOteRealized(monthRef: string, closerId?: string) {
       });
 
       // Sort by percentage achieved descending
-      results.sort((a, b) => b.percentAchieved - a.percentAchieved);
+      results.sort((a, b) => b.oteRealized - a.oteRealized);
 
       return results;
     },
