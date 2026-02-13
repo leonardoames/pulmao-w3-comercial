@@ -39,3 +39,12 @@ export const updateOteGoalSchema = z.object({
   id: z.string().uuid('ID da meta inválido'),
   ote_target_value: z.number().min(0, 'Valor não pode ser negativo').max(10_000_000),
 });
+
+export const socialSellingSchema = z.object({
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
+  closer_user_id: z.string().uuid('ID do closer inválido'),
+  conversas_iniciadas: z.number().int().min(0, 'Valor não pode ser negativo').max(10_000),
+  convites_enviados: z.number().int().min(0, 'Valor não pode ser negativo').max(10_000),
+  agendamentos: z.number().int().min(0, 'Valor não pode ser negativo').max(10_000),
+  observacoes: z.string().max(2000, 'Observações muito longas').optional().nullable(),
+});
