@@ -181,6 +181,57 @@ export type Database = {
         }
         Relationships: []
       }
+      social_selling: {
+        Row: {
+          agendamentos: number
+          atualizado_em: string
+          closer_user_id: string
+          conversas_iniciadas: number
+          convites_enviados: number
+          criado_em: string
+          data: string
+          id: string
+          observacoes: string | null
+        }
+        Insert: {
+          agendamentos?: number
+          atualizado_em?: string
+          closer_user_id: string
+          conversas_iniciadas?: number
+          convites_enviados?: number
+          criado_em?: string
+          data: string
+          id?: string
+          observacoes?: string | null
+        }
+        Update: {
+          agendamentos?: number
+          atualizado_em?: string
+          closer_user_id?: string
+          conversas_iniciadas?: number
+          convites_enviados?: number
+          criado_em?: string
+          data?: string
+          id?: string
+          observacoes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_selling_closer_user_id_fkey"
+            columns: ["closer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_selling_closer_user_id_fkey"
+            columns: ["closer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tv_settings: {
         Row: {
           id: string

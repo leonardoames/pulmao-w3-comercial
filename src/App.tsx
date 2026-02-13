@@ -12,6 +12,7 @@ import MeuFechamento from "./pages/MeuFechamento";
 import TVMode from "./pages/TVMode";
 import UserManagement from "./pages/UserManagement";
 import OteTracking from "./pages/OteTracking";
+import SocialSelling from "./pages/SocialSelling";
 import NotFound from "./pages/NotFound";
 import SharedDashboard from "./pages/SharedDashboard";
 
@@ -59,6 +60,7 @@ function AppRoutes() {
       <Route path="/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
       <Route path="/meu-fechamento" element={<ProtectedRoute><MeuFechamento /></ProtectedRoute>} />
       <Route path="/meta-ote" element={<ProtectedRoute><OteTracking /></ProtectedRoute>} />
+      <Route path="/social-selling" element={<ProtectedRoute><SocialSelling /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
       <Route path="/shared/:token" element={<SharedDashboard />} />
