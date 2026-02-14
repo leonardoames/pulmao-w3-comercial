@@ -13,6 +13,8 @@ import TVMode from "./pages/TVMode";
 import UserManagement from "./pages/UserManagement";
 import OteTracking from "./pages/OteTracking";
 import SocialSelling from "./pages/SocialSelling";
+import MarketingDashboard from "./pages/MarketingDashboard";
+import MarketingConteudos from "./pages/MarketingConteudos";
 import NotFound from "./pages/NotFound";
 import SharedDashboard from "./pages/SharedDashboard";
 
@@ -63,6 +65,8 @@ function AppRoutes() {
       <Route path="/social-selling" element={<ProtectedRoute><SocialSelling /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
+      <Route path="/marketing/dashboard" element={<ProtectedRoute><MarketingDashboard /></ProtectedRoute>} />
+      <Route path="/marketing/conteudos" element={<ProtectedRoute><MarketingConteudos /></ProtectedRoute>} />
       <Route path="/shared/:token" element={<SharedDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
