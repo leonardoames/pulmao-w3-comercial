@@ -8,6 +8,8 @@ import {
   Settings,
   Target,
   Users,
+  BarChart3,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,12 +19,24 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ROLE_LABELS_NEW } from '@/types/roles';
 
-const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/vendas', icon: DollarSign, label: 'Vendas' },
-  { path: '/meu-fechamento', icon: ClipboardList, label: 'Meu Fechamento' },
-  { path: '/meta-ote', icon: Target, label: 'Meta OTE' },
-  { path: '/social-selling', icon: Users, label: 'Social Selling' },
+const navGroups = [
+  {
+    label: 'Comercial',
+    items: [
+      { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+      { path: '/vendas', icon: DollarSign, label: 'Vendas' },
+      { path: '/meu-fechamento', icon: ClipboardList, label: 'Meu Fechamento' },
+      { path: '/meta-ote', icon: Target, label: 'Meta OTE' },
+      { path: '/social-selling', icon: Users, label: 'Social Selling' },
+    ],
+  },
+  {
+    label: 'Marketing',
+    items: [
+      { path: '/marketing/dashboard', icon: BarChart3, label: 'Dashboard' },
+      { path: '/marketing/conteudos', icon: FileText, label: 'Controle de Conteúdos' },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -38,33 +52,42 @@ export function AppSidebar() {
         <h1 className="text-xl font-bold tracking-tight">
           <span className="text-sidebar-primary">Pulmão</span> W3
         </h1>
-        <p className="text-xs text-sidebar-foreground/60 mt-1">Comercial</p>
+        <p className="text-xs text-sidebar-foreground/60 mt-1">Gestão Integrada</p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-primary'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-              {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+              {group.label}
+            </p>
+            <div className="mt-1 space-y-1">
+              {group.items.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+                      isActive
+                        ? 'bg-sidebar-accent text-sidebar-primary'
+                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                    {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      {/* Admin Panel Link - Fixed at bottom above user profile */}
+      {/* Admin Panel Link */}
       {canAccessAdmin && (
         <div className="px-4 pb-2">
           <Link
