@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   DollarSign,
   LogOut,
   ClipboardList,
+  ChevronDown,
   ChevronRight,
   Settings,
   Target,
@@ -49,7 +51,6 @@ export function AppSidebar() {
   const { data: userRole } = useCurrentUserRole();
   const isSocialSelling = useIsSocialSelling();
 
-  // Social Selling users only see Social Selling page
   const visibleGroups = isSocialSelling
     ? [
         {
@@ -58,6 +59,25 @@ export function AppSidebar() {
         },
       ]
     : navGroups;
+
+  // Determine which groups should start open based on current route
+  const initialOpen = visibleGroups.reduce((acc, group) => {
+    acc[group.label] = group.items.some((item) => location.pathname === item.path);
+    return acc;
+  }, {} as Record<string, boolean>);
+
+  // Default all to open if none match
+  const allClosed = !Object.values(initialOpen).some(Boolean);
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
+    allClosed
+      ? visibleGroups.reduce((acc, g) => ({ ...acc, [g.label]: true }), {} as Record<string, boolean>)
+      : initialOpen
+  );
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col">
@@ -70,35 +90,52 @@ export function AppSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
-        {visibleGroups.map((group) => (
-          <div key={group.label}>
-            <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-              {group.label}
-            </p>
-            <div className="mt-1 space-y-1">
-              {group.items.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-sidebar-accent text-sidebar-primary'
-                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                    {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
-                  </Link>
-                );
-              })}
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {visibleGroups.map((group) => {
+          const isOpen = openGroups[group.label] ?? true;
+          return (
+            <div key={group.label}>
+              <button
+                onClick={() => toggleGroup(group.label)}
+                className="w-full flex items-center justify-between px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground/70 transition-colors"
+              >
+                <span>{group.label}</span>
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 transition-transform duration-200',
+                    !isOpen && '-rotate-90'
+                  )}
+                />
+              </button>
+              <div
+                className={cn(
+                  'mt-1 space-y-1 overflow-hidden transition-all duration-200',
+                  isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                )}
+              >
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+                        isActive
+                          ? 'bg-sidebar-accent text-sidebar-primary'
+                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                      {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Admin Panel Link */}
