@@ -62,6 +62,33 @@ export type Database = {
           },
         ]
       }
+      marketing_investimentos: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string
+          data: string
+          id: string
+          valor: number
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por: string
+          data: string
+          id?: string
+          valor?: number
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string
+          data?: string
+          id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       ote_goals: {
         Row: {
           atualizado_em: string
