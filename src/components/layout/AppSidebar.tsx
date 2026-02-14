@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { useCanAccessAdminPanel, useCurrentUserRole } from '@/hooks/useUserRoles';
+import { useCanAccessAdminPanel, useCurrentUserRole, useIsSocialSelling } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -44,6 +44,17 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth();
   const canAccessAdmin = useCanAccessAdminPanel();
   const { data: userRole } = useCurrentUserRole();
+  const isSocialSelling = useIsSocialSelling();
+
+  // Social Selling users only see Social Selling page
+  const visibleGroups = isSocialSelling
+    ? [
+        {
+          label: 'Comercial',
+          items: [{ path: '/social-selling', icon: Users, label: 'Social Selling' }],
+        },
+      ]
+    : navGroups;
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar text-sidebar-foreground flex flex-col">
@@ -57,7 +68,7 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label}>
             <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
               {group.label}

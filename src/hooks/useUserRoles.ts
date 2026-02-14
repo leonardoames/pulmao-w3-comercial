@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, UserRole, canRoleManageClosers, canRoleAccessAdminPanel } from '@/types/roles';
+import { AppRole, UserRole, canRoleManageClosers, canRoleAccessAdminPanel, isRoleSocialSelling } from '@/types/roles';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
@@ -53,6 +53,12 @@ export function useCanEditAnyFechamento() {
 export function useIsCloser() {
   const { data: userRole } = useCurrentUserRole();
   return userRole?.role === 'CLOSER';
+}
+
+export function useIsSocialSelling() {
+  const { data: userRole } = useCurrentUserRole();
+  if (!userRole) return false;
+  return isRoleSocialSelling(userRole.role);
 }
 
 export function useAllUserRoles() {
