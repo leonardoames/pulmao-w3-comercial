@@ -12,7 +12,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { X, Send, Trash2, ExternalLink } from 'lucide-react';
+import { X, Send, Trash2, ExternalLink, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -129,11 +131,31 @@ export function ConteudoSidePanel({ conteudo, profiles, onClose, onUpdate, onDel
           {/* Data de publicação */}
           <div className="space-y-1.5">
             <Label className="text-xs">Data de publicação</Label>
-            <Input
-              type="date"
-              value={conteudo.data_publicacao || ''}
-              onChange={(e) => handleField('data_publicacao', e.target.value || null)}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !conteudo.data_publicacao && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {conteudo.data_publicacao
+                    ? format(new Date(conteudo.data_publicacao + 'T12:00:00'), 'dd/MM/yyyy')
+                    : 'Selecionar data'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={conteudo.data_publicacao ? new Date(conteudo.data_publicacao + 'T12:00:00') : undefined}
+                  onSelect={(date) => handleField('data_publicacao', date ? format(date, 'yyyy-MM-dd') : null)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Tipo de conteúdo */}
