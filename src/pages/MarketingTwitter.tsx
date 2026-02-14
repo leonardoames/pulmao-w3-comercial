@@ -35,7 +35,7 @@ export default function MarketingTwitter() {
   const { profile, setProfile } = useTwitterProfile();
   const [theme, setTheme] = useState<TweetTheme>('light');
   const [format, setFormat] = useState<FrameFormat>('1:1');
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(1.6);
   const [slides, setSlides] = useState<TweetSlide[]>([{ id: generateId(), text: '' }]);
   const [activeIndex, setActiveIndex] = useState(0);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -171,7 +171,7 @@ export default function MarketingTwitter() {
               <Label className="text-xs">Escala do tweet ({Math.round(scale * 100)}%)</Label>
               <Slider
                 min={0.8}
-                max={1.4}
+                max={2.0}
                 step={0.05}
                 value={[scale]}
                 onValueChange={([v]) => setScale(v)}
