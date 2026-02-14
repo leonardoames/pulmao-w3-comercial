@@ -15,35 +15,48 @@ const TwitterFrame = forwardRef<HTMLDivElement, Props>(
     const dims = FORMAT_DIMENSIONS[format];
     const isDark = theme === 'dark';
 
-    // Render at a fixed internal size, scaled down for display via CSS
-    const displayWidth = 400;
-    const aspectRatio = dims.width / dims.height;
-    const displayHeight = displayWidth / aspectRatio;
+    // Display scaling: fit the canvas into ~400px wide preview
+    const displayScale = 400 / dims.width;
 
     return (
-      <div style={{ width: displayWidth, margin: '0 auto' }}>
-        {/* This is what we screenshot — full resolution */}
+      <div style={{ width: 400, margin: '0 auto' }}>
+        {/* CANVAS — export target, fixed output dimensions, NO scale */}
         <div
           ref={ref}
           style={{
             width: dims.width,
             height: dims.height,
             background: isDark ? '#000000' : '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 40,
-            boxSizing: 'border-box',
-            transform: `scale(${displayWidth / dims.width})`,
+            transform: `scale(${displayScale})`,
             transformOrigin: 'top left',
+            overflow: 'hidden',
           }}
         >
-          <div style={{ width: '100%', maxWidth: 600 }}>
-            <TweetPreview profile={profile} text={text} theme={theme} scale={scale} />
+          {/* STAGE — centering container */}
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}
+          >
+            {/* TWEET BASE — real tweet layout, scale slider applies HERE only */}
+            <div
+              style={{
+                width: 550,
+                transform: `scale(${scale})`,
+                transformOrigin: 'center center',
+              }}
+            >
+              <TweetPreview profile={profile} text={text} theme={theme} scale={1} />
+            </div>
           </div>
         </div>
-        {/* Spacer to keep layout correct after transform scale */}
-        <div style={{ height: displayHeight, marginTop: -dims.height * (displayWidth / dims.width) + displayHeight }} />
+        {/* Spacer for correct layout after CSS transform */}
+        <div style={{ height: dims.height * displayScale }} />
       </div>
     );
   }

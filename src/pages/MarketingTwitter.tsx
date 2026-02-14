@@ -83,7 +83,7 @@ export default function MarketingTwitter() {
       width: d.w,
       height: d.h,
       pixelRatio: 2,
-      style: { transform: 'none', transformOrigin: 'top left' },
+      style: { transform: 'none', transformOrigin: 'top left', overflow: 'hidden' },
     });
   }, [format]);
 
@@ -171,7 +171,7 @@ export default function MarketingTwitter() {
               <Label className="text-xs">Escala do tweet ({Math.round(scale * 100)}%)</Label>
               <Slider
                 min={0.8}
-                max={1.2}
+                max={1.4}
                 step={0.05}
                 value={[scale]}
                 onValueChange={([v]) => setScale(v)}
