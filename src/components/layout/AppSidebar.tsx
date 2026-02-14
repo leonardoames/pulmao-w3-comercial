@@ -13,6 +13,7 @@ import {
   BarChart3,
   FileText,
   Sparkles,
+  PenTool,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,7 +39,7 @@ const navGroups = [
     items: [
       { path: '/marketing/dashboard', icon: BarChart3, label: 'Dashboard' },
       { path: '/marketing/conteudos', icon: FileText, label: 'Controle de Conteúdos' },
-      { path: '/marketing/twitter', icon: FileText, label: 'Gerador Twitter' },
+      { path: '/marketing/twitter', icon: PenTool, label: 'Gerador Twitter' },
       { path: '/marketing/ai', icon: Sparkles, label: 'Agentes IA' },
     ],
   },
@@ -100,7 +101,7 @@ export function AppSidebar() {
                 className="w-full flex items-center justify-between px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground/70 transition-colors"
               >
                 <span>{group.label}</span>
-                <ChevronDown
+              <ChevronDown
                   className={cn(
                     'h-4 w-4 transition-transform duration-200',
                     !isOpen && '-rotate-90'
