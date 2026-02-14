@@ -259,8 +259,12 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
         .sort((a, b) => a.percentNoShow - b.percentNoShow);
       const menorNoShow = closersNoShow[0] || null;
 
+      // IDs excluídos do ranking
+      const EXCLUDED_FROM_RANKING = ['55b5f498-2b57-48b1-b684-dde3da67bc48']; // Leonardo Ames
+
       // Ranking geral por volume
       const rankingGeral = Array.from(closerMetricsMap.entries())
+        .filter(([id]) => !EXCLUDED_FROM_RANKING.includes(id))
         .map(([id, data]) => ({ 
           id, 
           ...data,
