@@ -132,7 +132,7 @@ export default function DashboardPage() {
       </PageHeader>
 
       {/* Stats Cards - Row 1 */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
           title="Volume de Vendas"
           value={formatCurrency(stats?.volumeVendas ?? 0)}
@@ -162,7 +162,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards - Row 2 */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
           title="Valor em Pix"
           value={formatCurrency(stats?.valorPix ?? 0)}
@@ -189,7 +189,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards - Row 3 */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="Calls Realizadas"
           value={stats?.callsRealizadas ?? 0}

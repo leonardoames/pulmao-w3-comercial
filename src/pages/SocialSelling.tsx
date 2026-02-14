@@ -169,7 +169,7 @@ export default function SocialSellingPage() {
       </div>
 
       {/* A) Dashboard do Período */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         <StatCard
           title="Conversas Iniciadas"
           value={totalConversas.toLocaleString('pt-BR')}
