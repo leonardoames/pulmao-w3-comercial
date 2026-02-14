@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      conteudo_comentarios: {
+        Row: {
+          conteudo_id: string
+          criado_em: string
+          id: string
+          texto: string
+          user_id: string
+        }
+        Insert: {
+          conteudo_id: string
+          criado_em?: string
+          id?: string
+          texto?: string
+          user_id: string
+        }
+        Update: {
+          conteudo_id?: string
+          criado_em?: string
+          id?: string
+          texto?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteudo_comentarios_conteudo_id_fkey"
+            columns: ["conteudo_id"]
+            isOneToOne: false
+            referencedRelation: "conteudos_marketing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conteudos_marketing: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string
+          data_publicacao: string | null
+          id: string
+          legenda: string | null
+          link_drive: string | null
+          onde_postar: string[]
+          ordem: number
+          responsavel_user_id: string | null
+          roteiro: string | null
+          status: Database["public"]["Enums"]["conteudo_status"]
+          tipo_conteudo: string[]
+          titulo: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por: string
+          data_publicacao?: string | null
+          id?: string
+          legenda?: string | null
+          link_drive?: string | null
+          onde_postar?: string[]
+          ordem?: number
+          responsavel_user_id?: string | null
+          roteiro?: string | null
+          status?: Database["public"]["Enums"]["conteudo_status"]
+          tipo_conteudo?: string[]
+          titulo?: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string
+          data_publicacao?: string | null
+          id?: string
+          legenda?: string | null
+          link_drive?: string | null
+          onde_postar?: string[]
+          ordem?: number
+          responsavel_user_id?: string | null
+          roteiro?: string | null
+          status?: Database["public"]["Enums"]["conteudo_status"]
+          tipo_conteudo?: string[]
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteudos_marketing_responsavel_user_id_fkey"
+            columns: ["responsavel_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conteudos_marketing_responsavel_user_id_fkey"
+            columns: ["responsavel_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fechamentos: {
         Row: {
           atualizado_em: string
@@ -465,6 +563,13 @@ export type Database = {
         | "No-show"
         | "Remarcada"
         | "Cancelada"
+      conteudo_status:
+        | "Ideia"
+        | "EmGravacao"
+        | "EmEdicao"
+        | "EmAprovacao"
+        | "EmAjuste"
+        | "Aprovado"
       lead_origem:
         | "Formulario"
         | "Instagram"
@@ -627,6 +732,14 @@ export const Constants = {
         "No-show",
         "Remarcada",
         "Cancelada",
+      ],
+      conteudo_status: [
+        "Ideia",
+        "EmGravacao",
+        "EmEdicao",
+        "EmAprovacao",
+        "EmAjuste",
+        "Aprovado",
       ],
       lead_origem: [
         "Formulario",
