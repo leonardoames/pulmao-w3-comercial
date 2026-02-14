@@ -1,26 +1,26 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { toPng } from 'html-to-image';
-import JSZip from 'jszip';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/ui/page-header';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Download, Plus, Copy, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import TwitterProfileEditor from '@/components/twitter/TwitterProfileEditor';
-import TwitterFrame from '@/components/twitter/TwitterFrame';
-import { useTwitterProfile } from '@/components/twitter/useTwitterProfile';
-import { TweetSlide, TweetTheme, FrameFormat } from '@/components/twitter/types';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { toPng } from "html-to-image";
+import JSZip from "jszip";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+import { Download, Plus, Copy, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import TwitterProfileEditor from "@/components/twitter/TwitterProfileEditor";
+import TwitterFrame from "@/components/twitter/TwitterFrame";
+import { useTwitterProfile } from "@/components/twitter/useTwitterProfile";
+import { TweetSlide, TweetTheme, FrameFormat } from "@/components/twitter/types";
 
 // Load Twemoji from CDN
 const loadTwemoji = () => {
-  if (typeof (window as any).twemoji !== 'undefined') return Promise.resolve();
+  if (typeof (window as any).twemoji !== "undefined") return Promise.resolve();
   return new Promise<void>((resolve) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js';
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js";
     s.onload = () => resolve();
     s.onerror = () => resolve(); // graceful fallback
     document.head.appendChild(s);
@@ -33,10 +33,10 @@ function generateId() {
 
 export default function MarketingTwitter() {
   const { profile, setProfile } = useTwitterProfile();
-  const [theme, setTheme] = useState<TweetTheme>('light');
-  const [format, setFormat] = useState<FrameFormat>('1:1');
-  const [scale, setScale] = useState(1.6);
-  const [slides, setSlides] = useState<TweetSlide[]>([{ id: generateId(), text: '' }]);
+  const [theme, setTheme] = useState<TweetTheme>("light");
+  const [format, setFormat] = useState<FrameFormat>("1:1");
+  const [scale, setScale] = useState(1.75);
+  const [slides, setSlides] = useState<TweetSlide[]>([{ id: generateId(), text: "" }]);
   const [activeIndex, setActiveIndex] = useState(0);
   const frameRef = useRef<HTMLDivElement>(null);
   const [twemojiReady, setTwemojiReady] = useState(false);
@@ -48,12 +48,12 @@ export default function MarketingTwitter() {
   const activeSlide = slides[activeIndex] || slides[0];
 
   const updateSlideText = (text: string) => {
-    setSlides(s => s.map((sl, i) => i === activeIndex ? { ...sl, text } : sl));
+    setSlides((s) => s.map((sl, i) => (i === activeIndex ? { ...sl, text } : sl)));
   };
 
   const addSlide = () => {
-    const ns = { id: generateId(), text: '' };
-    setSlides(s => [...s, ns]);
+    const ns = { id: generateId(), text: "" };
+    setSlides((s) => [...s, ns]);
     setActiveIndex(slides.length);
   };
 
@@ -73,29 +73,29 @@ export default function MarketingTwitter() {
   };
 
   const captureFrame = useCallback(async (): Promise<string> => {
-    if (!frameRef.current) throw new Error('No frame');
+    if (!frameRef.current) throw new Error("No frame");
     await document.fonts.ready;
     // Small delay for twemoji rendering
-    await new Promise(r => setTimeout(r, 100));
-    const dims = { '1:1': { w: 1080, h: 1080 }, '4:5': { w: 1080, h: 1350 }, '9:16': { w: 1080, h: 1920 } };
+    await new Promise((r) => setTimeout(r, 100));
+    const dims = { "1:1": { w: 1080, h: 1080 }, "4:5": { w: 1080, h: 1350 }, "9:16": { w: 1080, h: 1920 } };
     const d = dims[format];
     return toPng(frameRef.current, {
       width: d.w,
       height: d.h,
       pixelRatio: 2,
-      style: { transform: 'none', transformOrigin: 'top left', overflow: 'hidden' },
+      style: { transform: "none", transformOrigin: "top left", overflow: "hidden" },
     });
   }, [format]);
 
   const downloadPng = async () => {
     try {
       const dataUrl = await captureFrame();
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.download = `tweet-${activeIndex + 1}.png`;
       link.href = dataUrl;
       link.click();
     } catch (e) {
-      console.error('Export failed', e);
+      console.error("Export failed", e);
     }
   };
 
@@ -105,19 +105,19 @@ export default function MarketingTwitter() {
     for (let i = 0; i < slides.length; i++) {
       setActiveIndex(i);
       // wait for re-render
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 300));
       try {
         const dataUrl = await captureFrame();
-        const base64 = dataUrl.split(',')[1];
+        const base64 = dataUrl.split(",")[1];
         zip.file(`slide-${i + 1}.png`, base64, { base64: true });
       } catch (e) {
         console.error(`Failed slide ${i + 1}`, e);
       }
     }
     setActiveIndex(originalIndex);
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const link = document.createElement('a');
-    link.download = 'carrossel-twitter.zip';
+    const blob = await zip.generateAsync({ type: "blob" });
+    const link = document.createElement("a");
+    link.download = "carrossel-twitter.zip";
     link.href = URL.createObjectURL(blob);
     link.click();
     URL.revokeObjectURL(link.href);
@@ -149,7 +149,9 @@ export default function MarketingTwitter() {
             <div>
               <Label className="text-xs">Tema do tweet</Label>
               <Select value={theme} onValueChange={(v) => setTheme(v as TweetTheme)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="light">Claro</SelectItem>
                   <SelectItem value="dark">Escuro</SelectItem>
@@ -159,7 +161,9 @@ export default function MarketingTwitter() {
             <div>
               <Label className="text-xs">Formato</Label>
               <Select value={format} onValueChange={(v) => setFormat(v as FrameFormat)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1:1">1:1 (Quadrado)</SelectItem>
                   <SelectItem value="4:5">4:5</SelectItem>
@@ -169,18 +173,14 @@ export default function MarketingTwitter() {
             </div>
             <div>
               <Label className="text-xs">Escala do tweet ({Math.round(scale * 100)}%)</Label>
-              <Slider
-                min={0.8}
-                max={2.0}
-                step={0.05}
-                value={[scale]}
-                onValueChange={([v]) => setScale(v)}
-              />
+              <Slider min={0.8} max={2.0} step={0.05} value={[scale]} onValueChange={([v]) => setScale(v)} />
             </div>
           </Card>
 
           <Card className="p-4 space-y-3">
-            <h3 className="text-sm font-semibold">Carrossel ({slides.length} slide{slides.length > 1 ? 's' : ''})</h3>
+            <h3 className="text-sm font-semibold">
+              Carrossel ({slides.length} slide{slides.length > 1 ? "s" : ""})
+            </h3>
             <div className="flex gap-2 flex-wrap">
               {slides.map((sl, i) => (
                 <button
@@ -188,8 +188,8 @@ export default function MarketingTwitter() {
                   onClick={() => setActiveIndex(i)}
                   className={`w-8 h-8 rounded text-xs font-medium border transition-colors ${
                     i === activeIndex
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-muted text-muted-foreground border-border hover:bg-accent'
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
                   }`}
                 >
                   {i + 1}
@@ -215,11 +215,23 @@ export default function MarketingTwitter() {
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" disabled={activeIndex === 0} onClick={() => setActiveIndex(activeIndex - 1)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={activeIndex === 0}
+                  onClick={() => setActiveIndex(activeIndex - 1)}
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-muted-foreground">Slide {activeIndex + 1}/{slides.length}</span>
-                <Button variant="ghost" size="icon" disabled={activeIndex === slides.length - 1} onClick={() => setActiveIndex(activeIndex + 1)}>
+                <span className="text-sm text-muted-foreground">
+                  Slide {activeIndex + 1}/{slides.length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={activeIndex === slides.length - 1}
+                  onClick={() => setActiveIndex(activeIndex + 1)}
+                >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -246,10 +258,10 @@ export default function MarketingTwitter() {
             </div>
             <Textarea
               value={activeSlide.text}
-              onChange={e => updateSlideText(e.target.value)}
+              onChange={(e) => updateSlideText(e.target.value)}
               placeholder="Digite o texto do tweet aqui..."
               className="min-h-[200px] font-sans"
-              style={{ whiteSpace: 'pre-wrap' }}
+              style={{ whiteSpace: "pre-wrap" }}
             />
           </Card>
 
