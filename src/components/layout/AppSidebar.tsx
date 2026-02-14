@@ -10,6 +10,7 @@ import {
   Users,
   BarChart3,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,6 +37,7 @@ const navGroups = [
       { path: '/marketing/dashboard', icon: BarChart3, label: 'Dashboard' },
       { path: '/marketing/conteudos', icon: FileText, label: 'Controle de Conteúdos' },
       { path: '/marketing/twitter', icon: FileText, label: 'Gerador Twitter' },
+      { path: '/marketing/ai', icon: Sparkles, label: 'Agentes IA' },
     ],
   },
 ];
