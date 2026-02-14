@@ -321,7 +321,10 @@ export function useNoShowByCloser(filter: DateFilter, customRange?: DateRange) {
         closerMap.set(id, current);
       });
 
+      const EXCLUDED_FROM_NOSHOW = ['55b5f498-2b57-48b1-b684-dde3da67bc48']; // Leonardo Ames
+
       return Array.from(closerMap.entries())
+        .filter(([id]) => !EXCLUDED_FROM_NOSHOW.includes(id))
         .map(([id, data]) => {
           const callsAgendadas = data.callsRealizadas + data.noShow;
           return {
