@@ -14,6 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_agents: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          prompt_base: string
+          type: Database["public"]["Enums"]["ai_agent_type"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          prompt_base?: string
+          type: Database["public"]["Enums"]["ai_agent_type"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          prompt_base?: string
+          type?: Database["public"]["Enums"]["ai_agent_type"]
+        }
+        Relationships: []
+      }
+      ai_outputs: {
+        Row: {
+          created_at: string
+          id: string
+          meta_json: Json | null
+          output_text: string
+          output_type: Database["public"]["Enums"]["ai_output_type"]
+          request_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta_json?: Json | null
+          output_text?: string
+          output_type: Database["public"]["Enums"]["ai_output_type"]
+          request_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta_json?: Json | null
+          output_text?: string
+          output_type?: Database["public"]["Enums"]["ai_output_type"]
+          request_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_outputs_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "ai_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_requests: {
+        Row: {
+          agent_id: string
+          created_at: string
+          format: string | null
+          id: string
+          inputs_json: Json
+          platform: Database["public"]["Enums"]["ai_platform"]
+          status: Database["public"]["Enums"]["ai_request_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          format?: string | null
+          id?: string
+          inputs_json?: Json
+          platform?: Database["public"]["Enums"]["ai_platform"]
+          status?: Database["public"]["Enums"]["ai_request_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          format?: string | null
+          id?: string
+          inputs_json?: Json
+          platform?: Database["public"]["Enums"]["ai_platform"]
+          status?: Database["public"]["Enums"]["ai_request_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_requests_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "ai_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conteudo_comentarios: {
         Row: {
           conteudo_id: string
@@ -556,6 +665,10 @@ export type Database = {
       is_social_selling: { Args: never; Returns: boolean }
     }
     Enums: {
+      ai_agent_type: "caption" | "script"
+      ai_output_type: "caption" | "script" | "variations"
+      ai_platform: "instagram" | "tiktok" | "youtube"
+      ai_request_status: "draft" | "processing" | "done" | "error"
       app_role:
         | "MASTER"
         | "DIRETORIA"
@@ -730,6 +843,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ai_agent_type: ["caption", "script"],
+      ai_output_type: ["caption", "script", "variations"],
+      ai_platform: ["instagram", "tiktok", "youtube"],
+      ai_request_status: ["draft", "processing", "done", "error"],
       app_role: [
         "MASTER",
         "DIRETORIA",
