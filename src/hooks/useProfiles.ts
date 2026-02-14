@@ -35,7 +35,9 @@ export function useClosers() {
         return [] as Profile[];
       }
 
-      const closerIds = closerRoles.map(r => r.user_id);
+      // Excluir Gustavo Hofmann do filtro de closers
+      const EXCLUDED_FROM_FILTER = ['6c7a0c54-6bbc-4d40-829a-217f098adb74'];
+      const closerIds = closerRoles.map(r => r.user_id).filter(id => !EXCLUDED_FROM_FILTER.includes(id));
 
       // Buscar profiles dos closers ativos
       const { data, error } = await supabase
