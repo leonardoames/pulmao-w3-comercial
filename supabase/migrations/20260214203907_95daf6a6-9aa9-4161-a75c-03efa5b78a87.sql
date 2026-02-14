@@ -1,0 +1,3 @@
+
+-- Add SOCIAL_SELLING to the app_role enum
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'SOCIAL_SELLING';

@@ -50,3 +50,34 @@ export function useClosers() {
     }
   });
 }
+
+// Busca social sellers pela tabela user_roles com role = 'SOCIAL_SELLING'
+export function useSocialSellers() {
+  return useQuery({
+    queryKey: ['social-sellers'],
+    queryFn: async () => {
+      const { data: ssRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'SOCIAL_SELLING');
+
+      if (rolesError) throw rolesError;
+
+      if (!ssRoles || ssRoles.length === 0) {
+        return [] as Profile[];
+      }
+
+      const ssIds = ssRoles.map(r => r.user_id);
+
+      const { data, error } = await supabase
+        .from('profiles_safe' as any)
+        .select('*')
+        .eq('ativo', true)
+        .in('id', ssIds)
+        .order('nome');
+
+      if (error) throw error;
+      return data as unknown as Profile[];
+    }
+  });
+}

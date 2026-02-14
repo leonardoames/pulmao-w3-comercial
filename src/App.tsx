@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useIsSocialSelling, useCurrentUserRole } from "@/hooks/useUserRoles";
 import { ThemeProvider } from "@/components/theme-provider";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -20,10 +21,12 @@ import SharedDashboard from "./pages/SharedDashboard";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children, allowSocialSelling }: { children: React.ReactNode; allowSocialSelling?: boolean }) {
   const { user, loading } = useAuth();
+  const isSocialSelling = useIsSocialSelling();
+  const { data: userRole, isLoading: roleLoading } = useCurrentUserRole();
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -36,6 +39,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Social Selling users can only access /social-selling
+  if (isSocialSelling && !allowSocialSelling) {
+    return <Navigate to="/social-selling" replace />;
   }
 
   return <>{children}</>;
@@ -62,7 +70,7 @@ function AppRoutes() {
       <Route path="/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
       <Route path="/meu-fechamento" element={<ProtectedRoute><MeuFechamento /></ProtectedRoute>} />
       <Route path="/meta-ote" element={<ProtectedRoute><OteTracking /></ProtectedRoute>} />
-      <Route path="/social-selling" element={<ProtectedRoute><SocialSelling /></ProtectedRoute>} />
+      <Route path="/social-selling" element={<ProtectedRoute allowSocialSelling><SocialSelling /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
       <Route path="/marketing/dashboard" element={<ProtectedRoute><MarketingDashboard /></ProtectedRoute>} />

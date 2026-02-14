@@ -553,9 +553,15 @@ export type Database = {
       }
       is_closer: { Args: never; Returns: boolean }
       is_master: { Args: never; Returns: boolean }
+      is_social_selling: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "MASTER" | "DIRETORIA" | "GESTOR_COMERCIAL" | "CLOSER"
+      app_role:
+        | "MASTER"
+        | "DIRETORIA"
+        | "GESTOR_COMERCIAL"
+        | "CLOSER"
+        | "SOCIAL_SELLING"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
         | "Agendada"
@@ -724,7 +730,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["MASTER", "DIRETORIA", "GESTOR_COMERCIAL", "CLOSER"],
+      app_role: [
+        "MASTER",
+        "DIRETORIA",
+        "GESTOR_COMERCIAL",
+        "CLOSER",
+        "SOCIAL_SELLING",
+      ],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],
       call_status: [
         "Agendada",
