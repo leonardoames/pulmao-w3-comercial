@@ -35,6 +35,7 @@ const navGroups = [
     items: [
       { path: '/marketing/dashboard', icon: BarChart3, label: 'Dashboard' },
       { path: '/marketing/conteudos', icon: FileText, label: 'Controle de Conteúdos' },
+      { path: '/marketing/twitter', icon: FileText, label: 'Gerador Twitter' },
     ],
   },
 ];

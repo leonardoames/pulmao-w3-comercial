@@ -16,6 +16,7 @@ import OteTracking from "./pages/OteTracking";
 import SocialSelling from "./pages/SocialSelling";
 import MarketingDashboard from "./pages/MarketingDashboard";
 import MarketingConteudos from "./pages/MarketingConteudos";
+import MarketingTwitter from "./pages/MarketingTwitter";
 import NotFound from "./pages/NotFound";
 import SharedDashboard from "./pages/SharedDashboard";
 
@@ -75,6 +76,7 @@ function AppRoutes() {
       <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
       <Route path="/marketing/dashboard" element={<ProtectedRoute><MarketingDashboard /></ProtectedRoute>} />
       <Route path="/marketing/conteudos" element={<ProtectedRoute><MarketingConteudos /></ProtectedRoute>} />
+      <Route path="/marketing/twitter" element={<ProtectedRoute><MarketingTwitter /></ProtectedRoute>} />
       <Route path="/shared/:token" element={<SharedDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
