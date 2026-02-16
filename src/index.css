@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -43,7 +44,7 @@ img.emoji {
     --popover-foreground: 20 14% 10%;
 
     /* Primary - Vibrant Orange */
-    --primary: 27 91% 52%;
+    --primary: 24 95% 53%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Warm Gray */
@@ -97,56 +98,56 @@ img.emoji {
     --chart-3: 38 92% 50%;
     --chart-4: 199 89% 48%;
     --chart-5: 0 84% 60%;
-    --font-sans: Montserrat, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --font-sans: Poppins, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    --background: 20 14% 6%;
+    --foreground: 30 20% 98%;
 
-    --card: 0 0% 6%;
-    --card-foreground: 0 0% 100%;
+    --card: 20 14% 9%;
+    --card-foreground: 30 20% 98%;
 
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 20 14% 9%;
+    --popover-foreground: 30 20% 98%;
 
-    --primary: 27 91% 52%;
+    --primary: 24 95% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 20 14% 15%;
+    --secondary-foreground: 30 20% 98%;
 
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 20 14% 15%;
+    --muted-foreground: 30 10% 60%;
 
-    --accent: 0 0% 14%;
-    --accent-foreground: 27 91% 60%;
+    --accent: 20 14% 18%;
+    --accent-foreground: 24 95% 60%;
 
-    --destructive: 0 50% 48%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 50% 40%;
+    --success: 142 76% 42%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 30 98% 71%;
+    --warning: 38 92% 55%;
     --warning-foreground: 0 0% 0%;
 
-    --info: 27 100% 87%;
+    --info: 199 89% 55%;
     --info-foreground: 0 0% 0%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 27 91% 52%;
+    --border: 20 14% 18%;
+    --input: 20 14% 18%;
+    --ring: 24 95% 55%;
 
-    --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 27 91% 52%;
+    --sidebar-background: 20 14% 6%;
+    --sidebar-foreground: 30 20% 98%;
+    --sidebar-primary: 24 95% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 10%;
-    --sidebar-ring: 27 91% 52%;
-    --font-sans: Montserrat, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --sidebar-accent: 20 14% 12%;
+    --sidebar-accent-foreground: 30 20% 98%;
+    --sidebar-border: 20 14% 12%;
+    --sidebar-ring: 24 95% 55%;
+    --font-sans: Poppins, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 }
 

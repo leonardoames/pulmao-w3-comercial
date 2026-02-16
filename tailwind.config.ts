@@ -139,7 +139,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Montserrat',
+  				'Poppins',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
