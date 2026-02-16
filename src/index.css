@@ -34,7 +34,7 @@ img.emoji {
   :root {
     /* Background & Foreground */
     --background: 30 20% 98%;
-    --foreground: 20 14% 10%;
+    --foreground: 0 0% 0%;
 
     /* Cards & Surfaces */
     --card: 0 0% 100%;
@@ -49,7 +49,7 @@ img.emoji {
 
     /* Secondary - Warm Gray */
     --secondary: 30 10% 95%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary-foreground: 20 14% 10%;
 
     /* Muted */
     --muted: 30 10% 95%;
