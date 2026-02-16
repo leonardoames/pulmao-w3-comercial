@@ -139,7 +139,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Poppins',
+  				'Montserrat',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
@@ -149,6 +149,7 @@ export default {
   				'Noto Color Emoji'
   			],
   			serif: [
+  				'Libre Caslon Text',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -157,6 +158,7 @@ export default {
   				'serif'
   			],
   			mono: [
+  				'Roboto Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
