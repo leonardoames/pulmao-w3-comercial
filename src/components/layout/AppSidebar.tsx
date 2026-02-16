@@ -131,7 +131,7 @@ export function AppSidebar() {
                       className={cn(
                         'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-sidebar-accent text-sidebar-primary'
+                          ? 'bg-primary text-primary-foreground'
                           : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                       )}
                     >
@@ -155,7 +155,7 @@ export function AppSidebar() {
             className={cn(
               'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
               location.pathname === '/painel-admin'
-                ? 'bg-sidebar-accent text-sidebar-primary'
+                ? 'bg-primary text-primary-foreground'
                 : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
             )}
           >
