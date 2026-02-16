@@ -1,95 +1,79 @@
 
 
-# Refatoracao: Dashboard de Conteudo -- Novas Metas, Seguidores Calculados e Layout Operacional
+# Unificacao Visual: Dashboards de Conteudo e Marketing seguindo o padrao Comercial + Ajuste de Cores
 
 ## Resumo
 
-Reescrever a pagina `ConteudoDashboard.tsx` com novo layout em 3 linhas, logica de metas por periodo (posts 6/dia, stories 10/dia), calculo de seguidores ganhos por diferenca (ultimo - primeiro registro), e tabela resumo com filtro por responsavel.
+Alinhar os 3 dashboards (Comercial, Conteudo, Marketing) com a mesma estrutura de layout, hierarquia visual e componentes. Atualizar a paleta de cores do tema para as cores exatas fornecidas.
 
 ---
 
-## 1. Logica de Calculo (mudancas principais)
+## 1. Ajuste de Cores no Tema
 
-### Metas por periodo
-- Meta de Posts = dias_no_periodo x 6
-- Meta de Stories = dias_no_periodo x 10
-- Realizado = soma dos valores no periodo
-- % atingido = (realizado / meta) x 100
-- Post agendado NAO conta como realizado
+### Arquivo: `src/index.css`
 
-### Seguidores ganhos (calculados, nao manuais)
-- Seguidores @leo ganhos = `followers_leo` do ultimo registro - `followers_leo` do primeiro registro do periodo
-- Seguidores @w3 ganhos = idem com `followers_w3`
-- Se faltar registro no primeiro dia, usar o primeiro registro disponivel no periodo
+Atualizar as variaveis CSS `:root` e `.dark` para refletir as cores exatas:
 
-### Dias no periodo
-- Contar dias entre startDate e endDate (inclusive), nao apenas dias com registros
+| Token | Cor hex | HSL (aproximado) | Uso |
+|-------|---------|-------------------|-----|
+| `--primary` | #f57914 | 27 92% 52% | Botoes, destaques |
+| `--primary-foreground` | #ffffff | 0 0% 100% | Texto sobre primary (ja correto) |
+| `--secondary` | #feab67 | 27 98% 70% | Elementos secundarios |
+| `--secondary-foreground` | #000000 | 0 0% 0% | Texto sobre secondary |
+| `--accent` | #ffd8b8 | 27 100% 86% | Fundos de destaque suave |
+| `--accent-foreground` | #000000 | 0 0% 0% | Texto sobre accent |
 
----
-
-## 2. Layout -- 3 Linhas
-
-### Linha 1 -- KPIs principais (grid 4 colunas)
-
-**Card 1: Posts publicados**
-- Valor principal: total de `posts_published_count` no periodo
-- Subtexto: "Meta: {meta} | {percent}% atingido"
-
-**Card 2: Stories realizados**
-- Valor principal: total de `stories_done_count`
-- Subtexto: "Meta: {meta} | {percent}% atingido"
-
-**Card 3: Posts agendados**
-- Apenas valor total de `posts_scheduled_count`
-- Sem meta
-
-**Card 4: Seguidores ganhos**
-- Dois mini-cards internos lado a lado:
-  - "@leo: +{valor}"
-  - "@w3: +{valor}"
-
-Remover: card "Meta de publicacoes 6/dia" isolado, card "Seguidores ganhos" com valor manual, card "Videos no YouTube" como KPI principal.
-
-### Linha 2 -- Graficos (grid 2 colunas)
-
-**Esquerda: Posts e Stories por dia**
-- Grafico de barras com duas series (posts e stories) lado a lado
-
-**Direita: Crescimento de seguidores**
-- Grafico de linhas com duas series: Leo e W3
-- Mostrando `followers_leo` e `followers_w3` ao longo dos dias
-
-### Linha 3 -- Tabela resumo
-
-Tabela com historico do periodo filtrado:
-| Data | Posts publicados | Posts agendados | Stories | YouTube | Seguidores Leo | Seguidores W3 | Responsavel |
-
-- Filtro por responsavel (Select dropdown)
-- Ordenacao por data decrescente
-- Dados vindos dos mesmos `content_daily_logs`
+Aplicar ajustes equivalentes no modo `.dark` (manter o mesmo hue, ajustar levemente a luminosidade para dark mode).
 
 ---
 
-## 3. Detalhes Tecnicos
+## 2. Padronizar Dashboard de Conteudo
 
 ### Arquivo: `src/pages/ConteudoDashboard.tsx`
 
-Reescrever completamente com:
+Alinhar com a estrutura do Dashboard Comercial:
 
-1. Hook `useContentDailyLogs(startDate, endDate, responsibleFilter)` ja existente
-2. Adicionar state para `responsibleFilter` (dropdown na topbar ou na tabela)
-3. Calcular `daysInPeriod` usando `differenceInDays(endDate, startDate) + 1`
-4. Calcular seguidores ganhos por diferenca entre primeiro e ultimo log (ordenados por data)
-5. Manter filtros de periodo (7D, 30D, Mes) na topbar
-6. Graficos com Recharts (BarChart para posts/stories, LineChart para seguidores)
-7. Tabela usando componentes `Table` existentes
-8. Importar `RESPONSIBLE_OPTIONS` de `types/content.ts`
+**Header:**
+- Usar `PageHeader` com filtros como children (mesmo padrao do Comercial)
+- Adicionar filtros completos: Hoje / Ontem / 7 dias / Este mes / 30 dias / Personalizado (usando `DateFilter` de `useDashboard`)
+- Adicionar calendar popover para range personalizado
+- Mover filtro de responsavel para dentro do PageHeader
 
-### Estilo visual
-- Cards minimalistas (sem icones grandes, numeros dominantes)
-- Paleta: fundo preto, cards com bg-card, laranja para destaques
-- Subtextos em muted-foreground
-- Tabela com bordas sutis, sem peso visual
+**Linha 1 -- KPIs (com SectionLabel):**
+- Adicionar `SectionLabel title="Producao"` antes dos KPIs
+- Substituir Cards crus por `StatCard` com icones e variants consistentes
+- Posts publicados: `StatCard` com subtitle "Meta: X | Y% atingido"
+- Stories: idem
+- Posts agendados: `StatCard` simples
+- Seguidores ganhos: `StatCard` com mini-cards internos (manter logica atual mas usando StatCard como wrapper)
+
+**Linha 2 -- Graficos (com SectionLabel):**
+- Adicionar `SectionLabel title="Evolucao"` antes dos graficos
+- Manter graficos existentes, ajustar spacing para `gap-6 mb-10`
+
+**Linha 3 -- Tabela (com SectionLabel):**
+- Adicionar `SectionLabel title="Historico"` antes da tabela
+- Manter tabela existente
+
+**Spacing geral:**
+- `gap-6` entre cards (nao `gap-4`)
+- `mb-10` entre secoes (nao `mb-0`)
+
+---
+
+## 3. Padronizar Dashboard de Marketing
+
+### Arquivo: `src/pages/MarketingDashboard.tsx`
+
+Ja usa `PageHeader`, `StatCard` e filtros completos. Ajustes:
+
+**Adicionar SectionLabels:**
+- `SectionLabel title="Investimento e Agendamentos"` antes da Row 1
+- `SectionLabel title="Custos e Vendas"` antes da Row 2
+- `SectionLabel title="Retorno"` antes da Row 3
+
+**Spacing:**
+- Mudar `mb-6` entre secoes para `mb-10` (consistente com Comercial)
 
 ---
 
@@ -97,7 +81,15 @@ Reescrever completamente com:
 
 | Acao | Arquivo |
 |------|---------|
-| Reescrever | `src/pages/ConteudoDashboard.tsx` |
+| Editar | `src/index.css` (cores do tema) |
+| Reescrever | `src/pages/ConteudoDashboard.tsx` (layout + componentes) |
+| Editar | `src/pages/MarketingDashboard.tsx` (SectionLabels + spacing) |
 
-Nenhum outro arquivo precisa ser alterado. Os hooks e tipos existentes ja suportam os dados necessarios.
+---
+
+## 5. Sequencia
+
+1. Atualizar cores em `index.css`
+2. Refatorar `ConteudoDashboard.tsx`
+3. Ajustar `MarketingDashboard.tsx`
 
