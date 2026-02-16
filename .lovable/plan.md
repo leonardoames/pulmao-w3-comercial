@@ -1,62 +1,82 @@
 
 
-# Filtros Avancados e Tooltips Descritivos na Pagina de Vendas
+# Melhorias no Historico de Meu Fechamento
 
 ## Resumo
 
-Adicionar tooltips descritivos em todos os icones da pagina (incluindo flags sempre visiveis, mesmo quando inativas) e implementar uma barra de filtros avancados com data, duracao, valor e flags.
+Reformular o card de historico para: (1) mostrar No-Show tambem em porcentagem, (2) exibir todos os dias do periodo com "Sem informacao" quando nao houver registro, (3) adicionar linha de totalizacao/somatorio no final, (4) implementar filtros de periodo (Esta Semana, Este Mes, Ultimos 30 Dias, Ultimo Mes, Todo o Periodo).
 
 ---
 
-## 1. Flags sempre visiveis com tooltip descritivo
+## 1. Filtros de periodo no historico
 
-Atualmente as flags so aparecem quando ativas. Mudar para **sempre exibir os 4 icones**, com aparencia diferenciada:
+Adicionar um `Select` no header do card de historico com as opcoes:
 
-- **Ativa**: icone colorido com fundo (como esta hoje)
-- **Inativa**: icone cinza com opacidade reduzida (`opacity-30`)
+- **Esta Semana**: segunda-feira da semana atual ate hoje
+- **Este Mes**: dia 1 do mes atual ate hoje
+- **Ultimos 30 Dias**: hoje - 30 dias ate hoje (padrao atual)
+- **Ultimo Mes**: dia 1 ao ultimo dia do mes anterior
+- **Todo o Periodo**: sem filtro de data (busca tudo)
 
-Cada tooltip tera descricao funcional:
-- Check: "Pagamento confirmado"
-- Edit2: "Contrato assinado pelo cliente"
-- Landmark: "Enviado ao setor financeiro"
-- Headphones: "Enviado ao time de Customer Success"
-
----
-
-## 2. Filtros avancados
-
-Adicionar uma secao expansivel de filtros abaixo da barra de busca atual, com um botao "Filtros" que abre/fecha. Campos:
-
-### Filtro por periodo (data de fechamento)
-- Dois date pickers: "De" e "Ate"
-- Usa o componente `Calendar` + `Popover` ja existente
-
-### Filtro por duracao do contrato
-- Select com opcoes: "Todos", "1-3 meses", "4-6 meses", "7-12 meses", "13+ meses"
-
-### Filtro por faixa de valor total
-- Select com opcoes: "Todos", "Ate R$ 5.000", "R$ 5.000 - R$ 20.000", "R$ 20.000 - R$ 50.000", "Acima de R$ 50.000"
-
-### Filtro por flags
-- 4 checkboxes: "Pago", "Contrato Assinado", "Enviado Financeiro", "Enviado CS"
-- Quando marcado, filtra apenas vendas que TEM aquela flag ativa
-
-### Botao "Limpar Filtros"
-- Reseta todos os filtros para o estado padrao
+O estado `periodFilter` controla qual intervalo e passado para o hook `useFechamentos`. As datas `startDate` e `endDate` serao calculadas com `useMemo` baseado no filtro selecionado, usando funcoes do `date-fns` (`startOfWeek`, `startOfMonth`, `subMonths`, `endOfMonth`).
 
 ---
 
-## 3. Logica de filtragem
+## 2. Preencher todos os dias do periodo
 
-Todos os filtros serao aplicados no `filteredVendas` existente, adicionando condicoes ao `.filter()` atual. Novos estados:
+Apos receber os dados do hook, gerar um array com **todos os dias** entre `startDate` e `endDate` usando `eachDayOfInterval` do `date-fns`. Para cada dia:
+
+- Se existe um fechamento registrado: exibir os dados normais
+- Se nao existe: exibir a linha com "Sem informacao" em texto cinza (`text-muted-foreground`) nas colunas de dados
+
+Dias futuros nao serao incluidos (limitar ao dia atual).
+
+---
+
+## 3. Coluna de No-Show com porcentagem
+
+Alterar a celula de No-Show para exibir o valor absoluto seguido da porcentagem entre parenteses:
 
 ```
-dateFrom, dateTo, duracaoFilter, valorFilter, flagFilters (pago, contrato_assinado, enviado_financeiro, enviado_cs)
+3 (25%)
 ```
+
+A porcentagem e calculada como: `no_show / calls_agendadas * 100`. Quando `calls_agendadas` for 0, exibir apenas "0".
 
 ---
 
-## Arquivo afetado
+## 4. Linha de somatorio (totais)
 
-1. `src/pages/Vendas.tsx` -- unico arquivo modificado
+Adicionar um `TableFooter` com uma linha de totais que soma:
+
+- **Realizadas**: soma de todas as `calls_realizadas` do periodo
+- **No-Show**: soma de todos os `no_show` + porcentagem geral
+- **Agendadas**: soma de todas as `calls_agendadas`
+
+A linha tera fundo diferenciado (`bg-muted/30 font-bold`) e o label "Total" na primeira coluna.
+
+---
+
+## 5. Ordenacao
+
+Manter a ordenacao decrescente (dia mais recente no topo) para facilitar a visualizacao dos registros mais recentes.
+
+---
+
+## Detalhes tecnicos
+
+### Arquivo: `src/pages/MeuFechamento.tsx`
+
+- Novo estado: `periodFilter` (string, default `'ultimos30'`)
+- Novo `useMemo` para calcular `startDate`/`endDate` com base no filtro
+- Novo `useMemo` para gerar array de todos os dias do intervalo e fazer merge com os fechamentos existentes
+- Novo `useMemo` para calcular totais (soma de realizadas, no_show, agendadas)
+- Adicionar `Select` no `CardHeader` do historico
+- Atualizar `TableHeader` para incluir "No-Show (%)"
+- Adicionar `TableFooter` com linha de totais
+- Importar `eachDayOfInterval`, `startOfWeek`, `startOfMonth`, `subMonths`, `endOfMonth`, `isFuture`, `isAfter`, `isBefore` do `date-fns`
+
+### Arquivo: `src/hooks/useFechamentos.ts`
+
+- Ajustar para aceitar `endDate` como undefined (sem limite superior) no caso de "Todo o Periodo"
 
