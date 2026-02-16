@@ -1,73 +1,101 @@
 
 
-# Social Selling: Popup de Registro, Novo Campo "Formularios" e Grafico Funil
+# Refinamento Visual Premium do Dashboard Comercial
 
-## Resumo das mudancas
+## Escopo
 
-### 1. Novo campo: `formularios_preenchidos`
-
-Um novo campo numerico sera adicionado a tabela `social_selling` no banco de dados, posicionado logicamente entre "Convites Enviados" e "Agendamentos" no funil.
-
-**Migracao SQL:**
-```sql
-ALTER TABLE public.social_selling
-ADD COLUMN formularios_preenchidos integer NOT NULL DEFAULT 0;
-```
-
-### 2. Registro do Dia vira Dialog (popup)
-
-O card "Registro do Dia" sera substituido por um botao na area do PageHeader que abre um Dialog modal. O formulario dentro do dialog tera os mesmos campos atuais + o novo campo "Formularios", com o seletor de data no topo do popup.
-
-### 3. Dashboard superior ganha novo StatCard + taxas atualizadas
-
-O grid de stats passara de 5 para 6 colunas (ou 3x2 em telas menores):
-
-```text
-Conversas | Convites | Formularios | Agendamentos | Conv. Form->Agend | Conv. Conversas->Agend
-```
-
-### 4. Grafico de Funil global
-
-Abaixo do dashboard e acima do historico, sera adicionado um grafico tipo funil usando Recharts (BarChart horizontal ou vertical) mostrando as etapas:
-
-```text
-Conversas Iniciadas -> Convites Enviados -> Formularios Preenchidos -> Agendamentos
-```
-
-O grafico respeitara os filtros de periodo e vendedor selecionados.
-
-### 5. Historico ganha coluna "Formularios"
-
-A tabela de historico recebera uma nova coluna entre "Convites" e "Agendamentos".
+Aplicar a paleta oficial da marca (#000000, #f47a14, #ffffff, #FEAC69, #FFDCB9) ao dashboard, criando uma experiencia dark elegante com hierarquia visual clara e reducao de ruido.
 
 ---
 
-## Detalhes tecnicos
+## 1. Paleta de cores (dark mode)
 
-### Banco de dados
-- Migracao: `ALTER TABLE public.social_selling ADD COLUMN formularios_preenchidos integer NOT NULL DEFAULT 0;`
-- Atualizar CHECK constraint se existente
+### Arquivo: `src/index.css` -- secao `.dark`
 
-### Arquivo: `src/schemas/validation.ts`
-- Adicionar `formularios_preenchidos` ao `socialSellingSchema` com `z.number().int().min(0).max(10_000)`
+Ajustar as variaveis CSS do dark mode para alinhar com a paleta oficial:
 
-### Arquivo: `src/hooks/useSocialSelling.ts`
-- Adicionar `formularios_preenchidos` ao interface `SocialSellingEntry`
-- Adicionar ao `UpsertSocialSellingInput`
-- Adicionar meta diaria ao `SOCIAL_SELLING_GOALS`: `formularios_preenchidos: 20`
+- `--background`: preto puro `0 0% 0%` (#000000)
+- `--card`: preto levemente elevado `0 0% 6%` (~#0F0F0F) -- contraste sutil contra o fundo
+- `--card-foreground`: branco `0 0% 100%`
+- `--foreground`: branco `0 0% 100%`
+- `--primary`: laranja #f47a14 convertido para HSL `27 91% 52%`
+- `--secondary` e `--muted`: preto elevado `0 0% 10%` -- neutro, sem ruido
+- `--muted-foreground`: branco com opacidade simulada `0 0% 55%`
+- `--border`: `0 0% 12%` -- bordas muito discretas
+- `--accent`: `0 0% 14%`
+- `--success`: verde suave e dessaturado `142 50% 40%`
+- `--destructive`: vermelho discreto `0 50% 48%`
+- `--warning`: substituir amarelo vibrante por laranja secundario #FEAC69 -> `30 98% 71%`
+- `--info`: substituir azul vibrante por #FFDCB9 -> `27 100% 87%` (laranja claro)
 
-### Arquivo: `src/pages/SocialSelling.tsx`
-- **Registro do Dia**: Substituir o Card por um `<Dialog>` com botao trigger no PageHeader
-  - Mover todo o formulario (inputs + textarea + botao salvar) para dentro do `<DialogContent>`
-  - Adicionar campo "Formularios" entre Convites e Agendamentos
-  - Manter o seletor de data dentro do dialog
-- **Dashboard**: Adicionar StatCard "Formularios" e atualizar calculo de `totalFormularios`
-- **Funil**: Adicionar componente de grafico funil usando `BarChart` do Recharts com barras horizontais decrescentes representando cada etapa
-- **Historico**: Adicionar coluna "Formularios" na tabela, ajustar colSpan do estado vazio
+Isso elimina verde/azul/amarelo vibrantes, priorizando monocromia com variacoes do laranja.
 
-### Arquivos afetados
-1. Migracao SQL (novo campo)
-2. `src/schemas/validation.ts`
-3. `src/hooks/useSocialSelling.ts`
-4. `src/pages/SocialSelling.tsx`
+---
+
+## 2. RevenueCard -- card dominante premium
+
+### Arquivo: `src/components/dashboard/RevenueCard.tsx`
+
+- Adicionar classe especial ao Card: `border-primary/30` e um box-shadow sutil em laranja (`shadow-[0_0_20px_rgba(244,122,20,0.08)]`)
+- Aumentar padding interno de `p-6` para `p-8`
+- Titulo "Receita Total" com `text-xs uppercase tracking-widest` (label discreto)
+- Valor principal: manter `text-4xl font-bold` mas adicionar `text-primary` para destacar em laranja
+- Separar visualmente titulo/valor/subtexto/barra/breakdown com espacamentos maiores (`mt-2`, `mt-6`, `mt-5`)
+- Barra de distribuicao: substituir cores `bg-success`/`bg-info`/`bg-warning` por variacoes do laranja:
+  - Pix: `bg-[#f47a14]` (laranja principal)
+  - Cartao: `bg-[#FEAC69]` (laranja secundario)
+  - Boleto: `bg-[#FFDCB9]` (laranja claro)
+- Barra: reduzir altura de `h-3` para `h-2` e aumentar border-radius
+- Breakdown: melhorar alinhamento com grid `grid-cols-3` e dots usando as mesmas cores do laranja
+- Remover gap-0.5 entre segmentos da barra para visual mais limpo
+
+---
+
+## 3. StatCard -- cards secundarios elegantes
+
+### Arquivo: `src/components/ui/stat-card.tsx`
+
+- Classe `.stat-card` no CSS: remover `border` visivel, usar `border-border/50` mais sutil
+- Reduzir sombra para quase imperceptivel: `shadow-none hover:shadow-sm`
+- Manter `rounded-xl` consistente
+- Variantes de cor: reduzir saturacao dos backgrounds (de `bg-success/5` para `bg-success/[0.03]`, etc.)
+- Icone: background mais sutil (`bg-muted/50` ao inves de `bg-muted`)
+
+---
+
+## 4. Cards gerais e tipografia
+
+### Arquivo: `src/components/ui/card.tsx`
+
+- Reduzir borda: `border-border/50` ao inves de `border`
+- Sombra: `shadow-none` (dark mode nao precisa de sombra forte)
+
+### Arquivo: `src/components/dashboard/SectionLabel.tsx`
+
+- Adicionar um pequeno indicador laranja antes do titulo: `before:content-[''] before:w-1 before:h-4 before:bg-primary before:rounded-full`
+- Linha divisoria: `bg-border/50` mais sutil
+
+### Arquivo: `src/pages/Dashboard.tsx`
+
+- Cards de destaques (Top Closer Dia, etc.): substituir `bg-primary/10 border-primary/20` por `bg-muted/50 border-border/50` -- visual neutro
+- Manter apenas o Top Closer do Dia com sutil destaque laranja
+- Cards de No-Show: badges de porcentagem com cores mais suaves
+- Ranking: manter medal colors mas reduzir backgrounds para `bg-muted/30`
+
+---
+
+## 5. Regra de hierarquia
+
+A unica metrica com destaque visual forte (cor laranja no valor + borda glow) sera a **Receita Total**. Todos os demais cards terao fundo neutro, bordas discretas e valores em branco. Labels sempre menores e com menor opacidade que os numeros.
+
+---
+
+## Arquivos afetados
+
+1. `src/index.css` -- paleta dark mode
+2. `src/components/dashboard/RevenueCard.tsx` -- card premium dominante
+3. `src/components/ui/stat-card.tsx` -- cards secundarios refinados
+4. `src/components/ui/card.tsx` -- base de card mais limpa
+5. `src/components/dashboard/SectionLabel.tsx` -- indicador visual
+6. `src/pages/Dashboard.tsx` -- ajustes de cor nos destaques
 
