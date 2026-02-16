@@ -1,82 +1,264 @@
 
 
-# Melhorias no Historico de Meu Fechamento
+# Modulo Conteudo -- Novo Menu, Dashboard e Acompanhamento Diario
 
 ## Resumo
 
-Reformular o card de historico para: (1) mostrar No-Show tambem em porcentagem, (2) exibir todos os dias do periodo com "Sem informacao" quando nao houver registro, (3) adicionar linha de totalizacao/somatorio no final, (4) implementar filtros de periodo (Esta Semana, Este Mes, Ultimos 30 Dias, Ultimo Mes, Todo o Periodo).
+Criar uma nova secao "Conteudo" na sidebar, mover paginas existentes do Marketing para la, e implementar duas novas paginas completas: **Dashboard de Conteudo** (KPIs + graficos) e **Acompanhamento Diario** (checklist operacional com template pre-populado). Requer duas novas tabelas no banco de dados, novos tipos, hooks e paginas.
 
 ---
 
-## 1. Filtros de periodo no historico
+## 1. Banco de Dados -- Novas Tabelas e Enums
 
-Adicionar um `Select` no header do card de historico com as opcoes:
+### 1.1 Enums
 
-- **Esta Semana**: segunda-feira da semana atual ate hoje
-- **Este Mes**: dia 1 do mes atual ate hoje
-- **Ultimos 30 Dias**: hoje - 30 dias ate hoje (padrao atual)
-- **Ultimo Mes**: dia 1 ao ultimo dia do mes anterior
-- **Todo o Periodo**: sem filtro de data (busca tudo)
-
-O estado `periodFilter` controla qual intervalo e passado para o hook `useFechamentos`. As datas `startDate` e `endDate` serao calculadas com `useMemo` baseado no filtro selecionado, usando funcoes do `date-fns` (`startOfWeek`, `startOfMonth`, `subMonths`, `endOfMonth`).
-
----
-
-## 2. Preencher todos os dias do periodo
-
-Apos receber os dados do hook, gerar um array com **todos os dias** entre `startDate` e `endDate` usando `eachDayOfInterval` do `date-fns`. Para cada dia:
-
-- Se existe um fechamento registrado: exibir os dados normais
-- Se nao existe: exibir a linha com "Sem informacao" em texto cinza (`text-muted-foreground`) nas colunas de dados
-
-Dias futuros nao serao incluidos (limitar ao dia atual).
-
----
-
-## 3. Coluna de No-Show com porcentagem
-
-Alterar a celula de No-Show para exibir o valor absoluto seguido da porcentagem entre parenteses:
-
-```
-3 (25%)
+```sql
+CREATE TYPE public.content_item_type AS ENUM ('reels', 'feed', 'stories', 'youtube', 'other');
+CREATE TYPE public.content_item_status AS ENUM ('pendente', 'feito', 'agendado');
+CREATE TYPE public.content_item_platform AS ENUM ('instagram', 'tiktok', 'youtube', 'other');
 ```
 
-A porcentagem e calculada como: `no_show / calls_agendadas * 100`. Quando `calls_agendadas` for 0, exibir apenas "0".
+### 1.2 Tabela `content_daily_logs`
+
+Registro diario agregado de metricas de conteudo. Uma linha por dia.
+
+```sql
+CREATE TABLE public.content_daily_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  date date NOT NULL,
+  responsible_user_id uuid NOT NULL,
+  followers_gained integer NOT NULL DEFAULT 0,
+  posts_published_count integer NOT NULL DEFAULT 0,
+  posts_scheduled_count integer NOT NULL DEFAULT 0,
+  stories_done_count integer NOT NULL DEFAULT 0,
+  youtube_videos_published_count integer NOT NULL DEFAULT 0,
+  notes text DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(date)
+);
+
+ALTER TABLE public.content_daily_logs ENABLE ROW LEVEL SECURITY;
+```
+
+RLS:
+- SELECT: todos autenticados
+- INSERT/UPDATE: apenas roles MASTER, DIRETORIA, GESTOR_COMERCIAL (gestores) -- usando `can_access_admin_panel()`
+- DELETE: apenas MASTER
+
+### 1.3 Tabela `content_post_items`
+
+Itens granulares do checklist diario.
+
+```sql
+CREATE TABLE public.content_post_items (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  date date NOT NULL,
+  type content_item_type NOT NULL DEFAULT 'other',
+  label text NOT NULL DEFAULT '',
+  status content_item_status NOT NULL DEFAULT 'pendente',
+  platform content_item_platform NOT NULL DEFAULT 'instagram',
+  is_required boolean NOT NULL DEFAULT false,
+  created_by uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.content_post_items ENABLE ROW LEVEL SECURITY;
+```
+
+RLS:
+- SELECT: todos autenticados
+- INSERT/UPDATE: gestores (can_access_admin_panel())
+- DELETE: gestores
+
+### 1.4 Trigger para updated_at
+
+Reutilizar a funcao `update_updated_at_column()` existente, criando triggers para ambas as tabelas.
 
 ---
 
-## 4. Linha de somatorio (totais)
+## 2. Sidebar -- Reorganizacao
 
-Adicionar um `TableFooter` com uma linha de totais que soma:
+### Arquivo: `src/components/layout/AppSidebar.tsx`
 
-- **Realizadas**: soma de todas as `calls_realizadas` do periodo
-- **No-Show**: soma de todos os `no_show` + porcentagem geral
-- **Agendadas**: soma de todas as `calls_agendadas`
+Reorganizar `navGroups` para ter 3 grupos:
 
-A linha tera fundo diferenciado (`bg-muted/30 font-bold`) e o label "Total" na primeira coluna.
+**Comercial** (sem mudanca):
+- Dashboard `/`
+- Vendas `/vendas`
+- Meu Fechamento `/meu-fechamento`
+- Meta OTE `/meta-ote`
+- Social Selling `/social-selling`
+
+**Conteudo** (novo grupo, absorve itens do Marketing):
+- Dashboard de Conteudo `/conteudo/dashboard` (NOVO)
+- Acompanhamento Diario `/conteudo/acompanhamento` (NOVO)
+- Controle de Conteudos `/conteudo/controle` (movido de `/marketing/conteudos`)
+- Gerador Twitter `/conteudo/twitter` (movido de `/marketing/twitter`)
+- Agentes IA `/conteudo/ai` (movido de `/marketing/ai`)
+
+**Marketing** (reduzido):
+- Dashboard `/marketing/dashboard` (permanece)
+
+Icones minimalistas: `BarChart3`, `CalendarCheck`, `FileText`, `PenTool`, `Sparkles`.
 
 ---
 
-## 5. Ordenacao
+## 3. Rotas -- App.tsx
 
-Manter a ordenacao decrescente (dia mais recente no topo) para facilitar a visualizacao dos registros mais recentes.
+### Arquivo: `src/App.tsx`
+
+- Adicionar imports das novas paginas
+- Adicionar rotas `/conteudo/dashboard`, `/conteudo/acompanhamento`
+- Adicionar redirects das rotas antigas `/marketing/conteudos` -> `/conteudo/controle`, `/marketing/twitter` -> `/conteudo/twitter`, `/marketing/ai/*` -> `/conteudo/ai/*`
+- Mover rotas existentes para novos paths
 
 ---
 
-## Detalhes tecnicos
+## 4. Tipos TypeScript
 
-### Arquivo: `src/pages/MeuFechamento.tsx`
+### Novo arquivo: `src/types/content.ts`
 
-- Novo estado: `periodFilter` (string, default `'ultimos30'`)
-- Novo `useMemo` para calcular `startDate`/`endDate` com base no filtro
-- Novo `useMemo` para gerar array de todos os dias do intervalo e fazer merge com os fechamentos existentes
-- Novo `useMemo` para calcular totais (soma de realizadas, no_show, agendadas)
-- Adicionar `Select` no `CardHeader` do historico
-- Atualizar `TableHeader` para incluir "No-Show (%)"
-- Adicionar `TableFooter` com linha de totais
-- Importar `eachDayOfInterval`, `startOfWeek`, `startOfMonth`, `subMonths`, `endOfMonth`, `isFuture`, `isAfter`, `isBefore` do `date-fns`
+```typescript
+export type ContentItemType = 'reels' | 'feed' | 'stories' | 'youtube' | 'other';
+export type ContentItemStatus = 'pendente' | 'feito' | 'agendado';
+export type ContentItemPlatform = 'instagram' | 'tiktok' | 'youtube' | 'other';
 
-### Arquivo: `src/hooks/useFechamentos.ts`
+export interface ContentDailyLog {
+  id: string;
+  date: string;
+  responsible_user_id: string;
+  followers_gained: number;
+  posts_published_count: number;
+  posts_scheduled_count: number;
+  stories_done_count: number;
+  youtube_videos_published_count: number;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
 
-- Ajustar para aceitar `endDate` como undefined (sem limite superior) no caso de "Todo o Periodo"
+export interface ContentPostItem {
+  id: string;
+  date: string;
+  type: ContentItemType;
+  label: string;
+  status: ContentItemStatus;
+  platform: ContentItemPlatform;
+  is_required: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+Incluir tambem constantes para labels em portugues e o template de itens obrigatorios diarios.
+
+---
+
+## 5. Hooks
+
+### Novo arquivo: `src/hooks/useContentTracking.ts`
+
+- `useContentDailyLogs(startDate, endDate)` -- busca logs diarios
+- `useUpsertContentDailyLog()` -- insert/update log
+- `useContentPostItems(date)` -- busca itens de um dia
+- `useCreateContentPostItem()` -- cria item
+- `useUpdateContentPostItem()` -- atualiza status/label
+- `useDeleteContentPostItem()` -- remove item adicional
+- `useAutoGenerateRequiredItems(date, userId)` -- gera itens obrigatorios para um dia se ainda nao existem
+
+Todos os hooks usam `supabase.from('content_daily_logs' as any)` e `supabase.from('content_post_items' as any)` para contornar tipagem ate a regeneracao automatica.
+
+---
+
+## 6. Pagina: Dashboard de Conteudo
+
+### Novo arquivo: `src/pages/ConteudoDashboard.tsx`
+
+**Layout de cima para baixo:**
+
+1. **Header + Filtros**: Titulo "Dashboard de Conteudo", subtitulo, e botoes de periodo (7D, 30D, Mes, Personalizado) no estilo laranja ja usado no Marketing Dashboard
+2. **KPI Cards** (grid 3x2):
+   - Publicacoes no mes
+   - Seguidores ganhos
+   - Publicacoes agendadas
+   - Stories realizados
+   - Meta de publicacoes (6/dia com media e % da meta)
+   - Videos no YouTube publicados
+3. **Grafico de Crescimento** (Recharts LineChart, largura total) -- "Crescimento de Seguidores"
+4. **Graficos lado a lado** (grid 2 colunas):
+   - "Publicacoes por dia" (BarChart)
+   - "Stories por dia" (BarChart)
+5. **Lista compacta** (opcional) -- ultimas entradas do log
+
+Metricas calculadas via aggregacao dos `content_daily_logs` no periodo selecionado.
+
+---
+
+## 7. Pagina: Acompanhamento Diario
+
+### Novo arquivo: `src/pages/ConteudoAcompanhamento.tsx`
+
+**Layout de cima para baixo:**
+
+1. **Header**: Titulo "Acompanhamento Diario", subtitulo, seletor de data (default hoje), botao "Adicionar conteudo" (laranja)
+2. **Contadores resumo** (linha horizontal compacta): Posts feitos hoje, Stories feitos hoje, YouTube hoje, Agendados hoje
+3. **Secao "Obrigatorios do dia"**: Card com os itens do template pre-populados. Cada linha:
+   - Badge de tipo (Reels/Feed/Stories/YouTube)
+   - Label editavel
+   - Tag de plataforma
+   - Toggle de status (Pendente -> Feito -> Agendado) com cores
+   - Indicador "Obrigatorio"
+4. **Secao "Conteudo adicional"**: Mesmo estilo, com botao "Adicionar item" que abre um form inline ou modal simples
+5. **Campos de metricas manuais**: Seguidores ganhos, notas do dia -- salvos no `content_daily_logs`
+
+**Template obrigatorio diario** (auto-gerado):
+- Perfil Leonardo Ames:
+  - Post 1 (Reels): Corte do podcast -- Autoridade/viral
+  - Post 2 (Reels): Viral
+  - Post 3 (Feed estatico ou carrossel): Frase estilo Twitter -- Viral/Educativo
+  - Post 4 (Reels): Documentario dia a dia do e-comm (bastidores)
+  - Post 5 (Feed estatico ou carrossel): Frase estilo Twitter -- Viral/Educativo
+  - Stories: Min 10x/dia (Lifestyle + e-commerce)
+- Perfil W3 Educacao:
+  - Post dia par: Generico
+  - Post dia impar: Depoimento (cliente ou Leo)
+
+**Permissoes**: Gestores/Admin podem editar. Outros visualizam em modo somente leitura (campos desabilitados visualmente).
+
+---
+
+## 8. Permissoes
+
+- Leitura (SELECT) em ambas as tabelas: todos autenticados
+- Escrita (INSERT/UPDATE/DELETE): apenas MASTER, DIRETORIA, GESTOR_COMERCIAL via `can_access_admin_panel()`
+- No frontend: hook `useCanAccessAdminPanel()` controla se campos sao editaveis ou read-only
+
+---
+
+## 9. Arquivos Afetados (Resumo)
+
+| Acao | Arquivo |
+|------|---------|
+| Migracao SQL | `supabase/migrations/...` (enums + 2 tabelas + RLS + triggers) |
+| Novo tipo | `src/types/content.ts` |
+| Novo hook | `src/hooks/useContentTracking.ts` |
+| Nova pagina | `src/pages/ConteudoDashboard.tsx` |
+| Nova pagina | `src/pages/ConteudoAcompanhamento.tsx` |
+| Editar sidebar | `src/components/layout/AppSidebar.tsx` |
+| Editar rotas | `src/App.tsx` |
+
+---
+
+## 10. Sequencia de Implementacao
+
+1. Migracao SQL (tabelas, enums, RLS, triggers)
+2. Tipos TypeScript (`src/types/content.ts`)
+3. Hooks de dados (`src/hooks/useContentTracking.ts`)
+4. Sidebar reorganizada (`AppSidebar.tsx`)
+5. Rotas atualizadas (`App.tsx`)
+6. Pagina Dashboard de Conteudo (`ConteudoDashboard.tsx`)
+7. Pagina Acompanhamento Diario (`ConteudoAcompanhamento.tsx`)
 
