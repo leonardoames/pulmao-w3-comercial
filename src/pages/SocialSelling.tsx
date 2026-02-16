@@ -10,16 +10,18 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { StatCard } from '@/components/ui/stat-card';
 import { useSocialSellingEntry, useSocialSellingEntries, useUpsertSocialSelling, SOCIAL_SELLING_GOALS } from '@/hooks/useSocialSelling';
 import { useSocialSellers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useCanEditAnyFechamento, useIsSocialSelling } from '@/hooks/useUserRoles';
 import { DateFilter, getDateRange, DateRange } from '@/hooks/useDashboard';
-import { CalendarIcon, Save, MessageCircle, Link2, CalendarCheck, ArrowRightLeft, TrendingUp } from 'lucide-react';
-import { format, differenceInCalendarDays } from 'date-fns';
+import { CalendarIcon, Save, MessageCircle, Link2, CalendarCheck, ArrowRightLeft, TrendingUp, Plus, FileText } from 'lucide-react';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const DATE_FILTERS: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -30,6 +32,8 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
   { value: 'custom', label: 'Personalizado' },
 ];
 
+const FUNNEL_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+
 export default function SocialSellingPage() {
   const { profile } = useAuth();
   const { data: socialSellers } = useSocialSellers();
@@ -39,6 +43,7 @@ export default function SocialSellingPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedSellerId, setSelectedSellerId] = useState<string>('__all__');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Filters
   const [dateFilter, setDateFilter] = useState<DateFilter>('month');
@@ -46,7 +51,6 @@ export default function SocialSellingPage() {
   const [customStartOpen, setCustomStartOpen] = useState(false);
   const [customEndOpen, setCustomEndOpen] = useState(false);
 
-  // For SOCIAL_SELLING users, always lock to their own id
   useEffect(() => {
     if (isSocialSelling && profile?.id) {
       setSelectedSellerId(profile.id);
@@ -60,7 +64,6 @@ export default function SocialSellingPage() {
 
   const filterRange = useMemo(() => getDateRange(dateFilter, customRange), [dateFilter, customRange]);
 
-  // Entries for the selected seller (or all if __all__ for master)
   const { data: entries } = useSocialSellingEntries({
     closer_id: isAllSelected ? undefined : selectedSellerId,
     startDate: filterRange.start,
@@ -72,6 +75,7 @@ export default function SocialSellingPage() {
   // Form state
   const [conversas, setConversas] = useState(0);
   const [convites, setConvites] = useState(0);
+  const [formularios, setFormularios] = useState(0);
   const [agendamentos, setAgendamentos] = useState(0);
   const [observacoes, setObservacoes] = useState('');
 
@@ -79,11 +83,13 @@ export default function SocialSellingPage() {
     if (entry) {
       setConversas(entry.conversas_iniciadas);
       setConvites(entry.convites_enviados);
+      setFormularios(entry.formularios_preenchidos);
       setAgendamentos(entry.agendamentos);
       setObservacoes(entry.observacoes || '');
     } else {
       setConversas(0);
       setConvites(0);
+      setFormularios(0);
       setAgendamentos(0);
       setObservacoes('');
     }
@@ -96,17 +102,27 @@ export default function SocialSellingPage() {
       closer_user_id: activeSellerId,
       conversas_iniciadas: Math.max(0, Math.floor(conversas)),
       convites_enviados: Math.max(0, Math.floor(convites)),
+      formularios_preenchidos: Math.max(0, Math.floor(formularios)),
       agendamentos: Math.max(0, Math.floor(agendamentos)),
       observacoes: observacoes.trim() || undefined,
     });
+    setDialogOpen(false);
   };
 
   // Stats
   const totalConversas = entries?.reduce((s, e) => s + e.conversas_iniciadas, 0) || 0;
   const totalConvites = entries?.reduce((s, e) => s + e.convites_enviados, 0) || 0;
+  const totalFormularios = entries?.reduce((s, e) => s + e.formularios_preenchidos, 0) || 0;
   const totalAgendamentos = entries?.reduce((s, e) => s + e.agendamentos, 0) || 0;
-  const convConvitesAgend = totalConvites > 0 ? ((totalAgendamentos / totalConvites) * 100).toFixed(1) + '%' : '—';
+  const convFormAgend = totalFormularios > 0 ? ((totalAgendamentos / totalFormularios) * 100).toFixed(1) + '%' : '—';
   const convConversasAgend = totalConversas > 0 ? ((totalAgendamentos / totalConversas) * 100).toFixed(1) + '%' : '—';
+
+  const funnelData = [
+    { name: 'Conversas', value: totalConversas },
+    { name: 'Convites', value: totalConvites },
+    { name: 'Formulários', value: totalFormularios },
+    { name: 'Agendamentos', value: totalAgendamentos },
+  ];
 
   const showSellerFilter = canManage && socialSellers && socialSellers.length > 0;
 
@@ -116,19 +132,79 @@ export default function SocialSellingPage() {
         title="Social Selling"
         description="Registre e acompanhe suas métricas diárias de social selling"
       >
-        {showSellerFilter && (
-          <Select value={selectedSellerId} onValueChange={setSelectedSellerId}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue placeholder="Todos os Social Sellers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos os Social Sellers</SelectItem>
-              {socialSellers.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-3">
+          {showSellerFilter && (
+            <Select value={selectedSellerId} onValueChange={setSelectedSellerId}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Todos os Social Sellers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos os Social Sellers</SelectItem>
+                {socialSellers.map(s => (
+                  <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2"><Plus className="h-4 w-4" /> Registro do Dia</Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between">
+                  <span>Registro do Dia</span>
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <CalendarIcon className="h-4 w-4" />
+                        {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar mode="single" selected={selectedDate} onSelect={d => { if (d) { setSelectedDate(d); setCalendarOpen(false); } }} locale={ptBR} disabled={d => d > new Date()} />
+                    </PopoverContent>
+                  </Popover>
+                </DialogTitle>
+              </DialogHeader>
+              {isLoading ? (
+                <p className="text-muted-foreground text-center py-8">Carregando...</p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="conversas" className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> Conversas</Label>
+                      <Input id="conversas" type="number" min="0" value={conversas} onChange={e => setConversas(Number(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.conversas_iniciadas}/dia</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="convites" className="flex items-center gap-1"><Link2 className="h-3.5 w-3.5" /> Convites</Label>
+                      <Input id="convites" type="number" min="0" value={convites} onChange={e => setConvites(Number(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.convites_enviados}/dia</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="formularios" className="flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> Formulários</Label>
+                      <Input id="formularios" type="number" min="0" value={formularios} onChange={e => setFormularios(Number(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.formularios_preenchidos}/dia</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="agendamentos" className="flex items-center gap-1"><CalendarCheck className="h-3.5 w-3.5" /> Agendamentos</Label>
+                      <Input id="agendamentos" type="number" min="0" value={agendamentos} onChange={e => setAgendamentos(Number(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.agendamentos}/dia</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="obs-ss">Observações</Label>
+                    <Textarea id="obs-ss" value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} placeholder="Alguma observação..." />
+                  </div>
+                  <Button onClick={handleSave} className="w-full gap-2" disabled={upsertMutation.isPending}>
+                    <Save className="h-4 w-4" /> Salvar
+                  </Button>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </PageHeader>
 
       {/* Date Filters */}
@@ -168,88 +244,39 @@ export default function SocialSellingPage() {
         )}
       </div>
 
-      {/* A) Dashboard do Período */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-        <StatCard
-          title="Conversas Iniciadas"
-          value={totalConversas.toLocaleString('pt-BR')}
-          icon={<MessageCircle className="h-5 w-5" />}
-        />
-        <StatCard
-          title="Convites Enviados"
-          value={totalConvites.toLocaleString('pt-BR')}
-          icon={<Link2 className="h-5 w-5" />}
-        />
-        <StatCard
-          title="Agendamentos"
-          value={totalAgendamentos.toLocaleString('pt-BR')}
-          icon={<CalendarCheck className="h-5 w-5" />}
-        />
-        <StatCard
-          title="Convites → Agend."
-          value={convConvitesAgend}
-          icon={<ArrowRightLeft className="h-5 w-5" />}
-        />
-        <StatCard
-          title="Conversas → Agend."
-          value={convConversasAgend}
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
+      {/* Dashboard */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <StatCard title="Conversas Iniciadas" value={totalConversas.toLocaleString('pt-BR')} icon={<MessageCircle className="h-5 w-5" />} />
+        <StatCard title="Convites Enviados" value={totalConvites.toLocaleString('pt-BR')} icon={<Link2 className="h-5 w-5" />} />
+        <StatCard title="Formulários" value={totalFormularios.toLocaleString('pt-BR')} icon={<FileText className="h-5 w-5" />} />
+        <StatCard title="Agendamentos" value={totalAgendamentos.toLocaleString('pt-BR')} icon={<CalendarCheck className="h-5 w-5" />} />
+        <StatCard title="Form → Agend." value={convFormAgend} icon={<ArrowRightLeft className="h-5 w-5" />} />
+        <StatCard title="Conversas → Agend." value={convConversasAgend} icon={<TrendingUp className="h-5 w-5" />} />
       </div>
 
-      {/* B) Registro do Dia */}
+      {/* Funnel Chart */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Registro do Dia</span>
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <CalendarIcon className="h-4 w-4" />
-                  {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar mode="single" selected={selectedDate} onSelect={d => { if (d) { setSelectedDate(d); setCalendarOpen(false); } }} locale={ptBR} disabled={d => d > new Date()} />
-              </PopoverContent>
-            </Popover>
-          </CardTitle>
+          <CardTitle>Funil de Conversão</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
-          {isLoading ? (
-            <p className="text-muted-foreground text-center py-8">Carregando...</p>
-          ) : (
-            <>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="conversas" className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> Conversas</Label>
-                  <Input id="conversas" type="number" min="0" value={conversas} onChange={e => setConversas(Number(e.target.value) || 0)} />
-                  <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.conversas_iniciadas}/dia</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="convites" className="flex items-center gap-1"><Link2 className="h-3.5 w-3.5" /> Convites</Label>
-                  <Input id="convites" type="number" min="0" value={convites} onChange={e => setConvites(Number(e.target.value) || 0)} />
-                  <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.convites_enviados}/dia</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="agendamentos" className="flex items-center gap-1"><CalendarCheck className="h-3.5 w-3.5" /> Agendamentos</Label>
-                  <Input id="agendamentos" type="number" min="0" value={agendamentos} onChange={e => setAgendamentos(Number(e.target.value) || 0)} />
-                  <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.agendamentos}/dia</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="obs-ss">Observações</Label>
-                <Textarea id="obs-ss" value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} placeholder="Alguma observação..." />
-              </div>
-              <Button onClick={handleSave} className="w-full gap-2" disabled={upsertMutation.isPending}>
-                <Save className="h-4 w-4" /> Salvar
-              </Button>
-            </>
-          )}
+        <CardContent>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={funnelData} layout="vertical" margin={{ left: 20, right: 30 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="name" width={100} />
+              <Tooltip formatter={(v: number) => v.toLocaleString('pt-BR')} />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                {funnelData.map((_, i) => (
+                  <Cell key={i} fill={FUNNEL_COLORS[i]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* C) Histórico */}
+      {/* Histórico */}
       <Card>
         <CardHeader>
           <CardTitle>Histórico</CardTitle>
@@ -261,6 +288,7 @@ export default function SocialSellingPage() {
                 <TableHead>Data</TableHead>
                 <TableHead className="text-center">Conversas</TableHead>
                 <TableHead className="text-center">Convites</TableHead>
+                <TableHead className="text-center">Formulários</TableHead>
                 <TableHead className="text-center">Agendamentos</TableHead>
                 <TableHead>Observações</TableHead>
               </TableRow>
@@ -268,18 +296,19 @@ export default function SocialSellingPage() {
             <TableBody>
               {!entries?.length ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhum registro encontrado</TableCell>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registro encontrado</TableCell>
                 </TableRow>
               ) : (
                 entries.map(e => (
                   <TableRow
                     key={e.id}
                     className={cn('cursor-pointer hover:bg-muted/50', e.data === dateStr && 'bg-primary/10')}
-                    onClick={() => setSelectedDate(new Date(e.data + 'T12:00:00'))}
+                    onClick={() => { setSelectedDate(new Date(e.data + 'T12:00:00')); setDialogOpen(true); }}
                   >
                     <TableCell className="font-medium">{format(new Date(e.data + 'T12:00:00'), 'dd/MM')}</TableCell>
                     <TableCell className="text-center">{e.conversas_iniciadas}</TableCell>
                     <TableCell className="text-center">{e.convites_enviados}</TableCell>
+                    <TableCell className="text-center">{e.formularios_preenchidos}</TableCell>
                     <TableCell className="text-center">{e.agendamentos}</TableCell>
                     <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">{e.observacoes || '—'}</TableCell>
                   </TableRow>

@@ -424,6 +424,7 @@ export type Database = {
           convites_enviados: number
           criado_em: string
           data: string
+          formularios_preenchidos: number
           id: string
           observacoes: string | null
         }
@@ -435,6 +436,7 @@ export type Database = {
           convites_enviados?: number
           criado_em?: string
           data: string
+          formularios_preenchidos?: number
           id?: string
           observacoes?: string | null
         }
@@ -446,6 +448,7 @@ export type Database = {
           convites_enviados?: number
           criado_em?: string
           data?: string
+          formularios_preenchidos?: number
           id?: string
           observacoes?: string | null
         }

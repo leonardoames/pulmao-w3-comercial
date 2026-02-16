@@ -45,6 +45,7 @@ export const socialSellingSchema = z.object({
   closer_user_id: z.string().uuid('ID do closer inválido'),
   conversas_iniciadas: z.number().int().min(0, 'Valor não pode ser negativo').max(10_000),
   convites_enviados: z.number().int().min(0, 'Valor não pode ser negativo').max(10_000),
+  formularios_preenchidos: z.number().int().min(0, 'Valor não pode ser negativo').max(10_000),
   agendamentos: z.number().int().min(0, 'Valor não pode ser negativo').max(10_000),
   observacoes: z.string().max(2000, 'Observações muito longas').optional().nullable(),
 });

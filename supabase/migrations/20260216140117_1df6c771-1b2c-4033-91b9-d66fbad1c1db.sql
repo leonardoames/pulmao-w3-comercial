@@ -1,0 +1,1 @@
+ALTER TABLE public.social_selling ADD COLUMN formularios_preenchidos integer NOT NULL DEFAULT 0;

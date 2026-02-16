@@ -9,6 +9,7 @@ export interface SocialSellingEntry {
   closer_user_id: string;
   conversas_iniciadas: number;
   convites_enviados: number;
+  formularios_preenchidos: number;
   agendamentos: number;
   observacoes: string | null;
   criado_em: string;
@@ -73,6 +74,7 @@ interface UpsertSocialSellingInput {
   closer_user_id: string;
   conversas_iniciadas: number;
   convites_enviados: number;
+  formularios_preenchidos: number;
   agendamentos: number;
   observacoes?: string;
 }
@@ -107,5 +109,6 @@ export function useUpsertSocialSelling() {
 export const SOCIAL_SELLING_GOALS = {
   conversas_iniciadas: 100,
   convites_enviados: 30,
+  formularios_preenchidos: 20,
   agendamentos: 10,
 } as const;
