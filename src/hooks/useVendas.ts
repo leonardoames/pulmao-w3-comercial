@@ -53,6 +53,8 @@ interface CreateVendaInput {
   quantidade_parcelas_boleto: number;
   pago?: boolean;
   contrato_assinado?: boolean;
+  enviado_financeiro?: boolean;
+  enviado_cs?: boolean;
   observacoes?: string;
 }
 
@@ -100,6 +102,8 @@ interface UpdateVendaInput {
   quantidade_parcelas_boleto?: number;
   pago?: boolean;
   contrato_assinado?: boolean;
+  enviado_financeiro?: boolean;
+  enviado_cs?: boolean;
   status?: VendaStatus;
   observacoes?: string;
 }

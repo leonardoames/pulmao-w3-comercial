@@ -12,6 +12,8 @@ export const vendaSchema = z.object({
   quantidade_parcelas_boleto: z.number().int().min(0).max(120),
   pago: z.boolean().optional(),
   contrato_assinado: z.boolean().optional(),
+  enviado_financeiro: z.boolean().optional(),
+  enviado_cs: z.boolean().optional(),
   observacoes: z.string().max(2000, 'Observações muito longas').optional().nullable(),
 });
 

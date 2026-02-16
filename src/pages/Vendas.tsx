@@ -15,7 +15,8 @@ import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento } from '@/hooks/useUserRoles';
 import { Venda } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -125,6 +126,8 @@ export default function VendasPage() {
       quantidade_parcelas_boleto: qtdParcelas,
       pago: formData.get('pago') === 'on',
       contrato_assinado: formData.get('contrato_assinado') === 'on',
+      enviado_financeiro: formData.get('enviado_financeiro') === 'on',
+      enviado_cs: formData.get('enviado_cs') === 'on',
       observacoes: observacoesRaw || undefined,
     };
 
@@ -317,7 +320,7 @@ export default function VendasPage() {
                   )}
                 </div>
 
-                <div className="flex gap-6">
+                <div className="flex flex-wrap gap-6">
                   <div className="flex items-center gap-2">
                     <Checkbox 
                       id="pago" 
@@ -333,6 +336,22 @@ export default function VendasPage() {
                       defaultChecked={editingVenda?.contrato_assinado}
                     />
                     <Label htmlFor="contrato_assinado">Contrato Assinado</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="enviado_financeiro" 
+                      name="enviado_financeiro"
+                      defaultChecked={editingVenda?.enviado_financeiro}
+                    />
+                    <Label htmlFor="enviado_financeiro">Enviado ao Financeiro</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="enviado_cs" 
+                      name="enviado_cs"
+                      defaultChecked={editingVenda?.enviado_cs}
+                    />
+                    <Label htmlFor="enviado_cs">Enviado ao CS</Label>
                   </div>
                 </div>
 
@@ -487,18 +506,50 @@ export default function VendasPage() {
                       </TableCell>
                       <TableCell>{(venda.closer as any)?.nome}</TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          {venda.pago && (
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-success/20 text-success" title="Pago">
-                              <Check className="h-3 w-3" />
-                            </span>
-                          )}
-                          {venda.contrato_assinado && (
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary" title="Contrato Assinado">
-                              <Edit2 className="h-3 w-3" />
-                            </span>
-                          )}
-                        </div>
+                        <TooltipProvider>
+                          <div className="flex gap-1">
+                            {venda.pago && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-success/20 text-success">
+                                    <Check className="h-3 w-3" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Pago</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {venda.contrato_assinado && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary">
+                                    <Edit2 className="h-3 w-3" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Contrato Assinado</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {venda.enviado_financeiro && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-warning/20 text-warning">
+                                    <Landmark className="h-3 w-3" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Enviado ao Financeiro</TooltipContent>
+                              </Tooltip>
+                            )}
+                            {venda.enviado_cs && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-info/20 text-info">
+                                    <Headphones className="h-3 w-3" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Enviado ao CS</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </TooltipProvider>
                       </TableCell>
                       {canEdit && (
                         <TableCell>
