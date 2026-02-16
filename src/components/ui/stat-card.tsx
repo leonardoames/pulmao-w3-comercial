@@ -26,10 +26,10 @@ export function StatCard({
   return (
     <div className={cn(
       'stat-card animate-fade-in',
-      variant === 'primary' && 'border-primary/20 bg-primary/5',
-      variant === 'success' && 'border-success/20 bg-success/5',
-      variant === 'warning' && 'border-warning/20 bg-warning/5',
-      variant === 'destructive' && 'border-destructive/20 bg-destructive/5',
+      variant === 'primary' && 'border-primary/15 bg-primary/[0.03]',
+      variant === 'success' && 'border-success/15 bg-success/[0.03]',
+      variant === 'warning' && 'border-warning/15 bg-warning/[0.03]',
+      variant === 'destructive' && 'border-destructive/15 bg-destructive/[0.03]',
       className
     )}>
       <div className="flex items-start justify-between">
@@ -52,7 +52,7 @@ export function StatCard({
         {icon && (
           <div className={cn(
             'p-3 rounded-lg',
-            variant === 'default' && 'bg-muted',
+            variant === 'default' && 'bg-muted/50',
             variant === 'primary' && 'bg-primary/10 text-primary',
             variant === 'success' && 'bg-success/10 text-success',
             variant === 'warning' && 'bg-warning/10 text-warning',

@@ -211,7 +211,7 @@ export default function DashboardPage() {
                 {rankings.rankingGeral.map((closer, index) => (
                   <div
                     key={closer.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
                   >
                     <div className="flex items-center gap-3">
                       <div className={cn(
@@ -259,8 +259,8 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-primary/[0.06] border border-primary/20">
                   <p className="text-sm text-muted-foreground mb-1">Top Closer do Dia</p>
                   <p className="font-bold text-lg">{rankings?.topCloserDia?.nome || '-'}</p>
                   {rankings?.topCloserDia && (
@@ -269,29 +269,29 @@ export default function DashboardPage() {
                     </p>
                   )}
                 </div>
-                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
                   <p className="text-sm text-muted-foreground mb-1">Top Closer da Semana</p>
                   <p className="font-bold text-lg">{rankings?.topCloserSemana?.nome || '-'}</p>
                   {rankings?.topCloserSemana && (
-                    <p className="text-sm text-primary font-medium">
+                    <p className="text-sm text-muted-foreground font-medium">
                       {formatCurrency(rankings.topCloserSemana.volume)}
                     </p>
                   )}
                 </div>
-                <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
                   <p className="text-sm text-muted-foreground mb-1">Top Conversão</p>
                   <p className="font-bold text-lg">{rankings?.topConversao?.nome || '-'}</p>
                   {rankings?.topConversao && (
-                    <p className="text-sm text-success font-medium">
+                    <p className="text-sm text-muted-foreground font-medium">
                       {rankings.topConversao.taxaConversao.toFixed(1)}%
                     </p>
                   )}
                 </div>
-                <div className="p-4 rounded-lg bg-info/10 border border-info/20">
+                <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
                   <p className="text-sm text-muted-foreground mb-1">Menor No-Show</p>
                   <p className="font-bold text-lg">{rankings?.menorNoShow?.nome || '-'}</p>
                   {rankings?.menorNoShow && (
-                    <p className="text-sm text-info font-medium">
+                    <p className="text-sm text-muted-foreground font-medium">
                       {rankings.menorNoShow.percentNoShow.toFixed(1)}%
                     </p>
                   )}
@@ -313,7 +313,7 @@ export default function DashboardPage() {
                   {noShowByCloser.map((closer) => (
                     <div
                       key={closer.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
+                      className="flex items-center justify-between p-4 rounded-lg bg-muted/30"
                     >
                       <div>
                         <p className="font-medium">{closer.nome}</p>
