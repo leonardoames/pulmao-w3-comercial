@@ -101,51 +101,51 @@ img.emoji {
   }
 
   .dark {
-    --background: 20 14% 6%;
-    --foreground: 30 20% 98%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 20 14% 9%;
-    --card-foreground: 30 20% 98%;
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 20 14% 9%;
-    --popover-foreground: 30 20% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 24 95% 55%;
+    --primary: 27 91% 52%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 20 14% 15%;
-    --secondary-foreground: 30 20% 98%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 20 14% 15%;
-    --muted-foreground: 30 10% 60%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 20 14% 18%;
-    --accent-foreground: 24 95% 60%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 27 91% 60%;
 
-    --destructive: 0 62% 50%;
+    --destructive: 0 50% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 42%;
+    --success: 142 50% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 55%;
+    --warning: 30 98% 71%;
     --warning-foreground: 0 0% 0%;
 
-    --info: 199 89% 55%;
+    --info: 27 100% 87%;
     --info-foreground: 0 0% 0%;
 
-    --border: 20 14% 18%;
-    --input: 20 14% 18%;
-    --ring: 24 95% 55%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 27 91% 52%;
 
-    --sidebar-background: 20 14% 6%;
-    --sidebar-foreground: 30 20% 98%;
-    --sidebar-primary: 24 95% 55%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 27 91% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 20 14% 12%;
-    --sidebar-accent-foreground: 30 20% 98%;
-    --sidebar-border: 20 14% 12%;
-    --sidebar-ring: 24 95% 55%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 27 91% 52%;
     --font-sans: Montserrat, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 }
@@ -167,7 +167,7 @@ img.emoji {
   }
 
   .stat-card {
-    @apply bg-card rounded-xl border border-border p-6 shadow-sm transition-all hover:shadow-md;
+    @apply bg-card rounded-xl border border-border/50 p-6 shadow-none transition-all hover:shadow-sm;
   }
 
   /* TV Mode styles */

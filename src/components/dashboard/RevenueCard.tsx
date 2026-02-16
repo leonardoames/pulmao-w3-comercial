@@ -28,30 +28,30 @@ export function RevenueCard({
   const pctBoleto = (valorBoleto / total) * 100;
 
   const segments = [
-    { label: 'Pix', value: valorPix, pct: pctPix, color: 'bg-success', dot: 'bg-success' },
-    { label: 'Cartão', value: valorCartao, pct: pctCartao, color: 'bg-info', dot: 'bg-info' },
-    { label: 'Boleto', value: valorBoleto, pct: pctBoleto, color: 'bg-warning', dot: 'bg-warning' },
+    { label: 'Pix', value: valorPix, pct: pctPix, color: 'bg-primary', dot: 'bg-primary' },
+    { label: 'Cartão', value: valorCartao, pct: pctCartao, color: 'bg-[hsl(30,98%,71%)]', dot: 'bg-[hsl(30,98%,71%)]' },
+    { label: 'Boleto', value: valorBoleto, pct: pctBoleto, color: 'bg-[hsl(27,100%,87%)]', dot: 'bg-[hsl(27,100%,87%)]' },
   ];
 
   return (
-    <Card className="lg:col-span-2">
-      <CardContent className="p-6">
+    <Card className="lg:col-span-2 border-primary/30 shadow-[0_0_20px_rgba(244,122,20,0.08)]">
+      <CardContent className="p-8">
         {/* Header */}
-        <p className="text-sm font-medium text-muted-foreground mb-1">Receita Total</p>
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <p className="text-4xl font-bold tracking-tight text-foreground">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Receita Total</p>
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <p className="text-4xl font-bold tracking-tight text-primary">
             {formatCurrency(volumeVendas)}
           </p>
-          <span className="text-base text-muted-foreground font-medium">
+          <span className="text-sm text-muted-foreground font-medium">
             / {formatCurrency(caixaDoMes)} em caixa ({proporcaoCaixa.toFixed(0)}%)
           </span>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-2">
           {totalVendas} {totalVendas === 1 ? 'venda' : 'vendas'} no período
         </p>
 
         {/* Segmented bar */}
-        <div className="flex h-3 rounded-full overflow-hidden mt-5 gap-0.5">
+        <div className="flex h-2 rounded-full overflow-hidden mt-6">
           {segments.map((seg) => (
             <div
               key={seg.label}
