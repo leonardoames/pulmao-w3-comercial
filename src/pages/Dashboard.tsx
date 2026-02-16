@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
-import { Phone, PhoneOff, TrendingUp, Target, Trophy, Tv, CalendarIcon, BarChart3, Users, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Phone, PhoneOff, TrendingUp, Target, Trophy, Tv, CalendarIcon, AlertCircle, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -142,6 +142,8 @@ export default function DashboardPage() {
           valorPix={stats?.valorPix ?? 0}
           valorCartao={stats?.valorCartao ?? 0}
           valorBoleto={stats?.valorBoleto ?? 0}
+          caixaDoMes={stats?.caixaDoMes ?? 0}
+          proporcaoCaixa={stats?.proporcaoCaixa ?? 0}
         />
         <div className="flex flex-col gap-6">
           <StatCard
@@ -154,6 +156,11 @@ export default function DashboardPage() {
             value={formatCurrency(stats?.faturamentoPorCall ?? 0)}
             subtitle="Volume / Calls realizadas"
             icon={<TrendingUp className="h-5 w-5" />}
+          />
+          <OteDashboardCard
+            monthRef={format(new Date(), 'yyyy-MM')}
+            selectedCloser={selectedCloser}
+            onCloserChange={setSelectedCloser}
           />
         </div>
       </div>
@@ -176,6 +183,7 @@ export default function DashboardPage() {
         <StatCard
           title="Calls Realizadas"
           value={stats?.callsRealizadas ?? 0}
+          subtitle={`${(stats?.callsRealizadas ?? 0) + (stats?.noShows ?? 0)} agendadas`}
           icon={<Phone className="h-5 w-5" />}
         />
         <StatCard
@@ -187,24 +195,8 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* BLOCO 3 — Metas e Caixa */}
-      <SectionLabel title="Metas e Caixa" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-        <StatCard
-          title="Caixa do Mês"
-          value={formatCurrency(stats?.caixaDoMes ?? 0)}
-          subtitle={`${(stats?.proporcaoCaixa ?? 0).toFixed(0)}% do volume`}
-          icon={<BarChart3 className="h-5 w-5" />}
-          variant="primary"
-        />
-        <OteDashboardCard
-          monthRef={format(new Date(), 'yyyy-MM')}
-          selectedCloser={selectedCloser}
-          onCloserChange={setSelectedCloser}
-        />
-      </div>
-
       {/* Destaques */}
+      <SectionLabel title="Destaques" />
       <div className="grid grid-cols-1 gap-6 mb-6">
         
         {/* Quick Rankings */}
