@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
+import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -205,7 +206,8 @@ export default function MarketingDashboard() {
       )}
 
       {/* Row 1: Investimento, Calls Agendadas, Calls Realizadas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <SectionLabel title="Investimento e Agendamentos" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard
           title="Investimento em Tráfego"
           value={formatMetric(stats?.investimentoTotal ?? null)}
@@ -227,7 +229,8 @@ export default function MarketingDashboard() {
       </div>
 
       {/* Row 2: CPA, Custo por Call, Volume, Qtd vendas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <SectionLabel title="Custos e Vendas" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard
           title="Custo por Agendamento"
           value={formatMetric(stats?.custoAgendamento ?? null)}
@@ -253,6 +256,7 @@ export default function MarketingDashboard() {
       </div>
 
       {/* Row 3: CAC, ROAS Global, ROAS Imediato */}
+      <SectionLabel title="Retorno" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="CAC"
