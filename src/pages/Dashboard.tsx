@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
-import { Phone, PhoneOff, DollarSign, TrendingUp, Target, Trophy, Tv, CalendarIcon, BarChart3, Users, AlertCircle } from 'lucide-react';
+import { Phone, PhoneOff, TrendingUp, Target, Trophy, Tv, CalendarIcon, BarChart3, Users, AlertCircle, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +17,8 @@ import { Link } from 'react-router-dom';
 import { OteDashboardCard } from '@/components/ote/OteDashboardCard';
 import { ShareDashboardDialog } from '@/components/dashboard/ShareDashboardDialog';
 import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
+import { RevenueCard } from '@/components/dashboard/RevenueCard';
+import { SectionLabel } from '@/components/dashboard/SectionLabel';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -131,26 +133,50 @@ export default function DashboardPage() {
         </div>
       </PageHeader>
 
-      {/* Stats Cards - Row 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <StatCard
-          title="Volume de Vendas"
-          value={formatCurrency(stats?.volumeVendas ?? 0)}
-          subtitle={`${stats?.totalVendas ?? 0} vendas`}
-          icon={<DollarSign className="h-5 w-5" />}
-          variant="primary"
+      {/* BLOCO 1 — Receita */}
+      <SectionLabel title="Receita" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+        <RevenueCard
+          volumeVendas={stats?.volumeVendas ?? 0}
+          totalVendas={stats?.totalVendas ?? 0}
+          valorPix={stats?.valorPix ?? 0}
+          valorCartao={stats?.valorCartao ?? 0}
+          valorBoleto={stats?.valorBoleto ?? 0}
         />
-        <StatCard
-          title="Ticket Médio"
-          value={formatCurrency(stats?.ticketMedio ?? 0)}
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
+        <div className="flex flex-col gap-6">
+          <StatCard
+            title="Ticket Médio"
+            value={formatCurrency(stats?.ticketMedio ?? 0)}
+            icon={<TrendingUp className="h-5 w-5" />}
+          />
+          <StatCard
+            title="Faturamento por Call"
+            value={formatCurrency(stats?.faturamentoPorCall ?? 0)}
+            subtitle="Volume / Calls realizadas"
+            icon={<TrendingUp className="h-5 w-5" />}
+          />
+        </div>
+      </div>
+
+      {/* BLOCO 2 — Performance Comercial */}
+      <SectionLabel title="Performance Comercial" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <StatCard
           title="Taxa de Conversão"
           value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
           subtitle="Vendas / Calls realizadas"
           icon={<Target className="h-5 w-5" />}
-          variant="success"
+          variant={(stats?.taxaConversao ?? 0) > 15 ? 'success' : undefined}
+        />
+        <StatCard
+          title="Vendas Realizadas"
+          value={stats?.totalVendas ?? 0}
+          icon={<ShoppingCart className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Calls Realizadas"
+          value={stats?.callsRealizadas ?? 0}
+          icon={<Phone className="h-5 w-5" />}
         />
         <StatCard
           title="% No-Show"
@@ -161,24 +187,9 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Stats Cards - Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <StatCard
-          title="Valor em Pix"
-          value={formatCurrency(stats?.valorPix ?? 0)}
-          icon={<DollarSign className="h-5 w-5" />}
-          variant="success"
-        />
-        <StatCard
-          title="Valor em Cartão"
-          value={formatCurrency(stats?.valorCartao ?? 0)}
-          icon={<DollarSign className="h-5 w-5" />}
-        />
-        <StatCard
-          title="Valor em Boleto"
-          value={formatCurrency(stats?.valorBoleto ?? 0)}
-          icon={<DollarSign className="h-5 w-5" />}
-        />
+      {/* BLOCO 3 — Metas e Caixa */}
+      <SectionLabel title="Metas e Caixa" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
         <StatCard
           title="Caixa do Mês"
           value={formatCurrency(stats?.caixaDoMes ?? 0)}
@@ -186,39 +197,18 @@ export default function DashboardPage() {
           icon={<BarChart3 className="h-5 w-5" />}
           variant="primary"
         />
-      </div>
-
-      {/* Stats Cards - Row 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <StatCard
-          title="Calls Realizadas"
-          value={stats?.callsRealizadas ?? 0}
-          icon={<Phone className="h-5 w-5" />}
-          variant="success"
-        />
-        <StatCard
-          title="Faturamento por Call"
-          value={formatCurrency(stats?.faturamentoPorCall ?? 0)}
-          subtitle="Volume / Calls realizadas"
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
-        <StatCard
-          title="Vendas Realizadas"
-          value={stats?.totalVendas ?? 0}
-          icon={<Users className="h-5 w-5" />}
-        />
-      </div>
-
-      {/* OTE Card and Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <OteDashboardCard
           monthRef={format(new Date(), 'yyyy-MM')}
           selectedCloser={selectedCloser}
           onCloserChange={setSelectedCloser}
         />
+      </div>
+
+      {/* Destaques */}
+      <div className="grid grid-cols-1 gap-6 mb-6">
         
         {/* Quick Rankings */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
