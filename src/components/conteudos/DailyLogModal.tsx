@@ -196,8 +196,8 @@ export function DailyLogModal({ open, onOpenChange, editLog }: DailyLogModalProp
       await replaceItems.mutateAsync({ date: saveDateStr, items: postItems });
       toast.success('Registro salvo!');
       onOpenChange(false);
-    } catch {
-      toast.error('Erro ao salvar registro');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao salvar registro');
     }
   };
 
