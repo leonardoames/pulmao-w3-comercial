@@ -192,4 +192,9 @@ img.emoji {
   .medal-bronze {
     @apply bg-amber-600 text-amber-100;
   }
+
+  .revenue-bar-segment {
+    @apply transition-all duration-500 ease-out first:rounded-l-full last:rounded-r-full;
+    min-width: 2px;
+  }
 }
