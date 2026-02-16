@@ -47,7 +47,7 @@ export default function AiAgentsList() {
   return (
     <AppLayout>
       <PageHeader title="Agentes IA" description="Gere legendas e roteiros com inteligência artificial">
-        <Button onClick={() => navigate('/marketing/ai/novo')}>
+        <Button onClick={() => navigate('/conteudo/ai/novo')}>
           <Plus className="h-4 w-4 mr-2" /> Novo
         </Button>
       </PageHeader>
@@ -88,7 +88,7 @@ export default function AiAgentsList() {
             <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhuma solicitação ainda</h3>
             <p className="text-muted-foreground mb-4">Crie sua primeira legenda ou roteiro com IA</p>
-            <Button onClick={() => navigate('/marketing/ai/novo')}>
+            <Button onClick={() => navigate('/conteudo/ai/novo')}>
               <Plus className="h-4 w-4 mr-2" /> Criar agora
             </Button>
           </CardContent>
@@ -99,7 +99,7 @@ export default function AiAgentsList() {
             <Card
               key={r.id}
               className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/marketing/ai/${r.id}`)}
+              onClick={() => navigate(`/conteudo/ai/${r.id}`)}
             >
               <CardContent className="py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">

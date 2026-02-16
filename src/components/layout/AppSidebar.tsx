@@ -14,6 +14,7 @@ import {
   FileText,
   Sparkles,
   PenTool,
+  CalendarCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,12 +36,19 @@ const navGroups = [
     ],
   },
   {
+    label: 'Conteúdo',
+    items: [
+      { path: '/conteudo/dashboard', icon: BarChart3, label: 'Dashboard de Conteúdo' },
+      { path: '/conteudo/acompanhamento', icon: CalendarCheck, label: 'Acompanhamento Diário' },
+      { path: '/conteudo/controle', icon: FileText, label: 'Controle de Conteúdos' },
+      { path: '/conteudo/twitter', icon: PenTool, label: 'Gerador Twitter' },
+      { path: '/conteudo/ai', icon: Sparkles, label: 'Agentes IA' },
+    ],
+  },
+  {
     label: 'Marketing',
     items: [
       { path: '/marketing/dashboard', icon: BarChart3, label: 'Dashboard' },
-      { path: '/marketing/conteudos', icon: FileText, label: 'Controle de Conteúdos' },
-      { path: '/marketing/twitter', icon: PenTool, label: 'Gerador Twitter' },
-      { path: '/marketing/ai', icon: Sparkles, label: 'Agentes IA' },
     ],
   },
 ];

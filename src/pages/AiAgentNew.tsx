@@ -71,7 +71,7 @@ export default function AiAgentNew() {
         inputs_json: inputsJson,
       });
 
-      navigate(`/marketing/ai/${request.id}`);
+      navigate(`/conteudo/ai/${request.id}`);
     } catch {
       // errors handled in hook
     } finally {
@@ -82,7 +82,7 @@ export default function AiAgentNew() {
   return (
     <AppLayout>
       <PageHeader title="Nova Geração IA" description="Preencha o briefing para gerar conteúdo">
-        <Button variant="outline" onClick={() => navigate('/marketing/ai')}>
+        <Button variant="outline" onClick={() => navigate('/conteudo/ai')}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
         </Button>
       </PageHeader>
