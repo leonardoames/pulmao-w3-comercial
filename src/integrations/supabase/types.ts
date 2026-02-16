@@ -123,6 +123,87 @@ export type Database = {
           },
         ]
       }
+      content_daily_logs: {
+        Row: {
+          created_at: string
+          date: string
+          followers_gained: number
+          id: string
+          notes: string | null
+          posts_published_count: number
+          posts_scheduled_count: number
+          responsible_user_id: string
+          stories_done_count: number
+          updated_at: string
+          youtube_videos_published_count: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          followers_gained?: number
+          id?: string
+          notes?: string | null
+          posts_published_count?: number
+          posts_scheduled_count?: number
+          responsible_user_id: string
+          stories_done_count?: number
+          updated_at?: string
+          youtube_videos_published_count?: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          followers_gained?: number
+          id?: string
+          notes?: string | null
+          posts_published_count?: number
+          posts_scheduled_count?: number
+          responsible_user_id?: string
+          stories_done_count?: number
+          updated_at?: string
+          youtube_videos_published_count?: number
+        }
+        Relationships: []
+      }
+      content_post_items: {
+        Row: {
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          is_required: boolean
+          label: string
+          platform: Database["public"]["Enums"]["content_item_platform"]
+          status: Database["public"]["Enums"]["content_item_status"]
+          type: Database["public"]["Enums"]["content_item_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          date: string
+          id?: string
+          is_required?: boolean
+          label?: string
+          platform?: Database["public"]["Enums"]["content_item_platform"]
+          status?: Database["public"]["Enums"]["content_item_status"]
+          type?: Database["public"]["Enums"]["content_item_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          is_required?: boolean
+          label?: string
+          platform?: Database["public"]["Enums"]["content_item_platform"]
+          status?: Database["public"]["Enums"]["content_item_status"]
+          type?: Database["public"]["Enums"]["content_item_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conteudo_comentarios: {
         Row: {
           conteudo_id: string
@@ -691,6 +772,9 @@ export type Database = {
         | "No-show"
         | "Remarcada"
         | "Cancelada"
+      content_item_platform: "instagram" | "tiktok" | "youtube" | "other"
+      content_item_status: "pendente" | "feito" | "agendado"
+      content_item_type: "reels" | "feed" | "stories" | "youtube" | "other"
       conteudo_status:
         | "Ideia"
         | "EmGravacao"
@@ -871,6 +955,9 @@ export const Constants = {
         "Remarcada",
         "Cancelada",
       ],
+      content_item_platform: ["instagram", "tiktok", "youtube", "other"],
+      content_item_status: ["pendente", "feito", "agendado"],
+      content_item_type: ["reels", "feed", "stories", "youtube", "other"],
       conteudo_status: [
         "Ideia",
         "EmGravacao",

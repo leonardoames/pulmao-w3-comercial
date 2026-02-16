@@ -20,6 +20,8 @@ import MarketingTwitter from "./pages/MarketingTwitter";
 import AiAgentsList from "./pages/AiAgentsList";
 import AiAgentNew from "./pages/AiAgentNew";
 import AiAgentDetail from "./pages/AiAgentDetail";
+import ConteudoDashboard from "./pages/ConteudoDashboard";
+import ConteudoAcompanhamento from "./pages/ConteudoAcompanhamento";
 import NotFound from "./pages/NotFound";
 import SharedDashboard from "./pages/SharedDashboard";
 
@@ -78,11 +80,20 @@ function AppRoutes() {
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
       <Route path="/marketing/dashboard" element={<ProtectedRoute><MarketingDashboard /></ProtectedRoute>} />
-      <Route path="/marketing/conteudos" element={<ProtectedRoute><MarketingConteudos /></ProtectedRoute>} />
-      <Route path="/marketing/twitter" element={<ProtectedRoute><MarketingTwitter /></ProtectedRoute>} />
-      <Route path="/marketing/ai" element={<ProtectedRoute><AiAgentsList /></ProtectedRoute>} />
-      <Route path="/marketing/ai/novo" element={<ProtectedRoute><AiAgentNew /></ProtectedRoute>} />
-      <Route path="/marketing/ai/:id" element={<ProtectedRoute><AiAgentDetail /></ProtectedRoute>} />
+      {/* Conteúdo routes */}
+      <Route path="/conteudo/dashboard" element={<ProtectedRoute><ConteudoDashboard /></ProtectedRoute>} />
+      <Route path="/conteudo/acompanhamento" element={<ProtectedRoute><ConteudoAcompanhamento /></ProtectedRoute>} />
+      <Route path="/conteudo/controle" element={<ProtectedRoute><MarketingConteudos /></ProtectedRoute>} />
+      <Route path="/conteudo/twitter" element={<ProtectedRoute><MarketingTwitter /></ProtectedRoute>} />
+      <Route path="/conteudo/ai" element={<ProtectedRoute><AiAgentsList /></ProtectedRoute>} />
+      <Route path="/conteudo/ai/novo" element={<ProtectedRoute><AiAgentNew /></ProtectedRoute>} />
+      <Route path="/conteudo/ai/:id" element={<ProtectedRoute><AiAgentDetail /></ProtectedRoute>} />
+      {/* Legacy redirects */}
+      <Route path="/marketing/conteudos" element={<Navigate to="/conteudo/controle" replace />} />
+      <Route path="/marketing/twitter" element={<Navigate to="/conteudo/twitter" replace />} />
+      <Route path="/marketing/ai" element={<Navigate to="/conteudo/ai" replace />} />
+      <Route path="/marketing/ai/novo" element={<Navigate to="/conteudo/ai/novo" replace />} />
+      <Route path="/marketing/ai/:id" element={<Navigate to="/conteudo/ai" replace />} />
       <Route path="/shared/:token" element={<SharedDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

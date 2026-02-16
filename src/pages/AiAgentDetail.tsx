@@ -46,7 +46,7 @@ export default function AiAgentDetail() {
   const handleDuplicate = async () => {
     if (!request) return;
     const result = await duplicateRequest.mutateAsync(request.id);
-    navigate(`/marketing/ai/${result.id}`);
+    navigate(`/conteudo/ai/${result.id}`);
   };
 
   const copyToClipboard = (text: string, outputId: string) => {
@@ -82,7 +82,7 @@ export default function AiAgentDetail() {
     return (
       <AppLayout>
         <PageHeader title="Solicitação não encontrada">
-          <Button variant="outline" onClick={() => navigate('/marketing/ai')}>
+          <Button variant="outline" onClick={() => navigate('/conteudo/ai')}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
           </Button>
         </PageHeader>
@@ -99,7 +99,7 @@ export default function AiAgentDetail() {
         description={`${request.ai_agents?.name || ''} • ${format(new Date(request.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}`}
       >
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/marketing/ai')}>
+          <Button variant="outline" onClick={() => navigate('/conteudo/ai')}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
           </Button>
           <Button variant="outline" onClick={handleDuplicate}>
