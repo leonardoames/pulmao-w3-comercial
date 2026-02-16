@@ -128,10 +128,13 @@ export type Database = {
           created_at: string
           date: string
           followers_gained: number
+          followers_leo: number
+          followers_w3: number
           id: string
           notes: string | null
           posts_published_count: number
           posts_scheduled_count: number
+          responsible_name: string
           responsible_user_id: string
           stories_done_count: number
           updated_at: string
@@ -141,10 +144,13 @@ export type Database = {
           created_at?: string
           date: string
           followers_gained?: number
+          followers_leo?: number
+          followers_w3?: number
           id?: string
           notes?: string | null
           posts_published_count?: number
           posts_scheduled_count?: number
+          responsible_name?: string
           responsible_user_id: string
           stories_done_count?: number
           updated_at?: string
@@ -154,10 +160,13 @@ export type Database = {
           created_at?: string
           date?: string
           followers_gained?: number
+          followers_leo?: number
+          followers_w3?: number
           id?: string
           notes?: string | null
           posts_published_count?: number
           posts_scheduled_count?: number
+          responsible_name?: string
           responsible_user_id?: string
           stories_done_count?: number
           updated_at?: string

@@ -6,7 +6,10 @@ export interface ContentDailyLog {
   id: string;
   date: string;
   responsible_user_id: string;
+  responsible_name: string;
   followers_gained: number;
+  followers_leo: number;
+  followers_w3: number;
   posts_published_count: number;
   posts_scheduled_count: number;
   stories_done_count: number;
@@ -38,8 +41,8 @@ export const CONTENT_ITEM_TYPE_LABELS: Record<ContentItemType, string> = {
 };
 
 export const CONTENT_ITEM_STATUS_LABELS: Record<ContentItemStatus, string> = {
-  pendente: 'Pendente',
-  feito: 'Feito',
+  pendente: 'Não fez',
+  feito: 'Publicado',
   agendado: 'Agendado',
 };
 
@@ -65,26 +68,16 @@ export interface RequiredTemplate {
 }
 
 export const DAILY_REQUIRED_TEMPLATE: RequiredTemplate[] = [
-  // Perfil Leonardo Ames
-  { type: 'reels', label: 'Post 1 (Reels): Corte do podcast — Autoridade/viral', platform: 'instagram' },
-  { type: 'reels', label: 'Post 2 (Reels): Viral', platform: 'instagram' },
-  { type: 'feed', label: 'Post 3 (Feed estático ou carrossel): Frase estilo Twitter — Viral/Educativo', platform: 'instagram' },
-  { type: 'reels', label: 'Post 4 (Reels): Documentário dia a dia do e-comm (bastidores)', platform: 'instagram' },
-  { type: 'feed', label: 'Post 5 (Feed estático ou carrossel): Frase estilo Twitter — Viral/Educativo', platform: 'instagram' },
-  { type: 'stories', label: 'Stories: Min 10x/dia (Lifestyle + e-commerce)', platform: 'instagram' },
+  { type: 'reels', label: 'Post 1 Léo: Corte do podcast — Autoridade/viral', platform: 'instagram' },
+  { type: 'reels', label: 'Post 2 Léo: Viral', platform: 'instagram' },
+  { type: 'feed', label: 'Post 3 Léo: Frase Twitter — Viral/Educativo', platform: 'instagram' },
+  { type: 'feed', label: 'Post 4 Léo: Frase Twitter — Viral/Educativo', platform: 'instagram' },
+  { type: 'reels', label: 'Post 5 Léo: Documentário dia a dia do ecomm', platform: 'instagram' },
+  { type: 'feed', label: 'Post 6 W3: Institucional ou Depoimento', platform: 'instagram' },
 ];
 
-// W3 Educação template varies by even/odd day
-export function getW3Template(date: Date): RequiredTemplate {
-  const day = date.getDate();
-  const isEven = day % 2 === 0;
-  return {
-    type: 'feed',
-    label: isEven ? 'W3 Educação — Post dia par: Genérico' : 'W3 Educação — Post dia ímpar: Depoimento (cliente ou Léo)',
-    platform: 'instagram',
-  };
-}
+export const RESPONSIBLE_OPTIONS = ['Otto'];
 
-export function getDailyTemplate(date: Date): RequiredTemplate[] {
-  return [...DAILY_REQUIRED_TEMPLATE, getW3Template(date)];
+export function getDailyTemplate(): RequiredTemplate[] {
+  return [...DAILY_REQUIRED_TEMPLATE];
 }
