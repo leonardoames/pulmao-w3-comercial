@@ -28,6 +28,8 @@ export interface Venda {
   pago: boolean;
   contrato_assinado: boolean;
   status: VendaStatus;
+  enviado_financeiro: boolean;
+  enviado_cs: boolean;
   observacoes?: string;
   criado_em: string;
   atualizado_em: string;

@@ -526,6 +526,8 @@ export type Database = {
           criado_em: string
           data_fechamento: string
           duracao_contrato_meses: number
+          enviado_cs: boolean
+          enviado_financeiro: boolean
           id: string
           nome_empresa: string
           nome_lead: string
@@ -546,6 +548,8 @@ export type Database = {
           criado_em?: string
           data_fechamento?: string
           duracao_contrato_meses?: number
+          enviado_cs?: boolean
+          enviado_financeiro?: boolean
           id?: string
           nome_empresa?: string
           nome_lead?: string
@@ -566,6 +570,8 @@ export type Database = {
           criado_em?: string
           data_fechamento?: string
           duracao_contrato_meses?: number
+          enviado_cs?: boolean
+          enviado_financeiro?: boolean
           id?: string
           nome_empresa?: string
           nome_lead?: string
