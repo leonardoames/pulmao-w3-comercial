@@ -51,7 +51,7 @@ export function RevenueCard({
         </p>
 
         {/* Segmented bar */}
-        <div className="flex h-2 rounded-full overflow-hidden mt-6">
+        <div className="flex h-2 rounded-full overflow-hidden mt-6 gap-1">
           {segments.map((seg) => (
             <div
               key={seg.label}
