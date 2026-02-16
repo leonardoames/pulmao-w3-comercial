@@ -135,7 +135,7 @@ export default function DashboardPage() {
 
       {/* BLOCO 1 — Receita */}
       <SectionLabel title="Receita" />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <RevenueCard
           volumeVendas={stats?.volumeVendas ?? 0}
           totalVendas={stats?.totalVendas ?? 0}
@@ -157,12 +157,14 @@ export default function DashboardPage() {
             subtitle="Volume / Calls realizadas"
             icon={<TrendingUp className="h-5 w-5" />}
           />
-          <OteDashboardCard
-            monthRef={format(new Date(), 'yyyy-MM')}
-            selectedCloser={selectedCloser}
-            onCloserChange={setSelectedCloser}
-          />
         </div>
+      </div>
+      <div className="mb-10">
+        <OteDashboardCard
+          monthRef={format(new Date(), 'yyyy-MM')}
+          selectedCloser={selectedCloser}
+          onCloserChange={setSelectedCloser}
+        />
       </div>
 
       {/* BLOCO 2 — Performance Comercial */}
