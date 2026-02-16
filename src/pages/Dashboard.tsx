@@ -199,98 +199,8 @@ export default function DashboardPage() {
 
       {/* Destaques */}
       <SectionLabel title="Destaques" />
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        
-        {/* Quick Rankings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-primary" />
-              Destaques
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <p className="text-sm text-muted-foreground mb-1">Top Closer do Dia</p>
-                <p className="font-bold text-lg">{rankings?.topCloserDia?.nome || '-'}</p>
-                {rankings?.topCloserDia && (
-                  <p className="text-sm text-primary font-medium">
-                    {formatCurrency(rankings.topCloserDia.volume)}
-                  </p>
-                )}
-              </div>
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <p className="text-sm text-muted-foreground mb-1">Top Closer da Semana</p>
-                <p className="font-bold text-lg">{rankings?.topCloserSemana?.nome || '-'}</p>
-                {rankings?.topCloserSemana && (
-                  <p className="text-sm text-primary font-medium">
-                    {formatCurrency(rankings.topCloserSemana.volume)}
-                  </p>
-                )}
-              </div>
-              <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-                <p className="text-sm text-muted-foreground mb-1">Top Conversão</p>
-                <p className="font-bold text-lg">{rankings?.topConversao?.nome || '-'}</p>
-                {rankings?.topConversao && (
-                  <p className="text-sm text-success font-medium">
-                    {rankings.topConversao.taxaConversao.toFixed(1)}%
-                  </p>
-                )}
-              </div>
-              <div className="p-4 rounded-lg bg-info/10 border border-info/20">
-                <p className="text-sm text-muted-foreground mb-1">Menor No-Show</p>
-                <p className="font-bold text-lg">{rankings?.menorNoShow?.nome || '-'}</p>
-                {rankings?.menorNoShow && (
-                  <p className="text-sm text-info font-medium">
-                    {rankings.menorNoShow.percentNoShow.toFixed(1)}%
-                  </p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* No-Show Panel by Closer (only when "Todos" is selected) */}
-      {selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              No-Show por Closer
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {noShowByCloser.map((closer) => (
-                <div
-                  key={closer.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
-                >
-                  <div>
-                    <p className="font-medium">{closer.nome}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {closer.noShow} no-shows de {closer.callsAgendadas} agendadas
-                    </p>
-                  </div>
-                  <div className={cn(
-                    "text-lg font-bold px-3 py-1 rounded-full",
-                    closer.percentNoShow > 30 ? "bg-destructive/20 text-destructive" :
-                    closer.percentNoShow > 15 ? "bg-warning/20 text-warning" :
-                    "bg-success/20 text-success"
-                  )}>
-                    {closer.percentNoShow.toFixed(1)}%
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Full Ranking */}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Coluna 1: Ranking de Closers */}
         <Card>
           <CardHeader>
             <CardTitle>Ranking de Closers</CardTitle>
@@ -338,6 +248,94 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Coluna 2: Destaques + No-Show */}
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-primary" />
+                Destaques
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                  <p className="text-sm text-muted-foreground mb-1">Top Closer do Dia</p>
+                  <p className="font-bold text-lg">{rankings?.topCloserDia?.nome || '-'}</p>
+                  {rankings?.topCloserDia && (
+                    <p className="text-sm text-primary font-medium">
+                      {formatCurrency(rankings.topCloserDia.volume)}
+                    </p>
+                  )}
+                </div>
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                  <p className="text-sm text-muted-foreground mb-1">Top Closer da Semana</p>
+                  <p className="font-bold text-lg">{rankings?.topCloserSemana?.nome || '-'}</p>
+                  {rankings?.topCloserSemana && (
+                    <p className="text-sm text-primary font-medium">
+                      {formatCurrency(rankings.topCloserSemana.volume)}
+                    </p>
+                  )}
+                </div>
+                <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                  <p className="text-sm text-muted-foreground mb-1">Top Conversão</p>
+                  <p className="font-bold text-lg">{rankings?.topConversao?.nome || '-'}</p>
+                  {rankings?.topConversao && (
+                    <p className="text-sm text-success font-medium">
+                      {rankings.topConversao.taxaConversao.toFixed(1)}%
+                    </p>
+                  )}
+                </div>
+                <div className="p-4 rounded-lg bg-info/10 border border-info/20">
+                  <p className="text-sm text-muted-foreground mb-1">Menor No-Show</p>
+                  <p className="font-bold text-lg">{rankings?.menorNoShow?.nome || '-'}</p>
+                  {rankings?.menorNoShow && (
+                    <p className="text-sm text-info font-medium">
+                      {rankings.menorNoShow.percentNoShow.toFixed(1)}%
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                  No-Show por Closer
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4">
+                  {noShowByCloser.map((closer) => (
+                    <div
+                      key={closer.id}
+                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <p className="font-medium">{closer.nome}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {closer.noShow} no-shows de {closer.callsAgendadas} agendadas
+                        </p>
+                      </div>
+                      <div className={cn(
+                        "text-lg font-bold px-3 py-1 rounded-full",
+                        closer.percentNoShow > 30 ? "bg-destructive/20 text-destructive" :
+                        closer.percentNoShow > 15 ? "bg-warning/20 text-warning" :
+                        "bg-success/20 text-success"
+                      )}>
+                        {closer.percentNoShow.toFixed(1)}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </AppLayout>
   );
