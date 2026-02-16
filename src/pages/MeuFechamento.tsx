@@ -9,61 +9,150 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMeuFechamento, useFechamentos, useUpsertFechamento } from '@/hooks/useFechamentos';
 import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useCanEditAnyFechamento } from '@/hooks/useUserRoles';
 import { CalendarIcon, Save } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfWeek, startOfMonth, subMonths, endOfMonth, eachDayOfInterval, isFuture, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+
+type PeriodFilter = 'estaSeamana' | 'esteMes' | 'ultimos30' | 'ultimoMes' | 'todo';
+
+function computePeriodDates(filter: PeriodFilter, today: Date): { startDate: Date | undefined; endDate: Date } {
+  switch (filter) {
+    case 'estaSeamana':
+      return { startDate: startOfWeek(today, { weekStartsOn: 1 }), endDate: today };
+    case 'esteMes':
+      return { startDate: startOfMonth(today), endDate: today };
+    case 'ultimos30':
+      return { startDate: subDays(today, 30), endDate: today };
+    case 'ultimoMes': {
+      const lastMonth = subMonths(today, 1);
+      return { startDate: startOfMonth(lastMonth), endDate: endOfMonth(lastMonth) };
+    }
+    case 'todo':
+      return { startDate: undefined, endDate: today };
+  }
+}
+
+interface DayRow {
+  date: Date;
+  dateStr: string;
+  hasData: boolean;
+  calls_realizadas: number;
+  no_show: number;
+  calls_agendadas: number;
+  id?: string;
+}
+
+function formatNoShow(noShow: number, agendadas: number): string {
+  if (agendadas === 0) return '0';
+  const pct = Math.round((noShow / agendadas) * 100);
+  return `${noShow} (${pct}%)`;
+}
 
 export default function MeuFechamentoPage() {
   const { profile } = useAuth();
   const { data: closers } = useClosers();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
-  
-  // Use the new role-based permission check
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('ultimos30');
+
   const canSelectCloser = useCanEditAnyFechamento();
-  
   const [selectedCloserId, setSelectedCloserId] = useState<string>(profile?.id || '');
-  
+
   // Update selectedCloserId when profile/closers/role loads
   useEffect(() => {
     if (canSelectCloser && closers && closers.length > 0) {
-      // Gestor/Master: if current selection is not in closers list, pick first closer
       const isValidCloser = closers.some(c => c.id === selectedCloserId);
       if (!isValidCloser) {
         setSelectedCloserId(closers[0].id);
       }
     } else if (!canSelectCloser && profile?.id && !selectedCloserId) {
-      // Closer: use own id
       setSelectedCloserId(profile.id);
     }
   }, [profile?.id, selectedCloserId, canSelectCloser, closers]);
-  
+
   const activeCloserId = selectedCloserId || profile?.id || '';
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const { data: fechamento, isLoading } = useMeuFechamento(activeCloserId, dateStr);
-  
-  // Calculate stable date strings for 30 days period (avoid new Date() in render)
+
   const today = useMemo(() => new Date(), []);
-  const thirtyDaysAgo = useMemo(() => subDays(today, 30), [today]);
-  
-  const { data: meusFechamentos } = useFechamentos({ 
+  const { startDate: periodStart, endDate: periodEnd } = useMemo(
+    () => computePeriodDates(periodFilter, today),
+    [periodFilter, today]
+  );
+
+  const { data: meusFechamentos } = useFechamentos({
     closer_id: activeCloserId,
-    startDate: thirtyDaysAgo,
-    endDate: today
+    startDate: periodStart,
+    endDate: periodEnd,
   });
+
+  // Build all days in period merged with data
+  const allDaysRows = useMemo<DayRow[]>(() => {
+    if (!periodStart) {
+      // "Todo o Periodo" — just show fetched data, no gap filling
+      return (meusFechamentos || []).map(f => ({
+        date: new Date(f.data + 'T12:00:00'),
+        dateStr: f.data,
+        hasData: true,
+        calls_realizadas: f.calls_realizadas,
+        no_show: f.no_show,
+        calls_agendadas: f.calls_agendadas ?? (f.calls_realizadas + f.no_show),
+        id: f.id,
+      }));
+    }
+
+    const cappedEnd = isFuture(periodEnd) ? today : periodEnd;
+    const days = eachDayOfInterval({ start: periodStart, end: cappedEnd });
+    const dataMap = new Map((meusFechamentos || []).map(f => [f.data, f]));
+
+    return days
+      .map(day => {
+        const key = format(day, 'yyyy-MM-dd');
+        const f = dataMap.get(key);
+        if (f) {
+          return {
+            date: day,
+            dateStr: key,
+            hasData: true,
+            calls_realizadas: f.calls_realizadas,
+            no_show: f.no_show,
+            calls_agendadas: f.calls_agendadas ?? (f.calls_realizadas + f.no_show),
+            id: f.id,
+          };
+        }
+        return {
+          date: day,
+          dateStr: key,
+          hasData: false,
+          calls_realizadas: 0,
+          no_show: 0,
+          calls_agendadas: 0,
+        };
+      })
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [meusFechamentos, periodStart, periodEnd, today]);
+
+  // Totals
+  const totals = useMemo(() => {
+    const rows = allDaysRows.filter(r => r.hasData);
+    const realizadas = rows.reduce((s, r) => s + r.calls_realizadas, 0);
+    const noShow = rows.reduce((s, r) => s + r.no_show, 0);
+    const agendadas = rows.reduce((s, r) => s + r.calls_agendadas, 0);
+    return { realizadas, noShow, agendadas };
+  }, [allDaysRows]);
+
   const upsertFechamento = useUpsertFechamento();
 
   const [callsRealizadas, setCallsRealizadas] = useState<number>(0);
   const [noShow, setNoShow] = useState<number>(0);
   const [observacoes, setObservacoes] = useState<string>('');
 
-  // Atualizar form quando a data mudar
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
@@ -71,7 +160,6 @@ export default function MeuFechamentoPage() {
     }
   };
 
-  // Reset form when fechamento data loads or date changes
   useEffect(() => {
     if (fechamento) {
       setCallsRealizadas(fechamento.calls_realizadas);
@@ -86,18 +174,12 @@ export default function MeuFechamentoPage() {
 
   const handleSave = async () => {
     if (!activeCloserId) return;
-
     const safeCallsRealizadas = Math.max(0, Math.floor(callsRealizadas));
     const safeNoShow = Math.max(0, Math.floor(noShow));
     const safeObservacoes = (observacoes || '').trim();
+    if (safeCallsRealizadas > 1000 || safeNoShow > 1000) return;
+    if (safeObservacoes.length > 2000) return;
 
-    if (safeCallsRealizadas > 1000 || safeNoShow > 1000) {
-      return;
-    }
-    if (safeObservacoes.length > 2000) {
-      return;
-    }
-    
     await upsertFechamento.mutateAsync({
       data: dateStr,
       closer_user_id: activeCloserId,
@@ -198,8 +280,8 @@ export default function MeuFechamentoPage() {
                   />
                 </div>
 
-                <Button 
-                  onClick={handleSave} 
+                <Button
+                  onClick={handleSave}
                   className="w-full gap-2"
                   disabled={upsertFechamento.isPending}
                 >
@@ -214,7 +296,21 @@ export default function MeuFechamentoPage() {
         {/* Histórico */}
         <Card>
           <CardHeader>
-            <CardTitle>Histórico (últimos 30 dias)</CardTitle>
+            <CardTitle className="flex items-center justify-between flex-wrap gap-2">
+              <span>Histórico</span>
+              <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="estaSeamana">Esta Semana</SelectItem>
+                  <SelectItem value="esteMes">Este Mês</SelectItem>
+                  <SelectItem value="ultimos30">Últimos 30 Dias</SelectItem>
+                  <SelectItem value="ultimoMes">Último Mês</SelectItem>
+                  <SelectItem value="todo">Todo o Período</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -222,37 +318,59 @@ export default function MeuFechamentoPage() {
                 <TableRow>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-center">Realizadas</TableHead>
-                  <TableHead className="text-center">No-Show</TableHead>
+                  <TableHead className="text-center">No-Show (%)</TableHead>
                   <TableHead className="text-center">Agendadas</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {meusFechamentos?.length === 0 ? (
+                {allDaysRows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      Nenhum fechamento registrado
+                      Nenhum registro encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  meusFechamentos?.map(f => (
-                    <TableRow 
-                      key={f.id}
+                  allDaysRows.map(row => (
+                    <TableRow
+                      key={row.dateStr}
                       className={cn(
                         "cursor-pointer hover:bg-muted/50",
-                        f.data === dateStr && "bg-primary/10"
+                        row.dateStr === dateStr && "bg-primary/10"
                       )}
-                      onClick={() => setSelectedDate(new Date(f.data + 'T12:00:00'))}
+                      onClick={() => setSelectedDate(new Date(row.dateStr + 'T12:00:00'))}
                     >
                       <TableCell className="font-medium">
-                        {format(new Date(f.data + 'T12:00:00'), 'dd/MM')}
+                        {format(row.date, 'dd/MM')}
                       </TableCell>
-                      <TableCell className="text-center">{f.calls_realizadas}</TableCell>
-                      <TableCell className="text-center text-destructive">{f.no_show}</TableCell>
-                      <TableCell className="text-center font-medium">{f.calls_agendadas}</TableCell>
+                      {row.hasData ? (
+                        <>
+                          <TableCell className="text-center">{row.calls_realizadas}</TableCell>
+                          <TableCell className="text-center text-destructive">
+                            {formatNoShow(row.no_show, row.calls_agendadas)}
+                          </TableCell>
+                          <TableCell className="text-center font-medium">{row.calls_agendadas}</TableCell>
+                        </>
+                      ) : (
+                        <TableCell colSpan={3} className="text-center text-muted-foreground italic">
+                          Sem informação
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
               </TableBody>
+              {allDaysRows.some(r => r.hasData) && (
+                <TableFooter>
+                  <TableRow className="bg-muted/30 font-bold">
+                    <TableCell>Total</TableCell>
+                    <TableCell className="text-center">{totals.realizadas}</TableCell>
+                    <TableCell className="text-center text-destructive">
+                      {formatNoShow(totals.noShow, totals.agendadas)}
+                    </TableCell>
+                    <TableCell className="text-center">{totals.agendadas}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
             </Table>
           </CardContent>
         </Card>
