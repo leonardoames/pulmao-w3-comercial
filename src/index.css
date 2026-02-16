@@ -49,7 +49,7 @@ img.emoji {
 
     /* Secondary - Warm Gray */
     --secondary: 30 10% 95%;
-    --secondary-foreground: 20 14% 10%;
+    --secondary-foreground: 0 0% 0%;
 
     /* Muted */
     --muted: 30 10% 95%;
