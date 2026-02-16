@@ -1,59 +1,62 @@
 
 
-# Adicionar flags "Enviado ao Financeiro" e "Enviado ao CS" nas Vendas
+# Filtros Avancados e Tooltips Descritivos na Pagina de Vendas
 
 ## Resumo
 
-Dois novos campos booleanos serao adicionados a tabela `vendas` e refletidos no formulario de cadastro/edicao e na listagem com icones que exibem tooltip ao passar o mouse.
+Adicionar tooltips descritivos em todos os icones da pagina (incluindo flags sempre visiveis, mesmo quando inativas) e implementar uma barra de filtros avancados com data, duracao, valor e flags.
 
-## 1. Banco de dados
+---
 
-Migracao SQL para adicionar as duas colunas:
+## 1. Flags sempre visiveis com tooltip descritivo
 
-```sql
-ALTER TABLE public.vendas
-ADD COLUMN enviado_financeiro boolean NOT NULL DEFAULT false,
-ADD COLUMN enviado_cs boolean NOT NULL DEFAULT false;
+Atualmente as flags so aparecem quando ativas. Mudar para **sempre exibir os 4 icones**, com aparencia diferenciada:
+
+- **Ativa**: icone colorido com fundo (como esta hoje)
+- **Inativa**: icone cinza com opacidade reduzida (`opacity-30`)
+
+Cada tooltip tera descricao funcional:
+- Check: "Pagamento confirmado"
+- Edit2: "Contrato assinado pelo cliente"
+- Landmark: "Enviado ao setor financeiro"
+- Headphones: "Enviado ao time de Customer Success"
+
+---
+
+## 2. Filtros avancados
+
+Adicionar uma secao expansivel de filtros abaixo da barra de busca atual, com um botao "Filtros" que abre/fecha. Campos:
+
+### Filtro por periodo (data de fechamento)
+- Dois date pickers: "De" e "Ate"
+- Usa o componente `Calendar` + `Popover` ja existente
+
+### Filtro por duracao do contrato
+- Select com opcoes: "Todos", "1-3 meses", "4-6 meses", "7-12 meses", "13+ meses"
+
+### Filtro por faixa de valor total
+- Select com opcoes: "Todos", "Ate R$ 5.000", "R$ 5.000 - R$ 20.000", "R$ 20.000 - R$ 50.000", "Acima de R$ 50.000"
+
+### Filtro por flags
+- 4 checkboxes: "Pago", "Contrato Assinado", "Enviado Financeiro", "Enviado CS"
+- Quando marcado, filtra apenas vendas que TEM aquela flag ativa
+
+### Botao "Limpar Filtros"
+- Reseta todos os filtros para o estado padrao
+
+---
+
+## 3. Logica de filtragem
+
+Todos os filtros serao aplicados no `filteredVendas` existente, adicionando condicoes ao `.filter()` atual. Novos estados:
+
+```
+dateFrom, dateTo, duracaoFilter, valorFilter, flagFilters (pago, contrato_assinado, enviado_financeiro, enviado_cs)
 ```
 
-## 2. Tipos e validacao
+---
 
-### `src/types/crm.ts`
-- Adicionar `enviado_financeiro: boolean` e `enviado_cs: boolean` na interface `Venda`
+## Arquivo afetado
 
-### `src/schemas/validation.ts`
-- Adicionar `enviado_financeiro: z.boolean().optional()` e `enviado_cs: z.boolean().optional()` ao `vendaSchema` e campos opcionais que ja existem
-
-### `src/hooks/useVendas.ts`
-- Adicionar `enviado_financeiro` e `enviado_cs` nas interfaces `CreateVendaInput` e `UpdateVendaInput` como campos opcionais booleanos
-
-## 3. Formulario de cadastro/edicao
-
-### `src/pages/Vendas.tsx`
-
-Na secao de checkboxes (linha ~320), adicionar dois novos checkboxes ao lado de "Pago" e "Contrato Assinado":
-
-- "Enviado ao Financeiro"
-- "Enviado ao CS"
-
-Incluir os valores no objeto `data` do `handleSubmit`.
-
-## 4. Flags na tabela com Tooltip
-
-Na coluna "Flags" da listagem (linha ~489), adicionar dois novos icones com `Tooltip` do Radix:
-
-- **Enviado ao Financeiro**: icone `Banknote` (ou `Landmark`) com tooltip "Enviado ao Financeiro"
-- **Enviado ao CS**: icone `HeadphonesIcon` (ou `UserCheck`) com tooltip "Enviado ao CS"
-
-Os icones existentes de "Pago" e "Contrato Assinado" tambem serao convertidos para usar `Tooltip` ao inves de `title` nativo, mantendo consistencia.
-
-Cada flag tera um circulo de fundo sutil com cor diferenciada (usar variacoes de cor neutras conforme paleta atual).
-
-## Arquivos afetados
-
-1. Migracao SQL (2 colunas novas)
-2. `src/types/crm.ts`
-3. `src/schemas/validation.ts`
-4. `src/hooks/useVendas.ts`
-5. `src/pages/Vendas.tsx`
+1. `src/pages/Vendas.tsx` -- unico arquivo modificado
 
