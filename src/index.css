@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -42,7 +43,7 @@ img.emoji {
     --popover-foreground: 20 14% 10%;
 
     /* Primary - Vibrant Orange */
-    --primary: 24 95% 53%;
+    --primary: 27 91% 52%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Warm Gray */
@@ -96,6 +97,7 @@ img.emoji {
     --chart-3: 38 92% 50%;
     --chart-4: 199 89% 48%;
     --chart-5: 0 84% 60%;
+    --font-sans: Montserrat, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 
   .dark {
@@ -144,6 +146,7 @@ img.emoji {
     --sidebar-accent-foreground: 30 20% 98%;
     --sidebar-border: 20 14% 12%;
     --sidebar-ring: 24 95% 55%;
+    --font-sans: Montserrat, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 }
 
