@@ -15,7 +15,7 @@ import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento } from '@/hooks/useUserRoles';
 import { Venda } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -31,6 +31,19 @@ export default function VendasPage() {
   const [dataVenda, setDataVenda] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCloserId, setSelectedCloserId] = useState<string>('');
+
+  // Advanced filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
+  const [duracaoFilter, setDuracaoFilter] = useState<string>('all');
+  const [valorFilter, setValorFilter] = useState<string>('all');
+  const [flagPago, setFlagPago] = useState(false);
+  const [flagContrato, setFlagContrato] = useState(false);
+  const [flagFinanceiro, setFlagFinanceiro] = useState(false);
+  const [flagCS, setFlagCS] = useState(false);
   
   const { data: vendas, isLoading } = useVendas();
   const { data: closers } = useClosers();
@@ -40,6 +53,19 @@ export default function VendasPage() {
   const createVenda = useCreateVenda();
   const updateVenda = useUpdateVenda();
 
+  const hasActiveFilters = !!dateFrom || !!dateTo || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS;
+
+  const clearFilters = () => {
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setDuracaoFilter('all');
+    setValorFilter('all');
+    setFlagPago(false);
+    setFlagContrato(false);
+    setFlagFinanceiro(false);
+    setFlagCS(false);
+  };
+
   const filteredVendas = vendas?.filter(venda => {
     const matchesCloser = closerFilter === 'all' || venda.closer_user_id === closerFilter;
     const searchLower = searchQuery.toLowerCase();
@@ -47,6 +73,43 @@ export default function VendasPage() {
       venda.nome_lead.toLowerCase().includes(searchLower) ||
       venda.nome_empresa.toLowerCase().includes(searchLower) ||
       (venda.closer as any)?.nome?.toLowerCase().includes(searchLower);
+
+    // Date range filter
+    if (dateFrom) {
+      const [y, m, d] = venda.data_fechamento.split('-').map(Number);
+      const vendaDate = new Date(y, m - 1, d);
+      if (vendaDate < dateFrom) return false;
+    }
+    if (dateTo) {
+      const [y, m, d] = venda.data_fechamento.split('-').map(Number);
+      const vendaDate = new Date(y, m - 1, d);
+      if (vendaDate > dateTo) return false;
+    }
+
+    // Duration filter
+    if (duracaoFilter !== 'all') {
+      const dur = venda.duracao_contrato_meses;
+      if (duracaoFilter === '1-3' && (dur < 1 || dur > 3)) return false;
+      if (duracaoFilter === '4-6' && (dur < 4 || dur > 6)) return false;
+      if (duracaoFilter === '7-12' && (dur < 7 || dur > 12)) return false;
+      if (duracaoFilter === '13+' && dur < 13) return false;
+    }
+
+    // Value filter
+    if (valorFilter !== 'all') {
+      const val = venda.valor_total;
+      if (valorFilter === '0-5000' && val > 5000) return false;
+      if (valorFilter === '5000-20000' && (val < 5000 || val > 20000)) return false;
+      if (valorFilter === '20000-50000' && (val < 20000 || val > 50000)) return false;
+      if (valorFilter === '50000+' && val < 50000) return false;
+    }
+
+    // Flag filters
+    if (flagPago && !venda.pago) return false;
+    if (flagContrato && !venda.contrato_assinado) return false;
+    if (flagFinanceiro && !venda.enviado_financeiro) return false;
+    if (flagCS && !venda.enviado_cs) return false;
+
     return matchesCloser && matchesSearch;
   });
 
@@ -422,8 +485,8 @@ export default function VendasPage() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-6">
+      {/* Search + Filter Toggle */}
+      <div className="flex flex-wrap gap-4 mb-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -444,7 +507,132 @@ export default function VendasPage() {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant={showFilters ? "secondary" : "outline"}
+          onClick={() => setShowFilters(!showFilters)}
+          className="gap-2"
+        >
+          <Filter className="h-4 w-4" />
+          Filtros
+          {hasActiveFilters && (
+            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+              !
+            </span>
+          )}
+        </Button>
       </div>
+
+      {/* Advanced Filters */}
+      {showFilters && (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Date From */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Data de</Label>
+                <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start gap-2 font-normal">
+                      <CalendarIcon className="h-4 w-4" />
+                      {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Início"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={(date) => { setDateFrom(date || undefined); setDateFromOpen(false); }}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Date To */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Data até</Label>
+                <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start gap-2 font-normal">
+                      <CalendarIcon className="h-4 w-4" />
+                      {dateTo ? format(dateTo, "dd/MM/yyyy") : "Fim"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={(date) => { setDateTo(date || undefined); setDateToOpen(false); }}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Duração do contrato</Label>
+                <Select value={duracaoFilter} onValueChange={setDuracaoFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="1-3">1–3 meses</SelectItem>
+                    <SelectItem value="4-6">4–6 meses</SelectItem>
+                    <SelectItem value="7-12">7–12 meses</SelectItem>
+                    <SelectItem value="13+">13+ meses</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Value */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Faixa de valor</Label>
+                <Select value={valorFilter} onValueChange={setValorFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="0-5000">Até R$ 5.000</SelectItem>
+                    <SelectItem value="5000-20000">R$ 5.000 – R$ 20.000</SelectItem>
+                    <SelectItem value="20000-50000">R$ 20.000 – R$ 50.000</SelectItem>
+                    <SelectItem value="50000+">Acima de R$ 50.000</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Flag checkboxes */}
+            <div className="flex flex-wrap items-center gap-6 mt-4 pt-4 border-t">
+              <span className="text-xs text-muted-foreground font-medium">Flags ativas:</span>
+              <div className="flex items-center gap-2">
+                <Checkbox id="filter_pago" checked={flagPago} onCheckedChange={(v) => setFlagPago(!!v)} />
+                <Label htmlFor="filter_pago" className="text-sm">Pago</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="filter_contrato" checked={flagContrato} onCheckedChange={(v) => setFlagContrato(!!v)} />
+                <Label htmlFor="filter_contrato" className="text-sm">Contrato Assinado</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="filter_financeiro" checked={flagFinanceiro} onCheckedChange={(v) => setFlagFinanceiro(!!v)} />
+                <Label htmlFor="filter_financeiro" className="text-sm">Enviado Financeiro</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="filter_cs" checked={flagCS} onCheckedChange={(v) => setFlagCS(!!v)} />
+                <Label htmlFor="filter_cs" className="text-sm">Enviado CS</Label>
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 ml-auto">
+                  <RotateCcw className="h-3 w-3" />
+                  Limpar filtros
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="p-0">
@@ -457,7 +645,7 @@ export default function VendasPage() {
                 <TableHead>Valor Total</TableHead>
                 <TableHead>Detalhes Pagamento</TableHead>
                 <TableHead>Closer</TableHead>
-                <TableHead className="w-20">Flags</TableHead>
+                <TableHead className="w-28">Flags</TableHead>
                 {canEdit && <TableHead className="w-10"></TableHead>}
               </TableRow>
             </TableHeader>
@@ -508,46 +696,38 @@ export default function VendasPage() {
                       <TableCell>
                         <TooltipProvider>
                           <div className="flex gap-1">
-                            {venda.pago && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-success/20 text-success">
-                                    <Check className="h-3 w-3" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Pago</TooltipContent>
-                              </Tooltip>
-                            )}
-                            {venda.contrato_assinado && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary">
-                                    <Edit2 className="h-3 w-3" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Contrato Assinado</TooltipContent>
-                              </Tooltip>
-                            )}
-                            {venda.enviado_financeiro && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-warning/20 text-warning">
-                                    <Landmark className="h-3 w-3" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Enviado ao Financeiro</TooltipContent>
-                              </Tooltip>
-                            )}
-                            {venda.enviado_cs && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-info/20 text-info">
-                                    <Headphones className="h-3 w-3" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Enviado ao CS</TooltipContent>
-                              </Tooltip>
-                            )}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.pago ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground opacity-30'}`}>
+                                  <Check className="h-3 w-3" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Pagamento confirmado</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.contrato_assinado ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground opacity-30'}`}>
+                                  <Edit2 className="h-3 w-3" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Contrato assinado pelo cliente</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.enviado_financeiro ? 'bg-warning/20 text-warning' : 'bg-muted text-muted-foreground opacity-30'}`}>
+                                  <Landmark className="h-3 w-3" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Enviado ao setor financeiro</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.enviado_cs ? 'bg-info/20 text-info' : 'bg-muted text-muted-foreground opacity-30'}`}>
+                                  <Headphones className="h-3 w-3" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Enviado ao time de Customer Success</TooltipContent>
+                            </Tooltip>
                           </div>
                         </TooltipProvider>
                       </TableCell>
