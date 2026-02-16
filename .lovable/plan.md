@@ -1,105 +1,84 @@
 
+# Redesign do Dashboard Comercial
 
-# Nova Seção: Social Selling
-
-## Resumo
-Criar uma nova página completa de **Social Selling** com formulário diário, histórico filtrado, gráfico de evolução e indicadores de meta. A estrutura segue os mesmos padrões já usados em "Meu Fechamento" e "Dashboard".
-
----
-
-## 1. Banco de Dados
-
-Criar a tabela `social_selling` com as seguintes colunas:
-
-| Coluna | Tipo | Detalhes |
-|--------|------|----------|
-| id | uuid | PK, default gen_random_uuid() |
-| data | date | NOT NULL |
-| closer_user_id | uuid | NOT NULL |
-| conversas_iniciadas | integer | NOT NULL, default 0 |
-| convites_enviados | integer | NOT NULL, default 0 |
-| agendamentos | integer | NOT NULL, default 0 |
-| observacoes | text | nullable |
-| criado_em | timestamptz | default now() |
-| atualizado_em | timestamptz | default now() |
-
-- Constraint UNIQUE em (data, closer_user_id) para upsert
-- Trigger de update em `atualizado_em`
-- RLS: mesmas políticas de `fechamentos` (SELECT para todos autenticados, INSERT/UPDATE restrito ao próprio closer ou gestores)
+## Objetivo
+Reorganizar o dashboard em 3 blocos logicos com hierarquia visual clara, card de Receita Total dominante com grafico de distribuicao, e visual de SaaS moderno.
 
 ---
 
-## 2. Metas Diárias (fixas)
+## Estrutura Final do Dashboard
 
-| Métrica | Meta/dia |
-|---------|----------|
-| Conversas Iniciadas | 100 |
-| Convites Enviados | 30 |
-| Agendamentos | 10 |
+### Header (mantido como esta)
+- Titulo, filtros de data, filtro de closer, botoes TV/Compartilhar
 
-Serão constantes no código (sem tabela extra).
+### BLOCO 1 -- Receita (destaque visual)
 
----
+**Card "Receita Total" (largura total ou 2/3)**
+- Valor total em destaque grande (text-4xl ou maior)
+- Subtitulo com quantidade de vendas
+- Barra segmentada horizontal mostrando proporcao Pix / Cartao / Boleto com cores distintas (verde, azul, amber)
+- Abaixo da barra: 3 colunas inline mostrando cada meio de pagamento com valor + percentual
+- Sem icones redundantes neste card
 
-## 3. Arquivos a Criar/Editar
+**Ao lado (1/3 da linha), 2 cards empilhados:**
+- Ticket Medio
+- Faturamento por Call
 
-### Novos arquivos:
-- **`src/pages/SocialSelling.tsx`** -- Página principal com:
-  - Formulário de registro diário (data picker, 3 campos numéricos, observações, botão salvar)
-  - Filtros de período (hoje, ontem, 7 dias, este mês, 30 dias, personalizado) reutilizando o padrão do Dashboard
-  - Tabela de histórico filtrado por período
-  - Cards de resumo com progresso vs meta (total no período / dias no período vs meta diária)
-  - Gráfico de linha (recharts) mostrando as 3 métricas dia a dia com linhas de meta
+Layout: `grid lg:grid-cols-3`, card principal com `lg:col-span-2`
 
-- **`src/hooks/useSocialSelling.ts`** -- Hook com:
-  - `useSocialSellingEntries(filters)` -- busca registros filtrados
-  - `useSocialSellingEntry(userId, date)` -- busca registro específico para o form
-  - `useUpsertSocialSelling()` -- mutation de upsert
+### BLOCO 2 -- Performance Comercial
 
-### Arquivos editados:
-- **`src/components/layout/AppSidebar.tsx`** -- Adicionar item "Social Selling" na navegação
-- **`src/App.tsx`** -- Adicionar rota `/social-selling`
-- **`src/types/crm.ts`** -- Adicionar interface `SocialSelling`
-- **`src/schemas/validation.ts`** -- Adicionar schema zod para validação
+Grid 4 colunas com cards menores e limpos:
+- Taxa de Conversao (variant success se > 15%, default caso contrario)
+- Vendas Realizadas
+- Calls Realizadas
+- % No-Show (variant destructive)
 
----
+Titulo de secao "Performance Comercial" acima do grid.
 
-## 4. Layout da Página
+### BLOCO 3 -- Metas e Caixa
 
-```text
-+--------------------------------------------------+
-| Social Selling         [Seletor Closer] (gestores)|
-|                                                    |
-| [Hoje] [Ontem] [7 dias] [Este mês] [30d] [Custom] |
-+--------------------------------------------------+
-|                                                    |
-| +-- Formulário ------+  +-- Resumo do Período ---+ |
-| | Data: [dd/mm/yyyy]  |  | Conversas: 450/500    | |
-| | Conversas:  [___]   |  | ████████░░ 90%        | |
-| | Convites:   [___]   |  | Convites:  120/150    | |
-| | Agendamentos:[___]  |  | ████████░░ 80%        | |
-| | Obs: [__________]   |  | Agendamentos: 40/50   | |
-| | [Salvar]            |  | ████████░░ 80%        | |
-| +---------------------+  +-----------------------+ |
-|                                                    |
-| +-- Gráfico de Evolução -------------------------+ |
-| | (LineChart com 3 séries + 3 linhas de meta)     | |
-| +------------------------------------------------+ |
-|                                                    |
-| +-- Histórico ------------------------------------+ |
-| | Data | Conversas | Convites | Agendamentos      | |
-| | ...                                             | |
-| +------------------------------------------------+ |
-+--------------------------------------------------+
-```
+Grid 2 colunas:
+- Caixa do Mes (card com subtitulo mostrando % do volume)
+- Meta OTE (componente OteDashboardCard existente)
+
+Titulo de secao "Metas e Caixa" acima do grid.
+
+### Secao inferior (mantida)
+- Destaques (rankings rapidos)
+- No-Show por Closer (condicional)
+- Ranking de Closers
 
 ---
 
-## 5. Detalhes Técnicos
+## Detalhes Tecnicos
 
-- **Upsert** com `onConflict: 'data,closer_user_id'` (mesmo padrão de fechamentos)
-- **Permissões**: Closer registra apenas para si; gestores/MASTER podem selecionar qualquer closer
-- **Gráfico**: Recharts `LineChart` com 3 `Line` (conversas, convites, agendamentos) + 3 `ReferenceLine` horizontais nas metas (100, 30, 10)
-- **Filtros**: Reutilizar `DateFilter` e `getDateRange` de `useDashboard.ts`
-- **Cards de meta**: Calculam a média diária no período e comparam com a meta fixa
+### Arquivos a criar
+1. **`src/components/dashboard/RevenueCard.tsx`** -- Novo componente para o card dominante de Receita Total
+   - Props: volumeVendas, totalVendas, valorPix, valorCartao, valorBoleto
+   - Barra segmentada customizada (div com 3 segmentos coloridos proporcionais)
+   - 3 sub-items com icone de bolinha colorida + label + valor + percentual
+   - Tipografia maior para o valor principal (text-4xl font-bold)
 
+2. **`src/components/dashboard/SectionLabel.tsx`** -- Componente simples para titulos de secao
+   - Texto em caps ou semibold com separador visual sutil
+
+### Arquivos a editar
+3. **`src/pages/Dashboard.tsx`** -- Reescrita da area de KPIs
+   - Remover as 3 rows atuais de StatCards (linhas 134-210)
+   - Substituir pelos 3 blocos logicos descritos acima
+   - Mover OteDashboardCard do bloco inferior para o Bloco 3
+   - Manter secao de Destaques, No-Show e Ranking como estao
+
+4. **`src/index.css`** -- Adicionar classe `.revenue-bar-segment` para a barra segmentada (transicoes suaves)
+
+### Cores da barra segmentada
+- Pix: `bg-success` (verde -- dinheiro na conta)
+- Cartao: `bg-info` (azul)
+- Boleto: `bg-warning` (amber -- pendente)
+
+### Mudancas de UX
+- Remover icones repetitivos de DollarSign dos cards individuais de pagamento (agora estao dentro do card unificado)
+- Reduzir variantes de cor nos StatCards -- usar `default` para a maioria, cor apenas onde indica status
+- Adicionar labels de secao para separar visualmente os 3 blocos
+- Melhorar espacamento com `mb-10` entre blocos em vez de `mb-6`
