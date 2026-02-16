@@ -43,21 +43,21 @@ img.emoji {
     --popover: 0 0% 100%;
     --popover-foreground: 20 14% 10%;
 
-    /* Primary - Vibrant Orange */
-    --primary: 24 95% 53%;
+    /* Primary - #f57914 */
+    --primary: 27 92% 52%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Warm Gray */
-    --secondary: 30 10% 95%;
-    --secondary-foreground: 20 14% 10%;
+    /* Secondary - #feab67 */
+    --secondary: 27 98% 70%;
+    --secondary-foreground: 0 0% 0%;
 
     /* Muted */
     --muted: 30 10% 95%;
     --muted-foreground: 20 9% 46%;
 
-    /* Accent - Light Orange */
-    --accent: 24 100% 96%;
-    --accent-foreground: 24 95% 35%;
+    /* Accent - #ffd8b8 */
+    --accent: 27 100% 86%;
+    --accent-foreground: 0 0% 0%;
 
     /* Destructive - Red */
     --destructive: 0 84% 60%;
@@ -78,22 +78,22 @@ img.emoji {
     /* Border & Input */
     --border: 30 13% 88%;
     --input: 30 13% 88%;
-    --ring: 24 95% 53%;
+    --ring: 27 92% 52%;
 
     --radius: 0.5rem;
 
     /* Sidebar - Dark theme with orange accent */
     --sidebar-background: 20 14% 10%;
     --sidebar-foreground: 30 20% 98%;
-    --sidebar-primary: 24 95% 53%;
+    --sidebar-primary: 27 92% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 20 14% 16%;
     --sidebar-accent-foreground: 30 20% 98%;
     --sidebar-border: 20 14% 16%;
-    --sidebar-ring: 24 95% 53%;
+    --sidebar-ring: 27 92% 52%;
 
     /* Chart colors */
-    --chart-1: 24 95% 53%;
+    --chart-1: 27 92% 52%;
     --chart-2: 142 76% 36%;
     --chart-3: 38 92% 50%;
     --chart-4: 199 89% 48%;
@@ -111,17 +111,17 @@ img.emoji {
     --popover: 20 14% 9%;
     --popover-foreground: 30 20% 98%;
 
-    --primary: 24 95% 55%;
+    --primary: 27 92% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 20 14% 15%;
-    --secondary-foreground: 30 20% 98%;
+    --secondary: 27 90% 60%;
+    --secondary-foreground: 0 0% 0%;
 
     --muted: 20 14% 15%;
     --muted-foreground: 30 10% 60%;
 
-    --accent: 20 14% 18%;
-    --accent-foreground: 24 95% 60%;
+    --accent: 27 80% 30%;
+    --accent-foreground: 27 100% 86%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -137,16 +137,16 @@ img.emoji {
 
     --border: 20 14% 18%;
     --input: 20 14% 18%;
-    --ring: 24 95% 55%;
+    --ring: 27 92% 54%;
 
     --sidebar-background: 20 14% 6%;
     --sidebar-foreground: 30 20% 98%;
-    --sidebar-primary: 24 95% 55%;
+    --sidebar-primary: 27 92% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 20 14% 12%;
     --sidebar-accent-foreground: 30 20% 98%;
     --sidebar-border: 20 14% 12%;
-    --sidebar-ring: 24 95% 55%;
+    --sidebar-ring: 27 92% 54%;
     --font-sans: Poppins, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
   }
 }

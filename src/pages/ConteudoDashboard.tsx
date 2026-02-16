@@ -1,39 +1,66 @@
 import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
+import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useContentDailyLogs } from '@/hooks/useContentTracking';
 import { RESPONSIBLE_OPTIONS } from '@/types/content';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { DateFilter, DateRange } from '@/hooks/useDashboard';
 import { format, subDays, startOfMonth, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, FileText, Film, CalendarCheck, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-type PeriodFilter = '7d' | '30d' | 'month';
 
 const POSTS_PER_DAY = 6;
 const STORIES_PER_DAY = 10;
 
+const filterOptions: { value: DateFilter; label: string }[] = [
+  { value: 'today', label: 'Hoje' },
+  { value: 'yesterday', label: 'Ontem' },
+  { value: '7days', label: '7 dias' },
+  { value: 'month', label: 'Este mês' },
+  { value: '30days', label: '30 dias' },
+  { value: 'custom', label: 'Personalizado' },
+];
+
 export default function ConteudoDashboard() {
-  const [period, setPeriod] = useState<PeriodFilter>('month');
+  const [filter, setFilter] = useState<DateFilter>('month');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
   const today = new Date();
 
   const { startDate, endDate } = useMemo(() => {
-    switch (period) {
-      case '7d':
+    switch (filter) {
+      case 'today':
+        return { startDate: format(today, 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') };
+      case 'yesterday': {
+        const y = subDays(today, 1);
+        return { startDate: format(y, 'yyyy-MM-dd'), endDate: format(y, 'yyyy-MM-dd') };
+      }
+      case '7days':
         return { startDate: format(subDays(today, 6), 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') };
-      case '30d':
+      case '30days':
         return { startDate: format(subDays(today, 29), 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') };
+      case 'custom':
+        if (customRange) {
+          return { startDate: format(customRange.start, 'yyyy-MM-dd'), endDate: format(customRange.end, 'yyyy-MM-dd') };
+        }
+        return { startDate: format(startOfMonth(today), 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') };
       case 'month':
       default:
         return { startDate: format(startOfMonth(today), 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') };
     }
-  }, [period]);
+  }, [filter, customRange]);
 
   const { data: logs = [] } = useContentDailyLogs(
     startDate,
@@ -45,9 +72,7 @@ export default function ConteudoDashboard() {
     return differenceInDays(parseISO(endDate), parseISO(startDate)) + 1;
   }, [startDate, endDate]);
 
-  const sortedLogs = useMemo(() => {
-    return [...logs].sort((a, b) => a.date.localeCompare(b.date));
-  }, [logs]);
+  const sortedLogs = useMemo(() => [...logs].sort((a, b) => a.date.localeCompare(b.date)), [logs]);
 
   const stats = useMemo(() => {
     const totalPosts = logs.reduce((s, l) => s + l.posts_published_count, 0);
@@ -87,74 +112,104 @@ export default function ConteudoDashboard() {
     w3: { label: '@w3', color: 'hsl(var(--warning))' },
   };
 
-  const filterButtons: { value: PeriodFilter; label: string }[] = [
-    { value: '7d', label: '7D' },
-    { value: '30d', label: '30D' },
-    { value: 'month', label: 'Mês' },
-  ];
+  const tableLogs = useMemo(() => [...logs].sort((a, b) => b.date.localeCompare(a.date)), [logs]);
 
-  const tableLogs = useMemo(() => {
-    return [...logs].sort((a, b) => b.date.localeCompare(a.date));
-  }, [logs]);
+  const handleFilterChange = (newFilter: DateFilter) => {
+    setFilter(newFilter);
+    if (newFilter === 'custom') setCalendarOpen(true);
+  };
+
+  const handleApplyCustomRange = () => {
+    if (tempRange.from && tempRange.to) {
+      setCustomRange({ start: tempRange.from, end: tempRange.to });
+      setCalendarOpen(false);
+    }
+  };
+
+  const displayRange = filter === 'custom' && customRange
+    ? `${format(customRange.start, 'dd/MM')} - ${format(customRange.end, 'dd/MM')}`
+    : null;
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <PageHeader title="Dashboard de Conteúdo" description="Visão geral do desempenho de conteúdo" />
-          <div className="flex gap-1 bg-card rounded-lg p-1">
-            {filterButtons.map(f => (
+      <PageHeader title="Dashboard de Conteúdo" description="Visão geral do desempenho de conteúdo">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {RESPONSIBLE_OPTIONS.map(r => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex gap-1 p-1 bg-muted rounded-lg flex-wrap">
+            {filterOptions.map((option) => (
               <Button
-                key={f.value}
-                variant={period === f.value ? 'default' : 'ghost'}
+                key={option.value}
+                variant={filter === option.value ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setPeriod(f.value)}
-                className={cn(period === f.value && 'bg-primary text-primary-foreground')}
+                onClick={() => handleFilterChange(option.value)}
+                className="min-w-[70px]"
               >
-                {f.label}
+                {option.value === 'custom' && displayRange ? displayRange : option.label}
               </Button>
             ))}
           </div>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0">
+                <CalendarIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4" align="end">
+              <Calendar
+                mode="range"
+                selected={{ from: tempRange.from, to: tempRange.to }}
+                onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
+                locale={ptBR}
+                numberOfMonths={2}
+              />
+              <div className="flex justify-end mt-4">
+                <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
+                  Aplicar
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
+      </PageHeader>
 
-        {/* Row 1 – KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Posts publicados */}
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Posts publicados</p>
-              <p className="text-3xl font-bold mt-1">{stats.totalPosts}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Meta: {stats.postsMeta} · <span className={cn(stats.postsPercent >= 100 ? 'text-success' : 'text-primary')}>{stats.postsPercent.toFixed(0)}%</span>
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Stories */}
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stories realizados</p>
-              <p className="text-3xl font-bold mt-1">{stats.totalStories}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Meta: {stats.storiesMeta} · <span className={cn(stats.storiesPercent >= 100 ? 'text-success' : 'text-primary')}>{stats.storiesPercent.toFixed(0)}%</span>
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Agendados */}
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Posts agendados</p>
-              <p className="text-3xl font-bold mt-1">{stats.totalScheduled}</p>
-            </CardContent>
-          </Card>
-
-          {/* Seguidores ganhos */}
-          <Card>
-            <CardContent className="pt-5 pb-4">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Seguidores ganhos</p>
-              <div className="grid grid-cols-2 gap-2">
+      {/* BLOCO 1 — Produção */}
+      <SectionLabel title="Produção" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <StatCard
+          title="Posts Publicados"
+          value={stats.totalPosts}
+          subtitle={`Meta: ${stats.postsMeta} · ${stats.postsPercent.toFixed(0)}% atingido`}
+          icon={<FileText className="h-5 w-5" />}
+          variant={stats.postsPercent >= 100 ? 'success' : 'primary'}
+        />
+        <StatCard
+          title="Stories Realizados"
+          value={stats.totalStories}
+          subtitle={`Meta: ${stats.storiesMeta} · ${stats.storiesPercent.toFixed(0)}% atingido`}
+          icon={<Film className="h-5 w-5" />}
+          variant={stats.storiesPercent >= 100 ? 'success' : 'primary'}
+        />
+        <StatCard
+          title="Posts Agendados"
+          value={stats.totalScheduled}
+          icon={<CalendarCheck className="h-5 w-5" />}
+        />
+        <div className="stat-card animate-fade-in border-primary/15 bg-primary/[0.03]">
+          <div className="flex items-start justify-between">
+            <div className="w-full">
+              <p className="text-sm font-medium text-muted-foreground">Seguidores Ganhos</p>
+              <div className="grid grid-cols-2 gap-2 mt-3">
                 <div className="rounded-md bg-muted/30 px-3 py-2">
                   <p className="text-[10px] text-muted-foreground">@leo</p>
                   <p className="text-lg font-bold">
@@ -168,113 +223,107 @@ export default function ConteudoDashboard() {
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="p-3 rounded-lg bg-primary/10 text-primary">
+              <Users className="h-5 w-5" />
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Row 2 – Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Posts e Stories por dia</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {chartData.length === 0 ? (
-                <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
-              ) : (
-                <ChartContainer config={barChartConfig} className="h-48 w-full">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="posts" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="stories" fill="hsl(var(--warning))" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ChartContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Crescimento de seguidores</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {chartData.length === 0 ? (
-                <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
-              ) : (
-                <ChartContainer config={lineChartConfig} className="h-48 w-full">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line type="monotone" dataKey="leo" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="w3" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ChartContainer>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Row 3 – Summary Table */}
+      {/* BLOCO 2 — Evolução */}
+      <SectionLabel title="Evolução" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <Card>
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium">Histórico do período</CardTitle>
-            <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-              <SelectTrigger className="w-40 h-8 text-xs">
-                <SelectValue placeholder="Responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {RESPONSIBLE_OPTIONS.map(r => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Posts e Stories por dia</CardTitle>
           </CardHeader>
           <CardContent>
-            {tableLogs.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground text-sm">Nenhum registro no período</div>
+            {chartData.length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">Data</TableHead>
-                      <TableHead className="text-xs text-center">Posts</TableHead>
-                      <TableHead className="text-xs text-center">Agendados</TableHead>
-                      <TableHead className="text-xs text-center">Stories</TableHead>
-                      <TableHead className="text-xs text-center">YouTube</TableHead>
-                      <TableHead className="text-xs text-center">Seg. Leo</TableHead>
-                      <TableHead className="text-xs text-center">Seg. W3</TableHead>
-                      <TableHead className="text-xs">Responsável</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tableLogs.map(log => (
-                      <TableRow key={log.id}>
-                        <TableCell className="text-xs">
-                          {format(new Date(log.date + 'T12:00:00'), 'dd/MM/yyyy')}
-                        </TableCell>
-                        <TableCell className="text-xs text-center">{log.posts_published_count}</TableCell>
-                        <TableCell className="text-xs text-center">{log.posts_scheduled_count}</TableCell>
-                        <TableCell className="text-xs text-center">{log.stories_done_count}</TableCell>
-                        <TableCell className="text-xs text-center">{log.youtube_videos_published_count}</TableCell>
-                        <TableCell className="text-xs text-center">{log.followers_leo.toLocaleString('pt-BR')}</TableCell>
-                        <TableCell className="text-xs text-center">{log.followers_w3.toLocaleString('pt-BR')}</TableCell>
-                        <TableCell className="text-xs">{log.responsible_name}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <ChartContainer config={barChartConfig} className="h-48 w-full">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                  <XAxis dataKey="date" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="posts" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="stories" fill="hsl(var(--warning))" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Crescimento de seguidores</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {chartData.length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
+            ) : (
+              <ChartContainer config={lineChartConfig} className="h-48 w-full">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                  <XAxis dataKey="date" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line type="monotone" dataKey="leo" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="w3" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ChartContainer>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* BLOCO 3 — Histórico */}
+      <SectionLabel title="Histórico" />
+      <Card>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-medium">Histórico do período</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tableLogs.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground text-sm">Nenhum registro no período</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Data</TableHead>
+                    <TableHead className="text-xs text-center">Posts</TableHead>
+                    <TableHead className="text-xs text-center">Agendados</TableHead>
+                    <TableHead className="text-xs text-center">Stories</TableHead>
+                    <TableHead className="text-xs text-center">YouTube</TableHead>
+                    <TableHead className="text-xs text-center">Seg. Leo</TableHead>
+                    <TableHead className="text-xs text-center">Seg. W3</TableHead>
+                    <TableHead className="text-xs">Responsável</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tableLogs.map(log => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-xs">
+                        {format(new Date(log.date + 'T12:00:00'), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell className="text-xs text-center">{log.posts_published_count}</TableCell>
+                      <TableCell className="text-xs text-center">{log.posts_scheduled_count}</TableCell>
+                      <TableCell className="text-xs text-center">{log.stories_done_count}</TableCell>
+                      <TableCell className="text-xs text-center">{log.youtube_videos_published_count}</TableCell>
+                      <TableCell className="text-xs text-center">{log.followers_leo.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs text-center">{log.followers_w3.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs">{log.responsible_name}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </AppLayout>
   );
 }
