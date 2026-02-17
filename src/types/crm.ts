@@ -43,6 +43,7 @@ export interface Fechamento {
   data: string;
   closer_user_id: string;
   calls_realizadas: number;
+  reagendado: number;
   no_show: number;
   observacoes?: string;
   criado_em: string;

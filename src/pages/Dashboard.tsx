@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
-import { Phone, PhoneOff, TrendingUp, Target, Trophy, Tv, CalendarIcon, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Phone, PhoneOff, TrendingUp, Target, Trophy, Tv, CalendarIcon, AlertCircle, ShoppingCart, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -169,7 +169,7 @@ export default function DashboardPage() {
 
       {/* BLOCO 2 — Performance Comercial */}
       <SectionLabel title="Performance Comercial" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
         <StatCard
           title="Taxa de Conversão"
           value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
@@ -185,8 +185,15 @@ export default function DashboardPage() {
         <StatCard
           title="Calls Realizadas"
           value={stats?.callsRealizadas ?? 0}
-          subtitle={`${(stats?.callsRealizadas ?? 0) + (stats?.noShows ?? 0)} agendadas`}
+          subtitle={`${stats?.callsAgendadas ?? 0} agendadas`}
           icon={<Phone className="h-5 w-5" />}
+        />
+        <StatCard
+          title="% Reagendado"
+          value={`${(stats?.percentReagendado ?? 0).toFixed(1)}%`}
+          subtitle={`${stats?.reagendados ?? 0} reagendados`}
+          icon={<RefreshCw className="h-5 w-5" />}
+          variant="warning"
         />
         <StatCard
           title="% No-Show"

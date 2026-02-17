@@ -38,7 +38,7 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange, c
       // Fechamentos no período
       let fechamentosQuery = supabase
         .from('fechamentos')
-        .select('calls_realizadas, no_show, closer_user_id')
+        .select('calls_realizadas, reagendado, no_show, closer_user_id')
         .gte('data', start.toISOString().split('T')[0])
         .lte('data', end.toISOString().split('T')[0]);
       
@@ -66,9 +66,11 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange, c
       if (vendasError) throw vendasError;
 
       const callsRealizadas = fechamentos?.reduce((sum, f) => sum + f.calls_realizadas, 0) || 0;
+      const reagendados = fechamentos?.reduce((sum, f) => sum + (f.reagendado || 0), 0) || 0;
       const noShows = fechamentos?.reduce((sum, f) => sum + f.no_show, 0) || 0;
-      const callsAgendadas = callsRealizadas + noShows;
+      const callsAgendadas = callsRealizadas + reagendados + noShows;
       const percentNoShow = callsAgendadas > 0 ? (noShows / callsAgendadas) * 100 : 0;
+      const percentReagendado = callsAgendadas > 0 ? (reagendados / callsAgendadas) * 100 : 0;
       
       const totalVendas = vendas?.length || 0;
       const volumeVendas = vendas?.reduce((sum, v) => sum + Number(v.valor_total), 0) || 0;
@@ -84,9 +86,11 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange, c
 
       return {
         callsRealizadas,
+        reagendados,
         noShows,
         callsAgendadas,
         percentNoShow,
+        percentReagendado,
         totalVendas,
         volumeVendas,
         valorPix,
@@ -153,6 +157,7 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
         .select(`
           closer_user_id,
           calls_realizadas,
+          reagendado,
           no_show,
           closer:profiles!fechamentos_closer_user_id_fkey(id, nome)
         `)
@@ -212,6 +217,7 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
       const closerMetricsMap = new Map<string, { 
         nome: string; 
         callsRealizadas: number; 
+        reagendado: number;
         noShow: number; 
         vendas: number;
         volume: number;
@@ -220,8 +226,9 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
       fechamentos?.forEach(f => {
         const id = f.closer_user_id;
         const nome = (f.closer as any)?.nome || 'Desconhecido';
-        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, noShow: 0, vendas: 0, volume: 0 };
+        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, reagendado: 0, noShow: 0, vendas: 0, volume: 0 };
         current.callsRealizadas += f.calls_realizadas;
+        current.reagendado += (f.reagendado || 0);
         current.noShow += f.no_show;
         closerMetricsMap.set(id, current);
       });
@@ -229,7 +236,7 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
       vendasPeriodo?.forEach(v => {
         const id = v.closer_user_id;
         const nome = (v.closer as any)?.nome || 'Desconhecido';
-        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, noShow: 0, vendas: 0, volume: 0 };
+        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, reagendado: 0, noShow: 0, vendas: 0, volume: 0 };
         current.vendas += 1;
         current.volume += Number(v.valor_total);
         closerMetricsMap.set(id, current);
@@ -248,14 +255,15 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
 
       // Menor no-show
       const closersNoShow = Array.from(closerMetricsMap.entries())
-        .map(([id, data]) => ({ 
-          id, 
-          ...data, 
-          percentNoShow: (data.callsRealizadas + data.noShow) > 0 
-            ? (data.noShow / (data.callsRealizadas + data.noShow)) * 100 
-            : 0 
-        }))
-        .filter(c => (c.callsRealizadas + c.noShow) > 0)
+        .map(([id, data]) => {
+          const agendadas = data.callsRealizadas + data.reagendado + data.noShow;
+          return { 
+            id, 
+            ...data, 
+            percentNoShow: agendadas > 0 ? (data.noShow / agendadas) * 100 : 0 
+          };
+        })
+        .filter(c => (c.callsRealizadas + c.reagendado + c.noShow) > 0)
         .sort((a, b) => a.percentNoShow - b.percentNoShow);
       const menorNoShow = closersNoShow[0] || null;
 
@@ -265,14 +273,15 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
       // Ranking geral por volume
       const rankingGeral = Array.from(closerMetricsMap.entries())
         .filter(([id]) => !EXCLUDED_FROM_RANKING.includes(id))
-        .map(([id, data]) => ({ 
-          id, 
-          ...data,
-          taxaConversao: data.callsRealizadas > 0 ? (data.vendas / data.callsRealizadas) * 100 : 0,
-          percentNoShow: (data.callsRealizadas + data.noShow) > 0 
-            ? (data.noShow / (data.callsRealizadas + data.noShow)) * 100 
-            : 0
-        }))
+        .map(([id, data]) => {
+          const agendadas = data.callsRealizadas + data.reagendado + data.noShow;
+          return { 
+            id, 
+            ...data,
+            taxaConversao: data.callsRealizadas > 0 ? (data.vendas / data.callsRealizadas) * 100 : 0,
+            percentNoShow: agendadas > 0 ? (data.noShow / agendadas) * 100 : 0
+          };
+        })
         .sort((a, b) => b.volume - a.volume);
 
       return {
@@ -297,6 +306,7 @@ export function useNoShowByCloser(filter: DateFilter, customRange?: DateRange) {
         .select(`
           closer_user_id,
           calls_realizadas,
+          reagendado,
           no_show,
           closer:profiles!fechamentos_closer_user_id_fkey(id, nome)
         `)
@@ -309,14 +319,16 @@ export function useNoShowByCloser(filter: DateFilter, customRange?: DateRange) {
       const closerMap = new Map<string, { 
         nome: string; 
         callsRealizadas: number; 
+        reagendado: number;
         noShow: number; 
       }>();
 
       fechamentos?.forEach(f => {
         const id = f.closer_user_id;
         const nome = (f.closer as any)?.nome || 'Desconhecido';
-        const current = closerMap.get(id) || { nome, callsRealizadas: 0, noShow: 0 };
+        const current = closerMap.get(id) || { nome, callsRealizadas: 0, reagendado: 0, noShow: 0 };
         current.callsRealizadas += f.calls_realizadas;
+        current.reagendado += (f.reagendado || 0);
         current.noShow += f.no_show;
         closerMap.set(id, current);
       });
@@ -326,7 +338,7 @@ export function useNoShowByCloser(filter: DateFilter, customRange?: DateRange) {
       return Array.from(closerMap.entries())
         .filter(([id]) => !EXCLUDED_FROM_NOSHOW.includes(id))
         .map(([id, data]) => {
-          const callsAgendadas = data.callsRealizadas + data.noShow;
+          const callsAgendadas = data.callsRealizadas + data.reagendado + data.noShow;
           return {
             id,
             nome: data.nome,
