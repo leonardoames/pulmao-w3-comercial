@@ -1,111 +1,70 @@
 
-# Ajustes visuais no Dashboard de Conteudo
+# Padronizar KPIs do Dashboard de Conteudo com o estilo do Dashboard Comercial
 
 ## Resumo
 
-Tres ajustes no `ConteudoDashboard.tsx` e um no `StatCard`: tags pill para status de meta, formato compacto de meta nos KPIs, legendas com acumulados nos graficos, e correcao de padding.
+Substituir os `StatCard` de Posts Publicados e Stories Realizados por cards customizados que seguem exatamente o mesmo padrao visual do `RevenueCard` do Dashboard Comercial, com o valor principal em destaque grande, a meta ao lado em texto menor separado por "/", e a porcentagem abaixo.
 
 ---
 
-## 1. KPI Cards -- Novo formato
+## Mudanca Visual
 
-**Valor principal com meta ao lado:**
-- Exibir como: `12 / 180` (valor / meta) em tamanho grande
-- Posts Agendados: apenas o valor (sem meta)
-
-**Porcentagem abaixo:**
-- Linha com `67% da meta`
-
-**Tag pill para status:**
-- Pill verde com texto "Meta atingida!" se >= 100%
-- Pill laranja/vermelha com texto "Abaixo da meta" se < 75%
-- Pill azul/neutra com texto "Dentro da meta" se entre 75% e 99%
-
-Para isso, o `StatCard` precisa aceitar um novo prop `badge` (ReactNode) ou alterar o `subtitle` para receber JSX. A abordagem mais limpa: parar de usar `subtitle` string e montar o conteudo diretamente no `ConteudoDashboard` usando o `children` ou customizando o StatCard para aceitar `badge`.
-
-**Solucao tecnica:** Adicionar prop opcional `badge` ao StatCard que renderiza abaixo do subtitle. No dashboard, passar a pill como badge.
-
----
-
-## 2. Graficos -- Remover padding excessivo
-
-O `ChartContainer` tem `className="h-48 w-full"` mas o problema de padding vem do `YAxis` padrao do Recharts.
-
-Correcao:
-- Adicionar `margin={{ left: -20, right: 10 }}` no `LineChart` para compensar o padding do YAxis
-- Ou usar `width` fixo no `YAxis` com valor menor: `<YAxis width={30} />`
-
----
-
-## 3. Legendas com acumulados nos graficos
-
-### Grafico Posts/Stories
-Adicionar legenda customizada abaixo do grafico mostrando:
-- Cor + "Posts Publicados: 45 no periodo"
-- Cor + "Stories: 120 no periodo"  
-- Cor + "Agendados: 15 no periodo"
-
-### Grafico Seguidores
-Adicionar legenda customizada abaixo do grafico mostrando:
-- Cor + "@leo: +230 no periodo"
-- Cor + "@w3: +85 no periodo"
-
-Usar componente customizado de legenda (div com flex, bolinha de cor e texto) em vez do `Legend` padrao do Recharts para ter controle total do conteudo.
-
----
-
-## 4. Arquivos afetados
-
-| Acao | Arquivo |
-|------|---------|
-| Editar | `src/components/ui/stat-card.tsx` (adicionar prop `badge`) |
-| Editar | `src/pages/ConteudoDashboard.tsx` (KPIs, graficos, legendas) |
-
----
-
-## 5. Detalhes tecnicos
-
-### StatCard -- nova prop
-
-```typescript
-badge?: ReactNode; // Renderiza abaixo do subtitle
+**De (atual com StatCard):**
+```
+Posts Publicados
+12 / 180
+67% da meta
+[Abaixo da meta]
 ```
 
-### KPI no Dashboard
-
-```tsx
-<StatCard
-  title="Posts Publicados"
-  value={`${stats.totalPosts} / ${stats.postsMeta}`}
-  subtitle={`${stats.postsPercent.toFixed(0)}% da meta`}
-  badge={
-    <span className={cn(
-      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1',
-      percent >= 100 ? 'bg-success/15 text-success' :
-      percent < 75 ? 'bg-warning/15 text-warning' :
-      'bg-primary/15 text-primary'
-    )}>
-      {percent >= 100 ? 'Meta atingida!' : percent < 75 ? 'Abaixo da meta' : 'Dentro da meta'}
-    </span>
-  }
-/>
+**Para (padrao RevenueCard):**
+```
+POSTS PUBLICADOS
+12  / 180 de meta (67%)
+[Abaixo da meta]
 ```
 
-### Legenda customizada nos graficos
-
-```tsx
-<div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-  <div className="flex items-center gap-1.5">
-    <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-    <span>Posts Publicados: {stats.totalPosts} no período</span>
-  </div>
-  ...
+Layout HTML seguindo o padrao do comercial:
+```html
+<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Posts Publicados</p>
+<div class="flex items-baseline gap-3 flex-wrap">
+  <p class="text-4xl font-bold tracking-tight text-primary">12</p>
+  <span class="text-sm text-muted-foreground font-medium">/ 180 de meta (67%)</span>
+</div>
+<div class="mt-2">
+  <span class="pill...">Abaixo da meta</span>
 </div>
 ```
 
-### Padding do grafico
+---
 
-```tsx
-<LineChart data={postsChartData} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
-  <YAxis width={35} ... />
-```
+## Arquivo afetado
+
+| Acao | Arquivo |
+|------|---------|
+| Editar | `src/pages/ConteudoDashboard.tsx` (linhas 306-336) |
+
+---
+
+## Detalhes tecnicos
+
+### Cards de Posts Publicados e Stories Realizados
+
+Substituir os dois `StatCard` por `Card` customizado com a mesma estrutura do `RevenueCard`:
+
+1. Titulo em `text-xs font-semibold uppercase tracking-widest text-muted-foreground`
+2. Valor principal em `text-4xl font-bold tracking-tight text-primary`
+3. Meta e porcentagem em `text-sm text-muted-foreground font-medium` ao lado do valor, na mesma baseline
+4. Pill de status abaixo com `mt-2`
+5. Manter borda colorida conforme variant (warning/success/primary) usando classes condicionais no Card
+
+### Card de Posts Agendados
+
+Manter como `StatCard` simples (sem meta, sem pill), apenas o valor.
+
+### Logica de cores da borda do card
+
+Aplicar classes condicionais no `Card` wrapper:
+- `border-success/30` se >= 100%
+- `border-warning/30` se < 75%
+- `border-primary/30` entre 75-99%
