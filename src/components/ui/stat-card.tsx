@@ -5,6 +5,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
+  badge?: ReactNode;
   icon?: ReactNode;
   trend?: {
     value: number;
@@ -18,6 +19,7 @@ export function StatCard({
   title,
   value,
   subtitle,
+  badge,
   icon,
   trend,
   className,
@@ -48,6 +50,7 @@ export function StatCard({
               <span>{Math.abs(trend.value)}%</span>
             </div>
           )}
+          {badge && <div className="mt-1">{badge}</div>}
         </div>
         {icon && (
           <div className={cn(
