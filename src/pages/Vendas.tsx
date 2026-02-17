@@ -229,6 +229,12 @@ export default function VendasPage() {
       return;
     }
 
+    const flag = (val: boolean) => val ? 'Sim' : 'Não';
+    const formatBoleto = (parcela: number, qtd: number) => {
+      if (!parcela || !qtd) return '-';
+      return `${qtd}x ${formatCurrency(parcela)}`;
+    };
+
     const rows = filteredVendas.map(v => {
       const [year, month, day] = v.data_fechamento.split('-').map(Number);
       const dataFormatted = `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
@@ -239,25 +245,38 @@ export default function VendasPage() {
         <td>${v.nome_empresa}</td>
         <td>${closerNome}</td>
         <td>${v.duracao_contrato_meses}m</td>
-        <td style="text-align:right">${formatCurrency(v.valor_total)}</td>
+        <td class="r">${formatCurrency(v.valor_pix)}</td>
+        <td class="r">${formatCurrency(v.valor_cartao)}</td>
+        <td class="r">${formatBoleto(v.valor_boleto_parcela, v.quantidade_parcelas_boleto)}</td>
+        <td class="r b">${formatCurrency(v.valor_total)}</td>
+        <td class="c">${flag(v.pago)}</td>
+        <td class="c">${flag(v.contrato_assinado)}</td>
+        <td class="c">${flag(v.enviado_financeiro)}</td>
+        <td class="c">${flag(v.enviado_cs)}</td>
       </tr>`;
     }).join('');
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Vendas</title>
     <style>
-      body{font-family:Arial,sans-serif;padding:32px;color:#222}
-      h1{font-size:20px;margin-bottom:4px}
-      p.sub{color:#666;font-size:13px;margin-bottom:20px}
-      table{width:100%;border-collapse:collapse;font-size:13px}
-      th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}
+      @page{size:landscape}
+      body{font-family:Arial,sans-serif;padding:24px;color:#222}
+      h1{font-size:18px;margin-bottom:4px}
+      p.sub{color:#666;font-size:12px;margin-bottom:16px}
+      table{width:100%;border-collapse:collapse;font-size:11px}
+      th,td{border:1px solid #ddd;padding:5px 6px;text-align:left;white-space:nowrap}
       th{background:#f5f5f5;font-weight:600}
-      .summary{margin-top:20px;font-size:14px}
-      .summary span{font-weight:bold}
+      .r{text-align:right}
+      .c{text-align:center}
+      .b{font-weight:bold}
       @media print{body{padding:0}}
     </style></head><body>
     <h1>Relatório de Vendas</h1>
     <p class="sub">${totalVendas} vendas • Faturamento: ${formatCurrency(totalFaturamento)} • Ticket Médio: ${formatCurrency(ticketMedio)}</p>
-    <table><thead><tr><th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Duração</th><th style="text-align:right">Valor Total</th></tr></thead>
+    <table><thead><tr>
+      <th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Duração</th>
+      <th class="r">Pix</th><th class="r">Cartão</th><th class="r">Boleto</th><th class="r">Valor Total</th>
+      <th class="c">Pago</th><th class="c">Contrato</th><th class="c">Financeiro</th><th class="c">CS</th>
+    </tr></thead>
     <tbody>${rows}</tbody></table>
     <script>window.onload=function(){window.print()}<\/script>
     </body></html>`;
