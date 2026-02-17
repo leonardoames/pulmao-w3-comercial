@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { useClosers } from '@/hooks/useProfiles';
 import { useMarketingStats, useMarketingInvestimentoDia, useUpsertInvestimento } from '@/hooks/useMarketingDashboard';
 import { DateFilter, DateRange } from '@/hooks/useDashboard';
-import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
+import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import {
   CalendarIcon, DollarSign, Phone, PhoneOff, Target, TrendingUp,
   ShoppingCart, BarChart3, Zap, Save,
@@ -50,7 +50,8 @@ export default function MarketingDashboard() {
   const [investValor, setInvestValor] = useState('');
   const [investCalendarOpen, setInvestCalendarOpen] = useState(false);
 
-  const canManage = useCanAccessAdminPanel();
+  const { canEdit: canEditPerm } = usePermissionChecks();
+  const canManage = canEditPerm('route:marketing-dashboard');
   const { data: closers } = useClosers();
   const { data: stats, isLoading } = useMarketingStats(filter, customRange, selectedCloser);
   const { data: investimentoDia } = useMarketingInvestimentoDia(investDate);

@@ -778,6 +778,7 @@ export type Database = {
       can_access_admin_panel: { Args: never; Returns: boolean }
       can_edit_any_fechamento: { Args: never; Returns: boolean }
       can_edit_comercial: { Args: never; Returns: boolean }
+      can_edit_content: { Args: never; Returns: boolean }
       can_edit_vendas: { Args: never; Returns: boolean }
       can_manage_ote_goals: { Args: never; Returns: boolean }
       can_manage_users: { Args: never; Returns: boolean }

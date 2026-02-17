@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useContentDailyLogs, useDeleteContentDailyLog } from '@/hooks/useContentTracking';
-import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
+import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { ContentDailyLog, RESPONSIBLE_OPTIONS } from '@/types/content';
 import { DailyLogModal } from '@/components/conteudos/DailyLogModal';
 import { DailyLogViewSheet } from '@/components/conteudos/DailyLogViewSheet';
@@ -22,7 +22,8 @@ import { DateRange } from 'react-day-picker';
 type PeriodFilter = 'today' | '7d' | 'month' | 'custom';
 
 export default function ConteudoAcompanhamento() {
-  const canEdit = useCanAccessAdminPanel();
+  const { canEdit: canEditPerm } = usePermissionChecks();
+  const canEdit = canEditPerm('route:conteudo-acompanhamento');
   const [period, setPeriod] = useState<PeriodFilter>('month');
   const [responsibleFilter, setResponsibleFilter] = useState('all');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();

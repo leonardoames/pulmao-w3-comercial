@@ -58,8 +58,10 @@ function ProtectedRoute({ children, routePath }: { children: React.ReactNode; ro
   if (routePath) {
     const resourceKey = ROUTE_TO_RESOURCE[routePath];
     if (resourceKey && !canView(resourceKey)) {
-      // Redirect to first accessible route or social-selling fallback
-      return <Navigate to="/" replace />;
+      // Redirect to first accessible route
+      const firstAccessible = Object.entries(ROUTE_TO_RESOURCE)
+        .find(([, key]) => canView(key));
+      return <Navigate to={firstAccessible?.[0] || '/auth'} replace />;
     }
   }
 
