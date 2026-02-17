@@ -774,6 +774,8 @@ export type Database = {
         | "GESTOR_COMERCIAL"
         | "CLOSER"
         | "SOCIAL_SELLING"
+        | "SDR"
+        | "ANALISTA_CONTEUDO"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
         | "Agendada"
@@ -955,6 +957,8 @@ export const Constants = {
         "GESTOR_COMERCIAL",
         "CLOSER",
         "SOCIAL_SELLING",
+        "SDR",
+        "ANALISTA_CONTEUDO",
       ],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],
       call_status: [
