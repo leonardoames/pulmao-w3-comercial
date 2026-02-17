@@ -1,70 +1,49 @@
 
-# Padronizar KPIs do Dashboard de Conteudo com o estilo do Dashboard Comercial
+# Corrigir erro ao desativar usuarios no Painel Admin
 
-## Resumo
+## Problema
 
-Substituir os `StatCard` de Posts Publicados e Stories Realizados por cards customizados que seguem exatamente o mesmo padrao visual do `RevenueCard` do Dashboard Comercial, com o valor principal em destaque grande, a meta ao lado em texto menor separado por "/", e a porcentagem abaixo.
+O erro `PGRST116: The result contains 0 rows` ocorre porque:
+
+1. A politica RLS da tabela `profiles` para UPDATE permite apenas `auth.uid() = id OR is_master()` -- ou seja, somente o proprio usuario ou um MASTER pode atualizar perfis.
+2. Roles como SDR, GESTOR_COMERCIAL e DIRETORIA agora acessam o painel admin, mas nao tem permissao RLS para editar perfis de outros usuarios.
+3. O codigo usa `.select().single()` apos o update, que falha quando nenhuma linha e retornada.
+
+## Solucao
+
+### 1. Atualizar politica RLS da tabela `profiles` (migracao SQL)
+
+Alterar a politica de UPDATE para permitir que roles administrativos (MASTER, DIRETORIA, GESTOR_COMERCIAL, SDR) possam editar perfis:
+
+```sql
+DROP POLICY "Usuários podem editar perfis" ON public.profiles;
+
+CREATE POLICY "Usuários podem editar perfis"
+ON public.profiles
+FOR UPDATE
+USING (
+  (auth.uid() = id) OR can_access_admin_panel()
+);
+```
+
+### 2. Corrigir o codigo do hook (`src/hooks/useUserManagement.ts`)
+
+Trocar `.select().single()` por `.select().maybeSingle()` no `useUpdateProfile` para evitar o erro PGRST116 quando o resultado e vazio por qualquer motivo.
+
+```typescript
+const { data, error } = await supabase
+  .from('profiles')
+  .update({ nome, email, area, ativo })
+  .eq('id', id)
+  .select()
+  .maybeSingle();
+```
 
 ---
 
-## Mudanca Visual
-
-**De (atual com StatCard):**
-```
-Posts Publicados
-12 / 180
-67% da meta
-[Abaixo da meta]
-```
-
-**Para (padrao RevenueCard):**
-```
-POSTS PUBLICADOS
-12  / 180 de meta (67%)
-[Abaixo da meta]
-```
-
-Layout HTML seguindo o padrao do comercial:
-```html
-<p class="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Posts Publicados</p>
-<div class="flex items-baseline gap-3 flex-wrap">
-  <p class="text-4xl font-bold tracking-tight text-primary">12</p>
-  <span class="text-sm text-muted-foreground font-medium">/ 180 de meta (67%)</span>
-</div>
-<div class="mt-2">
-  <span class="pill...">Abaixo da meta</span>
-</div>
-```
-
----
-
-## Arquivo afetado
+## Arquivos afetados
 
 | Acao | Arquivo |
 |------|---------|
-| Editar | `src/pages/ConteudoDashboard.tsx` (linhas 306-336) |
-
----
-
-## Detalhes tecnicos
-
-### Cards de Posts Publicados e Stories Realizados
-
-Substituir os dois `StatCard` por `Card` customizado com a mesma estrutura do `RevenueCard`:
-
-1. Titulo em `text-xs font-semibold uppercase tracking-widest text-muted-foreground`
-2. Valor principal em `text-4xl font-bold tracking-tight text-primary`
-3. Meta e porcentagem em `text-sm text-muted-foreground font-medium` ao lado do valor, na mesma baseline
-4. Pill de status abaixo com `mt-2`
-5. Manter borda colorida conforme variant (warning/success/primary) usando classes condicionais no Card
-
-### Card de Posts Agendados
-
-Manter como `StatCard` simples (sem meta, sem pill), apenas o valor.
-
-### Logica de cores da borda do card
-
-Aplicar classes condicionais no `Card` wrapper:
-- `border-success/30` se >= 100%
-- `border-warning/30` se < 75%
-- `border-primary/30` entre 75-99%
+| Criar | Migracao SQL para atualizar RLS de `profiles` |
+| Editar | `src/hooks/useUserManagement.ts` (linha 63-68) |
