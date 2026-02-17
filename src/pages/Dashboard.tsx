@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import { OteDashboardCard } from '@/components/ote/OteDashboardCard';
 import { ShareDashboardDialog } from '@/components/dashboard/ShareDashboardDialog';
 import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
+import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const [selectedCloser, setSelectedCloser] = useState<string>('all');
 
   const canShare = useCanAccessAdminPanel();
+  const { canView: canViewSection } = usePermissionChecks();
   const { data: closers } = useClosers();
   const { data: stats, isLoading } = useDashboardStats(filter, customRange, selectedCloser);
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
@@ -134,78 +136,90 @@ export default function DashboardPage() {
       </PageHeader>
 
       {/* BLOCO 1 — Receita */}
-      <SectionLabel title="Receita" />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <RevenueCard
-          volumeVendas={stats?.volumeVendas ?? 0}
-          totalVendas={stats?.totalVendas ?? 0}
-          valorPix={stats?.valorPix ?? 0}
-          valorCartao={stats?.valorCartao ?? 0}
-          valorBoleto={stats?.valorBoleto ?? 0}
-          caixaDoMes={stats?.caixaDoMes ?? 0}
-          proporcaoCaixa={stats?.proporcaoCaixa ?? 0}
-        />
-        <div className="flex flex-col gap-6">
-          <StatCard
-            title="Ticket Médio"
-            value={formatCurrency(stats?.ticketMedio ?? 0)}
-            icon={<TrendingUp className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Faturamento por Call"
-            value={formatCurrency(stats?.faturamentoPorCall ?? 0)}
-            subtitle="Volume / Calls realizadas"
-            icon={<TrendingUp className="h-5 w-5" />}
+      {canViewSection('section:dashboard:receita') && (
+        <>
+          <SectionLabel title="Receita" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <RevenueCard
+              volumeVendas={stats?.volumeVendas ?? 0}
+              totalVendas={stats?.totalVendas ?? 0}
+              valorPix={stats?.valorPix ?? 0}
+              valorCartao={stats?.valorCartao ?? 0}
+              valorBoleto={stats?.valorBoleto ?? 0}
+              caixaDoMes={stats?.caixaDoMes ?? 0}
+              proporcaoCaixa={stats?.proporcaoCaixa ?? 0}
+            />
+            <div className="flex flex-col gap-6">
+              <StatCard
+                title="Ticket Médio"
+                value={formatCurrency(stats?.ticketMedio ?? 0)}
+                icon={<TrendingUp className="h-5 w-5" />}
+              />
+              <StatCard
+                title="Faturamento por Call"
+                value={formatCurrency(stats?.faturamentoPorCall ?? 0)}
+                subtitle="Volume / Calls realizadas"
+                icon={<TrendingUp className="h-5 w-5" />}
+              />
+            </div>
+          </div>
+        </>
+      )}
+      {canViewSection('section:dashboard:ote') && (
+        <div className="mb-10">
+          <OteDashboardCard
+            monthRef={format(new Date(), 'yyyy-MM')}
+            selectedCloser={selectedCloser}
+            onCloserChange={setSelectedCloser}
           />
         </div>
-      </div>
-      <div className="mb-10">
-        <OteDashboardCard
-          monthRef={format(new Date(), 'yyyy-MM')}
-          selectedCloser={selectedCloser}
-          onCloserChange={setSelectedCloser}
-        />
-      </div>
+      )}
 
       {/* BLOCO 2 — Performance Comercial */}
-      <SectionLabel title="Performance Comercial" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
-        <StatCard
-          title="Taxa de Conversão"
-          value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
-          subtitle="Vendas / Calls realizadas"
-          icon={<Target className="h-5 w-5" />}
-          variant={(stats?.taxaConversao ?? 0) > 15 ? 'success' : undefined}
-        />
-        <StatCard
-          title="Vendas Realizadas"
-          value={stats?.totalVendas ?? 0}
-          icon={<ShoppingCart className="h-5 w-5" />}
-        />
-        <StatCard
-          title="Calls Realizadas"
-          value={stats?.callsRealizadas ?? 0}
-          subtitle={`${stats?.callsAgendadas ?? 0} agendadas`}
-          icon={<Phone className="h-5 w-5" />}
-        />
-        <StatCard
-          title="% Reagendado"
-          value={`${(stats?.percentReagendado ?? 0).toFixed(1)}%`}
-          subtitle={`${stats?.reagendados ?? 0} reagendados`}
-          icon={<RefreshCw className="h-5 w-5" />}
-          variant="warning"
-        />
-        <StatCard
-          title="% No-Show"
-          value={`${(stats?.percentNoShow ?? 0).toFixed(1)}%`}
-          subtitle={`${stats?.noShows ?? 0} no-shows`}
-          icon={<PhoneOff className="h-5 w-5" />}
-          variant="destructive"
-        />
-      </div>
+      {canViewSection('section:dashboard:performance') && (
+        <>
+          <SectionLabel title="Performance Comercial" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+            <StatCard
+              title="Taxa de Conversão"
+              value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
+              subtitle="Vendas / Calls realizadas"
+              icon={<Target className="h-5 w-5" />}
+              variant={(stats?.taxaConversao ?? 0) > 15 ? 'success' : undefined}
+            />
+            <StatCard
+              title="Vendas Realizadas"
+              value={stats?.totalVendas ?? 0}
+              icon={<ShoppingCart className="h-5 w-5" />}
+            />
+            <StatCard
+              title="Calls Realizadas"
+              value={stats?.callsRealizadas ?? 0}
+              subtitle={`${stats?.callsAgendadas ?? 0} agendadas`}
+              icon={<Phone className="h-5 w-5" />}
+            />
+            <StatCard
+              title="% Reagendado"
+              value={`${(stats?.percentReagendado ?? 0).toFixed(1)}%`}
+              subtitle={`${stats?.reagendados ?? 0} reagendados`}
+              icon={<RefreshCw className="h-5 w-5" />}
+              variant="warning"
+            />
+            <StatCard
+              title="% No-Show"
+              value={`${(stats?.percentNoShow ?? 0).toFixed(1)}%`}
+              subtitle={`${stats?.noShows ?? 0} no-shows`}
+              icon={<PhoneOff className="h-5 w-5" />}
+              variant="destructive"
+            />
+          </div>
+        </>
+      )}
 
       {/* Destaques */}
-      <SectionLabel title="Destaques" />
+      {canViewSection('section:dashboard:destaques') && (
+        <>
+          <SectionLabel title="Destaques" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Coluna 1: Ranking de Closers */}
         <Card>
@@ -344,6 +358,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+        </>
+      )}
     </AppLayout>
   );
 }

@@ -4,7 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { useIsSocialSelling, useCurrentUserRole } from "@/hooks/useUserRoles";
+import { useCurrentUserRole } from "@/hooks/useUserRoles";
+import { usePermissionChecks, ROUTE_TO_RESOURCE } from "@/hooks/useRolePermissions";
 import { ThemeProvider } from "@/components/theme-provider";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -27,12 +28,12 @@ import SharedDashboard from "./pages/SharedDashboard";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, allowSocialSelling }: { children: React.ReactNode; allowSocialSelling?: boolean }) {
+function ProtectedRoute({ children, routePath }: { children: React.ReactNode; routePath?: string }) {
   const { user, loading } = useAuth();
-  const isSocialSelling = useIsSocialSelling();
   const { data: userRole, isLoading: roleLoading } = useCurrentUserRole();
+  const { canView, isLoading: permLoading } = usePermissionChecks();
 
-  if (loading || roleLoading) {
+  if (loading || roleLoading || permLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -47,9 +48,13 @@ function ProtectedRoute({ children, allowSocialSelling }: { children: React.Reac
     return <Navigate to="/auth" replace />;
   }
 
-  // Social Selling users can only access /social-selling
-  if (isSocialSelling && !allowSocialSelling) {
-    return <Navigate to="/social-selling" replace />;
+  // Check route permission if a routePath is provided
+  if (routePath) {
+    const resourceKey = ROUTE_TO_RESOURCE[routePath];
+    if (resourceKey && !canView(resourceKey)) {
+      // Redirect to first accessible route or social-selling fallback
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -72,22 +77,22 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
-      <Route path="/meu-fechamento" element={<ProtectedRoute><MeuFechamento /></ProtectedRoute>} />
-      <Route path="/meta-ote" element={<ProtectedRoute><OteTracking /></ProtectedRoute>} />
-      <Route path="/social-selling" element={<ProtectedRoute allowSocialSelling><SocialSelling /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute routePath="/"><Dashboard /></ProtectedRoute>} />
+      <Route path="/vendas" element={<ProtectedRoute routePath="/vendas"><Vendas /></ProtectedRoute>} />
+      <Route path="/meu-fechamento" element={<ProtectedRoute routePath="/meu-fechamento"><MeuFechamento /></ProtectedRoute>} />
+      <Route path="/meta-ote" element={<ProtectedRoute routePath="/meta-ote"><OteTracking /></ProtectedRoute>} />
+      <Route path="/social-selling" element={<ProtectedRoute routePath="/social-selling"><SocialSelling /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
-      <Route path="/painel-admin" element={<ProtectedRoute><UserManagement /></ProtectedRoute>} />
-      <Route path="/marketing/dashboard" element={<ProtectedRoute><MarketingDashboard /></ProtectedRoute>} />
+      <Route path="/painel-admin" element={<ProtectedRoute routePath="/painel-admin"><UserManagement /></ProtectedRoute>} />
+      <Route path="/marketing/dashboard" element={<ProtectedRoute routePath="/marketing/dashboard"><MarketingDashboard /></ProtectedRoute>} />
       {/* Conteúdo routes */}
-      <Route path="/conteudo/dashboard" element={<ProtectedRoute><ConteudoDashboard /></ProtectedRoute>} />
-      <Route path="/conteudo/acompanhamento" element={<ProtectedRoute><ConteudoAcompanhamento /></ProtectedRoute>} />
-      <Route path="/conteudo/controle" element={<ProtectedRoute><MarketingConteudos /></ProtectedRoute>} />
-      <Route path="/conteudo/twitter" element={<ProtectedRoute><MarketingTwitter /></ProtectedRoute>} />
-      <Route path="/conteudo/ai" element={<ProtectedRoute><AiAgentsList /></ProtectedRoute>} />
-      <Route path="/conteudo/ai/novo" element={<ProtectedRoute><AiAgentNew /></ProtectedRoute>} />
-      <Route path="/conteudo/ai/:id" element={<ProtectedRoute><AiAgentDetail /></ProtectedRoute>} />
+      <Route path="/conteudo/dashboard" element={<ProtectedRoute routePath="/conteudo/dashboard"><ConteudoDashboard /></ProtectedRoute>} />
+      <Route path="/conteudo/acompanhamento" element={<ProtectedRoute routePath="/conteudo/acompanhamento"><ConteudoAcompanhamento /></ProtectedRoute>} />
+      <Route path="/conteudo/controle" element={<ProtectedRoute routePath="/conteudo/controle"><MarketingConteudos /></ProtectedRoute>} />
+      <Route path="/conteudo/twitter" element={<ProtectedRoute routePath="/conteudo/twitter"><MarketingTwitter /></ProtectedRoute>} />
+      <Route path="/conteudo/ai" element={<ProtectedRoute routePath="/conteudo/ai"><AiAgentsList /></ProtectedRoute>} />
+      <Route path="/conteudo/ai/novo" element={<ProtectedRoute routePath="/conteudo/ai"><AiAgentNew /></ProtectedRoute>} />
+      <Route path="/conteudo/ai/:id" element={<ProtectedRoute routePath="/conteudo/ai"><AiAgentDetail /></ProtectedRoute>} />
       {/* Legacy redirects */}
       <Route path="/marketing/conteudos" element={<Navigate to="/conteudo/controle" replace />} />
       <Route path="/marketing/twitter" element={<Navigate to="/conteudo/twitter" replace />} />

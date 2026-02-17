@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { useCanAccessAdminPanel, useCurrentUserRole, useIsSocialSelling } from '@/hooks/useUserRoles';
+import { useCurrentUserRole, useIsSocialSelling } from '@/hooks/useUserRoles';
+import { usePermissionChecks, ROUTE_TO_RESOURCE } from '@/hooks/useRolePermissions';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -56,18 +57,21 @@ const navGroups = [
 export function AppSidebar() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
-  const canAccessAdmin = useCanAccessAdminPanel();
   const { data: userRole } = useCurrentUserRole();
-  const isSocialSelling = useIsSocialSelling();
+  const { canView } = usePermissionChecks();
 
-  const visibleGroups = isSocialSelling
-    ? [
-        {
-          label: 'Comercial',
-          items: [{ path: '/social-selling', icon: Users, label: 'Social Selling' }],
-        },
-      ]
-    : navGroups;
+  // Filter nav items based on permissions
+  const visibleGroups = navGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        const resourceKey = ROUTE_TO_RESOURCE[item.path];
+        return resourceKey ? canView(resourceKey) : true;
+      }),
+    }))
+    .filter(group => group.items.length > 0);
+
+  const canViewAdmin = canView('route:painel-admin');
 
   // Determine which groups should start open based on current route
   const initialOpen = visibleGroups.reduce((acc, group) => {
@@ -75,7 +79,6 @@ export function AppSidebar() {
     return acc;
   }, {} as Record<string, boolean>);
 
-  // Default all to open if none match
   const allClosed = !Object.values(initialOpen).some(Boolean);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
@@ -148,7 +151,7 @@ export function AppSidebar() {
       </nav>
 
       {/* Admin Panel Link */}
-      {canAccessAdmin && (
+      {canViewAdmin && (
         <div className="px-4 pb-2">
           <Link
             to="/painel-admin"
