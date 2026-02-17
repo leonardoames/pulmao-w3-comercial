@@ -321,6 +321,7 @@ export type Database = {
           id: string
           no_show: number
           observacoes: string | null
+          reagendado: number
         }
         Insert: {
           atualizado_em?: string
@@ -331,6 +332,7 @@ export type Database = {
           id?: string
           no_show?: number
           observacoes?: string | null
+          reagendado?: number
         }
         Update: {
           atualizado_em?: string
@@ -341,6 +343,7 @@ export type Database = {
           id?: string
           no_show?: number
           observacoes?: string | null
+          reagendado?: number
         }
         Relationships: [
           {

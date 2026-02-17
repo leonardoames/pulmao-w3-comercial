@@ -26,6 +26,7 @@ export const fechamentoSchema = z.object({
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
   closer_user_id: z.string().uuid('ID do closer inválido'),
   calls_realizadas: z.number().int().min(0, 'Valor não pode ser negativo').max(1000),
+  reagendado: z.number().int().min(0, 'Valor não pode ser negativo').max(1000),
   no_show: z.number().int().min(0, 'Valor não pode ser negativo').max(1000),
   observacoes: z.string().max(2000, 'Observações muito longas').optional().nullable(),
 });

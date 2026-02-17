@@ -43,6 +43,7 @@ interface DayRow {
   dateStr: string;
   hasData: boolean;
   calls_realizadas: number;
+  reagendado: number;
   no_show: number;
   calls_agendadas: number;
   id?: string;
@@ -101,8 +102,9 @@ export default function MeuFechamentoPage() {
         dateStr: f.data,
         hasData: true,
         calls_realizadas: f.calls_realizadas,
+        reagendado: f.reagendado || 0,
         no_show: f.no_show,
-        calls_agendadas: f.calls_agendadas ?? (f.calls_realizadas + f.no_show),
+        calls_agendadas: f.calls_agendadas ?? (f.calls_realizadas + (f.reagendado || 0) + f.no_show),
         id: f.id,
       }));
     }
@@ -121,8 +123,9 @@ export default function MeuFechamentoPage() {
             dateStr: key,
             hasData: true,
             calls_realizadas: f.calls_realizadas,
+            reagendado: f.reagendado || 0,
             no_show: f.no_show,
-            calls_agendadas: f.calls_agendadas ?? (f.calls_realizadas + f.no_show),
+            calls_agendadas: f.calls_agendadas ?? (f.calls_realizadas + (f.reagendado || 0) + f.no_show),
             id: f.id,
           };
         }
@@ -131,6 +134,7 @@ export default function MeuFechamentoPage() {
           dateStr: key,
           hasData: false,
           calls_realizadas: 0,
+          reagendado: 0,
           no_show: 0,
           calls_agendadas: 0,
         };
@@ -142,14 +146,16 @@ export default function MeuFechamentoPage() {
   const totals = useMemo(() => {
     const rows = allDaysRows.filter(r => r.hasData);
     const realizadas = rows.reduce((s, r) => s + r.calls_realizadas, 0);
+    const reagendado = rows.reduce((s, r) => s + r.reagendado, 0);
     const noShow = rows.reduce((s, r) => s + r.no_show, 0);
     const agendadas = rows.reduce((s, r) => s + r.calls_agendadas, 0);
-    return { realizadas, noShow, agendadas };
+    return { realizadas, reagendado, noShow, agendadas };
   }, [allDaysRows]);
 
   const upsertFechamento = useUpsertFechamento();
 
   const [callsRealizadas, setCallsRealizadas] = useState<number>(0);
+  const [reagendado, setReagendado] = useState<number>(0);
   const [noShow, setNoShow] = useState<number>(0);
   const [observacoes, setObservacoes] = useState<string>('');
 
@@ -163,10 +169,12 @@ export default function MeuFechamentoPage() {
   useEffect(() => {
     if (fechamento) {
       setCallsRealizadas(fechamento.calls_realizadas);
+      setReagendado(fechamento.reagendado || 0);
       setNoShow(fechamento.no_show);
       setObservacoes(fechamento.observacoes || '');
     } else {
       setCallsRealizadas(0);
+      setReagendado(0);
       setNoShow(0);
       setObservacoes('');
     }
@@ -175,21 +183,23 @@ export default function MeuFechamentoPage() {
   const handleSave = async () => {
     if (!activeCloserId) return;
     const safeCallsRealizadas = Math.max(0, Math.floor(callsRealizadas));
+    const safeReagendado = Math.max(0, Math.floor(reagendado));
     const safeNoShow = Math.max(0, Math.floor(noShow));
     const safeObservacoes = (observacoes || '').trim();
-    if (safeCallsRealizadas > 1000 || safeNoShow > 1000) return;
+    if (safeCallsRealizadas > 1000 || safeReagendado > 1000 || safeNoShow > 1000) return;
     if (safeObservacoes.length > 2000) return;
 
     await upsertFechamento.mutateAsync({
       data: dateStr,
       closer_user_id: activeCloserId,
       calls_realizadas: safeCallsRealizadas,
+      reagendado: safeReagendado,
       no_show: safeNoShow,
       observacoes: safeObservacoes || undefined,
     });
   };
 
-  const callsAgendadas = callsRealizadas + noShow;
+  const callsAgendadas = callsRealizadas + reagendado + noShow;
 
   return (
     <AppLayout>
@@ -241,7 +251,7 @@ export default function MeuFechamentoPage() {
               <p className="text-muted-foreground text-center py-8">Carregando...</p>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="calls_realizadas">Calls Realizadas</Label>
                     <Input
@@ -250,6 +260,16 @@ export default function MeuFechamentoPage() {
                       min="0"
                       value={callsRealizadas}
                       onChange={(e) => setCallsRealizadas(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reagendado">Reagendados</Label>
+                    <Input
+                      id="reagendado"
+                      type="number"
+                      min="0"
+                      value={reagendado}
+                      onChange={(e) => setReagendado(Number(e.target.value) || 0)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -318,6 +338,7 @@ export default function MeuFechamentoPage() {
                 <TableRow>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-center">Realizadas</TableHead>
+                  <TableHead className="text-center">Reagendados</TableHead>
                   <TableHead className="text-center">No-Show (%)</TableHead>
                   <TableHead className="text-center">Agendadas</TableHead>
                 </TableRow>
@@ -325,7 +346,7 @@ export default function MeuFechamentoPage() {
               <TableBody>
                 {allDaysRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                       Nenhum registro encontrado
                     </TableCell>
                   </TableRow>
@@ -345,13 +366,14 @@ export default function MeuFechamentoPage() {
                       {row.hasData ? (
                         <>
                           <TableCell className="text-center">{row.calls_realizadas}</TableCell>
+                          <TableCell className="text-center">{row.reagendado}</TableCell>
                           <TableCell className="text-center text-destructive">
                             {formatNoShow(row.no_show, row.calls_agendadas)}
                           </TableCell>
                           <TableCell className="text-center font-medium">{row.calls_agendadas}</TableCell>
                         </>
                       ) : (
-                        <TableCell colSpan={3} className="text-center text-muted-foreground italic">
+                        <TableCell colSpan={4} className="text-center text-muted-foreground italic">
                           Sem informação
                         </TableCell>
                       )}
@@ -364,6 +386,7 @@ export default function MeuFechamentoPage() {
                   <TableRow className="bg-muted/30 font-bold">
                     <TableCell>Total</TableCell>
                     <TableCell className="text-center">{totals.realizadas}</TableCell>
+                    <TableCell className="text-center">{totals.reagendado}</TableCell>
                     <TableCell className="text-center text-destructive">
                       {formatNoShow(totals.noShow, totals.agendadas)}
                     </TableCell>

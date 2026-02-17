@@ -39,7 +39,7 @@ export function useFechamentos(filters?: {
       // Add derived field
       return (data as unknown as Fechamento[]).map(f => ({
         ...f,
-        calls_agendadas: f.calls_realizadas + f.no_show
+        calls_agendadas: f.calls_realizadas + (f.reagendado || 0) + f.no_show
       }));
     },
     enabled: !filters?.closer_id || filters.closer_id.length > 0
@@ -68,6 +68,7 @@ interface UpsertFechamentoInput {
   data: string;
   closer_user_id: string;
   calls_realizadas: number;
+  reagendado: number;
   no_show: number;
   observacoes?: string;
 }

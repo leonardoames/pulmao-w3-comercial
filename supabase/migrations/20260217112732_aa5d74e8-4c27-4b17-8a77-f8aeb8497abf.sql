@@ -1,0 +1,2 @@
+ALTER TABLE public.fechamentos ADD COLUMN reagendado integer NOT NULL DEFAULT 0;
+ALTER TABLE public.fechamentos ADD CONSTRAINT fechamentos_reagendado_check CHECK (reagendado >= 0 AND reagendado <= 1000);

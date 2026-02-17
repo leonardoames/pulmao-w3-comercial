@@ -15,7 +15,7 @@ import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento } from '@/hooks/useUserRoles';
 import { Venda } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -223,10 +223,61 @@ export default function VendasPage() {
     return closers?.find(c => c.id === closerId)?.nome || 'Selecione...';
   };
 
+  const handleExportPDF = () => {
+    if (!filteredVendas || filteredVendas.length === 0) {
+      toast.error('Nenhuma venda para exportar');
+      return;
+    }
+
+    const rows = filteredVendas.map(v => {
+      const [year, month, day] = v.data_fechamento.split('-').map(Number);
+      const dataFormatted = `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
+      const closerNome = (v.closer as any)?.nome || '-';
+      return `<tr>
+        <td>${dataFormatted}</td>
+        <td>${v.nome_lead}</td>
+        <td>${v.nome_empresa}</td>
+        <td>${closerNome}</td>
+        <td>${v.duracao_contrato_meses}m</td>
+        <td style="text-align:right">${formatCurrency(v.valor_total)}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Vendas</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:32px;color:#222}
+      h1{font-size:20px;margin-bottom:4px}
+      p.sub{color:#666;font-size:13px;margin-bottom:20px}
+      table{width:100%;border-collapse:collapse;font-size:13px}
+      th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}
+      th{background:#f5f5f5;font-weight:600}
+      .summary{margin-top:20px;font-size:14px}
+      .summary span{font-weight:bold}
+      @media print{body{padding:0}}
+    </style></head><body>
+    <h1>Relatório de Vendas</h1>
+    <p class="sub">${totalVendas} vendas • Faturamento: ${formatCurrency(totalFaturamento)} • Ticket Médio: ${formatCurrency(ticketMedio)}</p>
+    <table><thead><tr><th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Duração</th><th style="text-align:right">Valor Total</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <script>window.onload=function(){window.print()}<\/script>
+    </body></html>`;
+
+    const w = window.open('', '_blank');
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+    }
+  };
+
   return (
     <AppLayout>
       <PageHeader title="Vendas" description="Contratos e faturamento">
-        {canEdit && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
+            <FileDown className="h-4 w-4" />
+            Exportar PDF
+          </Button>
+          {canEdit && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleOpenNew} className="gap-2">
@@ -440,6 +491,7 @@ export default function VendasPage() {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </PageHeader>
 
       {/* Stats */}
