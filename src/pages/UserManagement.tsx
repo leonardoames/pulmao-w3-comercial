@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -30,12 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Shield } from 'lucide-react';
+import { Plus, Pencil, Shield, Users, Lock } from 'lucide-react';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
 import { AppRole, ROLE_LABELS_NEW, ALL_ROLES, canRoleAccessAdminPanel } from '@/types/roles';
 import { AREA_LABELS, UserArea } from '@/types/crm';
 import { Navigate } from 'react-router-dom';
+import { RolePermissionsPanel } from '@/components/admin/RolePermissionsPanel';
 
 const AREAS: UserArea[] = ['Comercial', 'CS', 'Financeiro', 'Marketing', 'Diretoria'];
 
@@ -114,7 +116,6 @@ export default function UserManagement() {
   const handleUpdate = async () => {
     if (!editingUser) return;
 
-    // Update profile
     await updateProfile.mutateAsync({
       id: editingUser.id,
       nome: editForm.nome,
@@ -123,7 +124,6 @@ export default function UserManagement() {
       ativo: editForm.ativo
     });
 
-    // Update role
     await updateUserRole.mutateAsync({
       userId: editingUser.id,
       role: editForm.role
@@ -148,171 +148,188 @@ export default function UserManagement() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <PageHeader
-            title="Gestão de Usuários"
-            description="Gerencie usuários e permissões do sistema"
-          />
-          
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Usuário
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Criar Novo Usuário</DialogTitle>
-                <DialogDescription>
-                  Preencha os dados para criar um novo usuário no sistema.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Nome</Label>
-                  <Input 
-                    value={newUser.nome}
-                    onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
-                    placeholder="Nome completo"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input 
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="email@exemplo.com"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Senha</Label>
-                  <Input 
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    placeholder="Senha inicial"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Área</Label>
-                    <Select 
-                      value={newUser.area} 
-                      onValueChange={(v) => setNewUser({ ...newUser, area: v as UserArea })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AREAS.map((area) => (
-                          <SelectItem key={area} value={area}>
-                            {AREA_LABELS[area]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+        <PageHeader
+          title="Painel Admin"
+          description="Gerencie usuários e permissões do sistema"
+        />
+
+        <Tabs defaultValue="users">
+          <TabsList>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            {canManageUsers && (
+              <TabsTrigger value="permissions" className="gap-2">
+                <Lock className="h-4 w-4" />
+                Permissões
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="users" className="mt-6 space-y-4">
+            <div className="flex justify-end">
+              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Usuário
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Criar Novo Usuário</DialogTitle>
+                    <DialogDescription>
+                      Preencha os dados para criar um novo usuário no sistema.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nome</Label>
+                      <Input 
+                        value={newUser.nome}
+                        onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
+                        placeholder="Nome completo"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input 
+                        type="email"
+                        value={newUser.email}
+                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                        placeholder="email@exemplo.com"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Senha</Label>
+                      <Input 
+                        type="password"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                        placeholder="Senha inicial"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Área</Label>
+                        <Select 
+                          value={newUser.area} 
+                          onValueChange={(v) => setNewUser({ ...newUser, area: v as UserArea })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AREAS.map((area) => (
+                              <SelectItem key={area} value={area}>
+                                {AREA_LABELS[area]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Role</Label>
+                        <Select 
+                          value={newUser.role} 
+                          onValueChange={(v) => setNewUser({ ...newUser, role: v as AppRole })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ALL_ROLES.map((role) => (
+                              <SelectItem key={role} value={role}>
+                                {ROLE_LABELS_NEW[role]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Select 
-                      value={newUser.role} 
-                      onValueChange={(v) => setNewUser({ ...newUser, role: v as AppRole })}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleCreate}
+                      disabled={createUser.isPending || !newUser.nome || !newUser.email || !newUser.password}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ALL_ROLES.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {ROLE_LABELS_NEW[role]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleCreate}
-                  disabled={createUser.isPending || !newUser.nome || !newUser.email || !newUser.password}
-                >
-                  {createUser.isPending ? 'Criando...' : 'Criar Usuário'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+                      {createUser.isPending ? 'Criando...' : 'Criar Usuário'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-        {/* Users Table */}
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Área</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    Carregando...
-                  </TableCell>
-                </TableRow>
-              ) : users?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    Nenhum usuário encontrado
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users?.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.nome}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{AREA_LABELS[user.area]}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.user_role?.role || 'CLOSER')}>
-                        <Shield className="h-3 w-3 mr-1" />
-                        {ROLE_LABELS_NEW[user.user_role?.role || 'CLOSER']}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.ativo ? 'default' : 'secondary'}>
-                        {user.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleEdit(user)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            {/* Users Table */}
+            <div className="rounded-lg border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Área</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {users?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">
+                        Nenhum usuário encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    users?.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.nome}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{AREA_LABELS[user.area]}</TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeVariant(user.user_role?.role || 'CLOSER')}>
+                            <Shield className="h-3 w-3 mr-1" />
+                            {ROLE_LABELS_NEW[user.user_role?.role || 'CLOSER']}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.ativo ? 'default' : 'secondary'}>
+                            {user.ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {canManageUsers && (
+            <TabsContent value="permissions" className="mt-6">
+              <RolePermissionsPanel />
+            </TabsContent>
+          )}
+        </Tabs>
 
         {/* Edit Dialog */}
         <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
