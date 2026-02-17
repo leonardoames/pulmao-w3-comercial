@@ -65,7 +65,7 @@ export function useUpdateProfile() {
         .update({ nome, email, area, ativo })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
