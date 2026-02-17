@@ -67,21 +67,30 @@ serve(async (req) => {
       });
     }
 
-    // Use admin client to update user password and set metadata flag
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { error: updateError } = await adminClient.auth.admin.updateUser(userId, {
-      password: tempPassword,
-      user_metadata: { must_change_password: true },
+    // Use REST API directly to update user password and set metadata flag
+    const res = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${supabaseServiceKey}`,
+        "apikey": supabaseServiceKey,
+      },
+      body: JSON.stringify({
+        password: tempPassword,
+        user_metadata: { must_change_password: true },
+      }),
     });
 
-    if (updateError) {
-      console.error("Error resetting password:", updateError);
-      return new Response(JSON.stringify({ error: "Erro ao resetar senha: " + updateError.message }), {
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("Error resetting password:", errText);
+      return new Response(JSON.stringify({ error: "Erro ao resetar senha: " + errText }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    await res.json(); // consume body
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
