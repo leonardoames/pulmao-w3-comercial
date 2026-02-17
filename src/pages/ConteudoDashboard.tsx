@@ -304,30 +304,46 @@ export default function ConteudoDashboard() {
       {/* BLOCO 2 — Operacional (KPIs) */}
       <SectionLabel title="Operacional" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <StatCard
-          title="Posts Publicados"
-          value={`${stats.totalPosts} / ${stats.postsMeta}`}
-          subtitle={`${stats.postsPercent.toFixed(0)}% da meta`}
-          icon={<FileText className="h-5 w-5" />}
-          variant={getVariant(stats.postsPercent)}
-          badge={
-            <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.postsPercent))}>
-              {getPillLabel(stats.postsPercent)}
-            </span>
-          }
-        />
-        <StatCard
-          title="Stories Realizados"
-          value={`${stats.totalStories} / ${stats.storiesMeta}`}
-          subtitle={`${stats.storiesPercent.toFixed(0)}% da meta`}
-          icon={<Film className="h-5 w-5" />}
-          variant={getVariant(stats.storiesPercent)}
-          badge={
-            <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.storiesPercent))}>
-              {getPillLabel(stats.storiesPercent)}
-            </span>
-          }
-        />
+        <Card className={cn(
+          stats.postsPercent >= 100 ? 'border-success/30' :
+          stats.postsPercent < 75 ? 'border-warning/30' : 'border-primary/30'
+        )}>
+          <CardContent className="p-8">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Posts Publicados</p>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <p className="text-4xl font-bold tracking-tight text-primary">{stats.totalPosts}</p>
+              <span className="text-sm text-muted-foreground font-medium">
+                / {stats.postsMeta} de meta ({stats.postsPercent.toFixed(0)}%)
+              </span>
+            </div>
+            <div className="mt-2">
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.postsPercent))}>
+                {getPillLabel(stats.postsPercent)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={cn(
+          stats.storiesPercent >= 100 ? 'border-success/30' :
+          stats.storiesPercent < 75 ? 'border-warning/30' : 'border-primary/30'
+        )}>
+          <CardContent className="p-8">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Stories Realizados</p>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <p className="text-4xl font-bold tracking-tight text-primary">{stats.totalStories}</p>
+              <span className="text-sm text-muted-foreground font-medium">
+                / {stats.storiesMeta} de meta ({stats.storiesPercent.toFixed(0)}%)
+              </span>
+            </div>
+            <div className="mt-2">
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.storiesPercent))}>
+                {getPillLabel(stats.storiesPercent)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         <StatCard
           title="Posts Agendados"
           value={stats.totalScheduled}
