@@ -1,122 +1,111 @@
-# Atualizacao do Dashboard de Conteudo
+
+# Ajustes visuais no Dashboard de Conteudo
 
 ## Resumo
 
-Refatorar `ConteudoDashboard.tsx` com 6 mudancas: graficos no topo com linhas de meta, grafico de seguidores mostrando variacao diaria, alertas visuais nos KPIs, e remocao de redundancias.
+Tres ajustes no `ConteudoDashboard.tsx` e um no `StatCard`: tags pill para status de meta, formato compacto de meta nos KPIs, legendas com acumulados nos graficos, e correcao de padding.
 
 ---
 
-## 1. Novo layout (ordem dos blocos)
+## 1. KPI Cards -- Novo formato
 
-1. **Resultado** (movidos para o topo)
-2. **Operacional**
-3. **Historico** (tabela)
+**Valor principal com meta ao lado:**
+- Exibir como: `12 / 180` (valor / meta) em tamanho grande
+- Posts Agendados: apenas o valor (sem meta)
+
+**Porcentagem abaixo:**
+- Linha com `67% da meta`
+
+**Tag pill para status:**
+- Pill verde com texto "Meta atingida!" se >= 100%
+- Pill laranja/vermelha com texto "Abaixo da meta" se < 75%
+- Pill azul/neutra com texto "Dentro da meta" se entre 75% e 99%
+
+Para isso, o `StatCard` precisa aceitar um novo prop `badge` (ReactNode) ou alterar o `subtitle` para receber JSX. A abordagem mais limpa: parar de usar `subtitle` string e montar o conteudo diretamente no `ConteudoDashboard` usando o `children` ou customizando o StatCard para aceitar `badge`.
+
+**Solucao tecnica:** Adicionar prop opcional `badge` ao StatCard que renderiza abaixo do subtitle. No dashboard, passar a pill como badge.
 
 ---
 
-## 2. Grafico de Posts e Stories (linha, nao barras)
+## 2. Graficos -- Remover padding excessivo
 
-- Trocar `BarChart` por `LineChart`
-- 3 linhas: Posts publicados, Stories, Posts agendados
-- Gerar dados para **todos os dias do periodo** (preencher dias sem registro com 0)
-- Adicionar 2 linhas tracejadas horizontais de meta:
-  - Meta posts/dia = 6 (usando `ReferenceLine`)
-  - Meta stories/dia = 10 (usando `ReferenceLine`)
+O `ChartContainer` tem `className="h-48 w-full"` mas o problema de padding vem do `YAxis` padrao do Recharts.
 
-### Geracao de todos os dias
+Correcao:
+- Adicionar `margin={{ left: -20, right: 10 }}` no `LineChart` para compensar o padding do YAxis
+- Ou usar `width` fixo no `YAxis` com valor menor: `<YAxis width={30} />`
+
+---
+
+## 3. Legendas com acumulados nos graficos
+
+### Grafico Posts/Stories
+Adicionar legenda customizada abaixo do grafico mostrando:
+- Cor + "Posts Publicados: 45 no periodo"
+- Cor + "Stories: 120 no periodo"  
+- Cor + "Agendados: 15 no periodo"
+
+### Grafico Seguidores
+Adicionar legenda customizada abaixo do grafico mostrando:
+- Cor + "@leo: +230 no periodo"
+- Cor + "@w3: +85 no periodo"
+
+Usar componente customizado de legenda (div com flex, bolinha de cor e texto) em vez do `Legend` padrao do Recharts para ter controle total do conteudo.
+
+---
+
+## 4. Arquivos afetados
+
+| Acao | Arquivo |
+|------|---------|
+| Editar | `src/components/ui/stat-card.tsx` (adicionar prop `badge`) |
+| Editar | `src/pages/ConteudoDashboard.tsx` (KPIs, graficos, legendas) |
+
+---
+
+## 5. Detalhes tecnicos
+
+### StatCard -- nova prop
 
 ```typescript
-// Iterar do startDate ao endDate, para cada dia buscar log ou usar 0
-const allDays = eachDayOfInterval({ start: parseISO(startDate), end: parseISO(endDate) });
-const logMap = new Map(sortedLogs.map(l => [l.date, l]));
-const chartData = allDays.map(day => {
-  const key = format(day, 'yyyy-MM-dd');
-  const log = logMap.get(key);
-  return {
-    date: format(day, 'dd/MM'),
-    posts: log?.posts_published_count ?? 0,
-    stories: log?.stories_done_count ?? 0,
-    agendados: log?.posts_scheduled_count ?? 0,
-  };
-});
+badge?: ReactNode; // Renderiza abaixo do subtitle
 ```
 
----
+### KPI no Dashboard
 
-## 3. Grafico de Seguidores (variacao diaria, nao total)
-
-- Mostrar **variacao dia a dia** (diferenca em relacao ao dia anterior)
-- Duas linhas no mesmo grafico: Leo e W3
-- Primeiro dia do periodo mostra 0 (sem referencia anterior)
-- Remover dados de seguidores do card de KPIs (evitar redundancia)
-
-```typescript
-const followersChartData = allDays.map((day, i) => {
-  const key = format(day, 'yyyy-MM-dd');
-  const log = logMap.get(key);
-  const prevLog = i > 0 ? logMap.get(format(allDays[i-1], 'yyyy-MM-dd')) : null;
-  return {
-    date: format(day, 'dd/MM'),
-    leo: log && prevLog ? log.followers_leo - prevLog.followers_leo : 0,
-    w3: log && prevLog ? log.followers_w3 - prevLog.followers_w3 : 0,
-  };
-});
+```tsx
+<StatCard
+  title="Posts Publicados"
+  value={`${stats.totalPosts} / ${stats.postsMeta}`}
+  subtitle={`${stats.postsPercent.toFixed(0)}% da meta`}
+  badge={
+    <span className={cn(
+      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1',
+      percent >= 100 ? 'bg-success/15 text-success' :
+      percent < 75 ? 'bg-warning/15 text-warning' :
+      'bg-primary/15 text-primary'
+    )}>
+      {percent >= 100 ? 'Meta atingida!' : percent < 75 ? 'Abaixo da meta' : 'Dentro da meta'}
+    </span>
+  }
+/>
 ```
 
----
+### Legenda customizada nos graficos
 
-## 4. KPI Cards (3 cards, sem seguidores)
-
-Remover o 4o card de "Seguidores Ganhos" (informacao ja esta no grafico).
-
-Cards restantes:
-
-1. **Posts Publicados** - valor, meta do periodo, % atingido
-2. **Stories Realizados** - valor, meta do periodo, % atingido
-3. **Posts Agendados** - apenas valor
-
----
-
-## 5. Alertas visuais nos KPIs
-
-
-| Condicao                  | Estilo                                       |
-| ------------------------- | -------------------------------------------- |
-| Resultado < 75% da meta   | `variant="warning"` + borda laranja/vermelha |
-| Resultado >= 100% da meta | `variant="success"` + badge verde            |
-| Entre 75% e 99%           | `variant="primary"` (padrao)                 |
-
-
-Logica para escolher variant:
-
-```typescript
-const getVariant = (percent: number) => {
-  if (percent >= 100) return 'success';
-  if (percent < 75) return 'warning';
-  return 'primary';
-};
+```tsx
+<div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+  <div className="flex items-center gap-1.5">
+    <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+    <span>Posts Publicados: {stats.totalPosts} no período</span>
+  </div>
+  ...
+</div>
 ```
 
-Adicionar badge textual no subtitle:
+### Padding do grafico
 
-- "Abaixo da meta" (< 75%)
-- "Meta atingida!" (>= 100%)
-
----
-
-## 6. Detalhes tecnicos
-
-### Importacoes adicionais
-
-- `ReferenceLine` de recharts
-- `eachDayOfInterval` de date-fns
-
-### Arquivo afetado
-
-
-| Acao   | Arquivo                           |
-| ------ | --------------------------------- |
-| Editar | `src/pages/ConteudoDashboard.tsx` |
-
-
-Nenhum outro arquivo precisa ser alterado.
+```tsx
+<LineChart data={postsChartData} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
+  <YAxis width={35} ... />
+```
