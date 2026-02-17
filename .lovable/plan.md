@@ -1,44 +1,71 @@
 
 
-# Incluir detalhes de pagamento na exportacao PDF de Vendas
+# Corrigir carregamento infinito do app
 
 ## Problema
-A funcao `handleExportPDF` gera a tabela com apenas 6 colunas (Data, Lead, Empresa, Closer, Duracao, Valor Total), omitindo os detalhes de pagamento e as flags de status.
-
-## Solucao
-Atualizar a funcao `handleExportPDF` em `src/pages/Vendas.tsx` para incluir todas as informacoes relevantes.
-
-### Colunas que serao adicionadas na tabela do PDF:
-- **Pix (R$)** -- valor pago via Pix
-- **Cartao (R$)** -- valor pago via cartao
-- **Boleto (R$)** -- valor da parcela x quantidade de parcelas (ex: "3x R$ 500,00")
-- **Pago** -- Sim/Nao
-- **Contrato** -- Sim/Nao
-- **Env. Financeiro** -- Sim/Nao
-- **Env. CS** -- Sim/Nao
-
-### Ajustes visuais:
-- Layout da tabela sera ajustado para orientacao paisagem (`@page { size: landscape }`) para acomodar as colunas adicionais
-- Fonte reduzida para caber todos os dados
-- Valores monetarios alinhados a direita
-- Flags exibidas como "Sim" / "Nao"
-
-### Arquivo afetado
-| Acao | Arquivo |
-|------|---------|
-| Editar | `src/pages/Vendas.tsx` (funcao `handleExportPDF`, linhas 226-270) |
-
-### Detalhes tecnicos
-Modificar o mapeamento de cada venda para incluir as novas colunas:
+O `ProtectedRoute` em `App.tsx` aguarda tres flags: `loading`, `roleLoading`, e `permLoading`. O `permLoading` vem de `usePermissionChecks()` (linha 140):
 
 ```text
-Colunas do cabecalho:
-Data | Lead | Empresa | Closer | Duracao | Pix | Cartao | Boleto | Valor Total | Pago | Contrato | Financeiro | CS
-
-Cada linha tera:
-- Pix/Cartao/Valor Total formatados com formatCurrency()
-- Boleto exibido como "Nx R$ X,XX" ou "-" se zero
-- Flags como "Sim"/"Nao"
-- CSS @page com size:landscape para impressao
+isLoading: !permissions && !isMaster
 ```
 
+O bug: quando a sessao do usuario esta expirada/invalida (token stale no localStorage), o Supabase retorna o `user` do cache local (nao-nulo), mas as queries ao banco falham. Isso causa:
+
+1. `user` nao e nulo -- ProtectedRoute NAO redireciona para /auth
+2. Query `user_roles` falha ou retorna null -- `role = undefined`
+3. `useMyPermissions` fica desabilitada (`enabled: !!role` = false) -- `permissions = undefined`
+4. `isMaster = false`
+5. `isLoading = !undefined && !false = true` -- PARA SEMPRE
+
+Mesmo sem sessao expirada, qualquer falha na query de roles causa o mesmo efeito.
+
+## Solucao
+
+### Arquivo: `src/hooks/useRolePermissions.ts`
+
+Alterar `usePermissionChecks` para usar os estados reais do react-query (`isFetched`, `isError`) em vez de verificar apenas se `data` existe:
+
+```typescript
+export function usePermissionChecks() {
+  const myPerms = useMyPermissions();
+  const roleQuery = useCurrentUserRole();
+  const isMaster = roleQuery.data?.role === 'MASTER';
+
+  const permissions = myPerms.data;
+
+  const canView = (resourceKey: string): boolean => {
+    if (isMaster) return true;
+    if (!permissions) return false;
+    const perm = permissions.find(p => p.resource_key === resourceKey);
+    return perm?.can_view ?? false;
+  };
+
+  const canEdit = (resourceKey: string): boolean => {
+    if (isMaster) return true;
+    if (!permissions) return false;
+    const perm = permissions.find(p => p.resource_key === resourceKey);
+    return perm?.can_edit ?? false;
+  };
+
+  // Carregando somente enquanto queries estao realmente em progresso
+  // Se role nao carregou ainda -> loading
+  // Se role carregou e e MASTER -> pronto
+  // Se role carregou, nao e MASTER, e permissions ainda nao carregou -> loading
+  // Se role falhou ou retornou null (sem role) -> pronto (sem permissoes)
+  const isLoading =
+    roleQuery.isLoading ||
+    (!isMaster && !!roleQuery.data?.role && !myPerms.isFetched);
+
+  return { canView, canEdit, isLoading };
+}
+```
+
+### Logica explicada:
+
+- `roleQuery.isLoading` -- esperando a role do usuario
+- Quando role carregou:
+  - Se MASTER: `isLoading = false` (acesso total)
+  - Se tem outra role: espera `myPerms.isFetched` (query completou, com sucesso ou erro)
+  - Se role e null (usuario sem role): `!!null?.role = false`, `isLoading = false` (sem permissoes, app redireciona para /auth ou mostra sem acesso)
+
+Nenhum outro arquivo precisa ser alterado.
