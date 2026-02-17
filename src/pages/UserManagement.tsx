@@ -31,12 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Shield, Users, Lock } from 'lucide-react';
+import { Plus, Pencil, Shield, Users, Lock, KeyRound } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
 import { AppRole, ROLE_LABELS_NEW, ALL_ROLES, canRoleAccessAdminPanel } from '@/types/roles';
 import { AREA_LABELS, UserArea } from '@/types/crm';
 import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { RolePermissionsPanel } from '@/components/admin/RolePermissionsPanel';
 
 const AREAS: UserArea[] = ['Comercial', 'CS', 'Financeiro', 'Marketing', 'Diretoria'];
@@ -52,6 +54,9 @@ export default function UserManagement() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [resetUser, setResetUser] = useState<any>(null);
+  const [tempPassword, setTempPassword] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   // Create form state
   const [newUser, setNewUser] = useState({
@@ -130,6 +135,25 @@ export default function UserManagement() {
     });
 
     setEditingUser(null);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetUser || !tempPassword) return;
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: { userId: resetUser.id, tempPassword },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Senha de ${resetUser.nome} resetada! Ele precisará criar uma nova senha no próximo login.`);
+      setResetUser(null);
+      setTempPassword('');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao resetar senha');
+    } finally {
+      setResetting(false);
+    }
   };
 
   const getRoleBadgeVariant = (role: AppRole) => {
@@ -307,14 +331,25 @@ export default function UserManagement() {
                             {user.ativo ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-1">
                           <Button 
                             variant="ghost" 
                             size="sm"
                             onClick={() => handleEdit(user)}
+                            title="Editar"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
+                          {canManageUsers && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => { setResetUser(user); setTempPassword(''); }}
+                              title="Resetar Senha"
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
@@ -418,6 +453,46 @@ export default function UserManagement() {
                 disabled={updateProfile.isPending || updateUserRole.isPending}
               >
                 {updateProfile.isPending ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={!!resetUser} onOpenChange={(open) => !open && setResetUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5" />
+                Resetar Senha
+              </DialogTitle>
+              <DialogDescription>
+                Defina uma senha temporária para <strong>{resetUser?.nome}</strong>. 
+                Ao fazer login, o usuário será obrigado a criar uma nova senha.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Senha Temporária</Label>
+                <Input
+                  type="text"
+                  value={tempPassword}
+                  onChange={(e) => setTempPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  minLength={6}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResetUser(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleResetPassword}
+                disabled={resetting || tempPassword.length < 6}
+                variant="destructive"
+              >
+                {resetting ? 'Resetando...' : 'Resetar Senha'}
               </Button>
             </DialogFooter>
           </DialogContent>
