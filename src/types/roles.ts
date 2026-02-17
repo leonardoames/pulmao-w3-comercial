@@ -1,4 +1,4 @@
-export type AppRole = 'MASTER' | 'DIRETORIA' | 'GESTOR_COMERCIAL' | 'CLOSER' | 'SOCIAL_SELLING';
+export type AppRole = 'MASTER' | 'DIRETORIA' | 'GESTOR_COMERCIAL' | 'SDR' | 'CLOSER' | 'SOCIAL_SELLING' | 'ANALISTA_CONTEUDO';
 
 export interface UserRole {
   id: string;
@@ -12,20 +12,22 @@ export const ROLE_LABELS_NEW: Record<AppRole, string> = {
   MASTER: 'Master',
   DIRETORIA: 'Diretoria',
   GESTOR_COMERCIAL: 'Gestor Comercial',
+  SDR: 'SDR',
   CLOSER: 'Closer',
   SOCIAL_SELLING: 'Social Seller',
+  ANALISTA_CONTEUDO: 'Analista de Conteúdo',
 };
 
-export const ALL_ROLES: AppRole[] = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'CLOSER', 'SOCIAL_SELLING'];
+export const ALL_ROLES: AppRole[] = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR', 'CLOSER', 'SOCIAL_SELLING', 'ANALISTA_CONTEUDO'];
 
 // Check if role can manage closers (select any closer for fechamento/vendas)
 export const canRoleManageClosers = (role: AppRole): boolean => {
-  return ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL'].includes(role);
+  return ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR'].includes(role);
 };
 
 // Check if role can access admin panel
 export const canRoleAccessAdminPanel = (role: AppRole): boolean => {
-  return ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL'].includes(role);
+  return ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR'].includes(role);
 };
 
 // Check if role is social selling only
