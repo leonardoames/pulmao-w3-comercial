@@ -32,15 +32,17 @@ import {
 } from '@/components/ui/select';
 import { Plus, Pencil, Shield } from 'lucide-react';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
-import { useUpdateUserRole, useCanManageUsers } from '@/hooks/useUserRoles';
-import { AppRole, ROLE_LABELS_NEW, ALL_ROLES } from '@/types/roles';
+import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
+import { AppRole, ROLE_LABELS_NEW, ALL_ROLES, canRoleAccessAdminPanel } from '@/types/roles';
 import { AREA_LABELS, UserArea } from '@/types/crm';
 import { Navigate } from 'react-router-dom';
 
 const AREAS: UserArea[] = ['Comercial', 'CS', 'Financeiro', 'Marketing', 'Diretoria'];
 
 export default function UserManagement() {
-  const canManageUsers = useCanManageUsers();
+  const { data: userRole, isLoading: roleLoading } = useCurrentUserRole();
+  const canManageUsers = userRole?.role === 'MASTER';
+  const canAccessAdmin = userRole ? canRoleAccessAdminPanel(userRole.role) : false;
   const { data: users, isLoading } = useUsersWithRoles();
   const updateProfile = useUpdateProfile();
   const updateUserRole = useUpdateUserRole();
@@ -67,8 +69,22 @@ export default function UserManagement() {
     role: 'CLOSER' as AppRole
   });
 
+  // Wait for role to load before deciding
+  if (roleLoading || isLoading) {
+    return (
+      <AppLayout>
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   // Redirect if not authorized to access admin panel
-  if (!canManageUsers && !isLoading) {
+  if (!canAccessAdmin) {
     return <Navigate to="/" replace />;
   }
 
