@@ -12,12 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useContentDailyLogs } from '@/hooks/useContentTracking';
 import { RESPONSIBLE_OPTIONS } from '@/types/content';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import { DateFilter, DateRange } from '@/hooks/useDashboard';
-import { format, subDays, startOfMonth, differenceInDays, parseISO } from 'date-fns';
+import { format, subDays, startOfMonth, differenceInDays, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, FileText, Film, CalendarCheck, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { CalendarIcon, FileText, Film, CalendarCheck } from 'lucide-react';
 
 const POSTS_PER_DAY = 6;
 const STORIES_PER_DAY = 10;
@@ -30,6 +29,18 @@ const filterOptions: { value: DateFilter; label: string }[] = [
   { value: '30days', label: '30 dias' },
   { value: 'custom', label: 'Personalizado' },
 ];
+
+const getVariant = (percent: number): 'success' | 'warning' | 'primary' => {
+  if (percent >= 100) return 'success';
+  if (percent < 75) return 'warning';
+  return 'primary';
+};
+
+const getAlertLabel = (percent: number): string => {
+  if (percent >= 100) return ' · Meta atingida!';
+  if (percent < 75) return ' · Abaixo da meta';
+  return '';
+};
 
 export default function ConteudoDashboard() {
   const [filter, setFilter] = useState<DateFilter>('month');
@@ -68,11 +79,12 @@ export default function ConteudoDashboard() {
     responsibleFilter !== 'all' ? responsibleFilter : undefined
   );
 
-  const daysInPeriod = useMemo(() => {
-    return differenceInDays(parseISO(endDate), parseISO(startDate)) + 1;
-  }, [startDate, endDate]);
+  const daysInPeriod = useMemo(() => differenceInDays(parseISO(endDate), parseISO(startDate)) + 1, [startDate, endDate]);
 
   const sortedLogs = useMemo(() => [...logs].sort((a, b) => a.date.localeCompare(b.date)), [logs]);
+
+  const allDays = useMemo(() => eachDayOfInterval({ start: parseISO(startDate), end: parseISO(endDate) }), [startDate, endDate]);
+  const logMap = useMemo(() => new Map(sortedLogs.map(l => [l.date, l])), [sortedLogs]);
 
   const stats = useMemo(() => {
     const totalPosts = logs.reduce((s, l) => s + l.posts_published_count, 0);
@@ -84,30 +96,43 @@ export default function ConteudoDashboard() {
     const postsPercent = postsMeta > 0 ? (totalPosts / postsMeta) * 100 : 0;
     const storiesPercent = storiesMeta > 0 ? (totalStories / storiesMeta) * 100 : 0;
 
-    const first = sortedLogs[0];
-    const last = sortedLogs[sortedLogs.length - 1];
-    const followersLeoGained = first && last ? last.followers_leo - first.followers_leo : 0;
-    const followersW3Gained = first && last ? last.followers_w3 - first.followers_w3 : 0;
+    return { totalPosts, totalStories, totalScheduled, postsMeta, storiesMeta, postsPercent, storiesPercent };
+  }, [logs, daysInPeriod]);
 
-    return { totalPosts, totalStories, totalScheduled, postsMeta, storiesMeta, postsPercent, storiesPercent, followersLeoGained, followersW3Gained };
-  }, [logs, daysInPeriod, sortedLogs]);
+  const postsChartData = useMemo(() => {
+    return allDays.map(day => {
+      const key = format(day, 'yyyy-MM-dd');
+      const log = logMap.get(key);
+      return {
+        date: format(day, 'dd/MM', { locale: ptBR }),
+        posts: log?.posts_published_count ?? 0,
+        stories: log?.stories_done_count ?? 0,
+        agendados: log?.posts_scheduled_count ?? 0,
+      };
+    });
+  }, [allDays, logMap]);
 
-  const chartData = useMemo(() => {
-    return sortedLogs.map(l => ({
-      date: format(new Date(l.date + 'T12:00:00'), 'dd/MM', { locale: ptBR }),
-      posts: l.posts_published_count,
-      stories: l.stories_done_count,
-      leo: l.followers_leo,
-      w3: l.followers_w3,
-    }));
-  }, [sortedLogs]);
+  const followersChartData = useMemo(() => {
+    return allDays.map((day, i) => {
+      const key = format(day, 'yyyy-MM-dd');
+      const log = logMap.get(key);
+      const prevKey = i > 0 ? format(allDays[i - 1], 'yyyy-MM-dd') : null;
+      const prevLog = prevKey ? logMap.get(prevKey) : null;
+      return {
+        date: format(day, 'dd/MM', { locale: ptBR }),
+        leo: log && prevLog ? log.followers_leo - prevLog.followers_leo : 0,
+        w3: log && prevLog ? log.followers_w3 - prevLog.followers_w3 : 0,
+      };
+    });
+  }, [allDays, logMap]);
 
-  const barChartConfig = {
-    posts: { label: 'Posts', color: 'hsl(var(--primary))' },
+  const postsChartConfig = {
+    posts: { label: 'Posts Publicados', color: 'hsl(var(--primary))' },
     stories: { label: 'Stories', color: 'hsl(var(--warning))' },
+    agendados: { label: 'Agendados', color: 'hsl(var(--secondary))' },
   };
 
-  const lineChartConfig = {
+  const followersChartConfig = {
     leo: { label: '@leo', color: 'hsl(var(--primary))' },
     w3: { label: '@w3', color: 'hsl(var(--warning))' },
   };
@@ -183,74 +208,29 @@ export default function ConteudoDashboard() {
         </div>
       </PageHeader>
 
-      {/* BLOCO 1 — Produção */}
-      <SectionLabel title="Produção" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <StatCard
-          title="Posts Publicados"
-          value={stats.totalPosts}
-          subtitle={`Meta: ${stats.postsMeta} · ${stats.postsPercent.toFixed(0)}% atingido`}
-          icon={<FileText className="h-5 w-5" />}
-          variant={stats.postsPercent >= 100 ? 'success' : 'primary'}
-        />
-        <StatCard
-          title="Stories Realizados"
-          value={stats.totalStories}
-          subtitle={`Meta: ${stats.storiesMeta} · ${stats.storiesPercent.toFixed(0)}% atingido`}
-          icon={<Film className="h-5 w-5" />}
-          variant={stats.storiesPercent >= 100 ? 'success' : 'primary'}
-        />
-        <StatCard
-          title="Posts Agendados"
-          value={stats.totalScheduled}
-          icon={<CalendarCheck className="h-5 w-5" />}
-        />
-        <div className="stat-card animate-fade-in border-primary/15 bg-primary/[0.03]">
-          <div className="flex items-start justify-between">
-            <div className="w-full">
-              <p className="text-sm font-medium text-muted-foreground">Seguidores Ganhos</p>
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                <div className="rounded-md bg-muted/30 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">@leo</p>
-                  <p className="text-lg font-bold">
-                    {stats.followersLeoGained >= 0 ? '+' : ''}{stats.followersLeoGained.toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                <div className="rounded-md bg-muted/30 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">@w3</p>
-                  <p className="text-lg font-bold">
-                    {stats.followersW3Gained >= 0 ? '+' : ''}{stats.followersW3Gained.toLocaleString('pt-BR')}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-primary/10 text-primary">
-              <Users className="h-5 w-5" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* BLOCO 2 — Evolução */}
-      <SectionLabel title="Evolução" />
+      {/* BLOCO 1 — Resultado (Gráficos) */}
+      <SectionLabel title="Resultado" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Posts e Stories por dia</CardTitle>
           </CardHeader>
           <CardContent>
-            {chartData.length === 0 ? (
+            {postsChartData.length === 0 ? (
               <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
             ) : (
-              <ChartContainer config={barChartConfig} className="h-48 w-full">
-                <BarChart data={chartData}>
+              <ChartContainer config={postsChartConfig} className="h-48 w-full">
+                <LineChart data={postsChartData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis className="text-xs" />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="posts" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="stories" fill="hsl(var(--warning))" radius={[3, 3, 0, 0]} />
-                </BarChart>
+                  <ReferenceLine y={POSTS_PER_DAY} stroke="hsl(var(--primary))" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: `Meta Posts (${POSTS_PER_DAY})`, position: 'insideTopRight', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                  <ReferenceLine y={STORIES_PER_DAY} stroke="hsl(var(--warning))" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: `Meta Stories (${STORIES_PER_DAY})`, position: 'insideTopRight', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                  <Line type="monotone" dataKey="posts" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="stories" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="agendados" stroke="hsl(var(--secondary))" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                </LineChart>
               </ChartContainer>
             )}
           </CardContent>
@@ -258,14 +238,14 @@ export default function ConteudoDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Crescimento de seguidores</CardTitle>
+            <CardTitle className="text-sm font-medium">Variação diária de seguidores</CardTitle>
           </CardHeader>
           <CardContent>
-            {chartData.length === 0 ? (
+            {followersChartData.length === 0 ? (
               <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
             ) : (
-              <ChartContainer config={lineChartConfig} className="h-48 w-full">
-                <LineChart data={chartData}>
+              <ChartContainer config={followersChartConfig} className="h-48 w-full">
+                <LineChart data={followersChartData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis className="text-xs" />
@@ -277,6 +257,30 @@ export default function ConteudoDashboard() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* BLOCO 2 — Operacional (KPIs) */}
+      <SectionLabel title="Operacional" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <StatCard
+          title="Posts Publicados"
+          value={stats.totalPosts}
+          subtitle={`Meta: ${stats.postsMeta} · ${stats.postsPercent.toFixed(0)}% atingido${getAlertLabel(stats.postsPercent)}`}
+          icon={<FileText className="h-5 w-5" />}
+          variant={getVariant(stats.postsPercent)}
+        />
+        <StatCard
+          title="Stories Realizados"
+          value={stats.totalStories}
+          subtitle={`Meta: ${stats.storiesMeta} · ${stats.storiesPercent.toFixed(0)}% atingido${getAlertLabel(stats.storiesPercent)}`}
+          icon={<Film className="h-5 w-5" />}
+          variant={getVariant(stats.storiesPercent)}
+        />
+        <StatCard
+          title="Posts Agendados"
+          value={stats.totalScheduled}
+          icon={<CalendarCheck className="h-5 w-5" />}
+        />
       </div>
 
       {/* BLOCO 3 — Histórico */}
