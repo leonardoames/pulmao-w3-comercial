@@ -25,6 +25,7 @@ import ConteudoDashboard from "./pages/ConteudoDashboard";
 import ConteudoAcompanhamento from "./pages/ConteudoAcompanhamento";
 import NotFound from "./pages/NotFound";
 import SharedDashboard from "./pages/SharedDashboard";
+import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,11 @@ function ProtectedRoute({ children, routePath }: { children: React.ReactNode; ro
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Force password change if flagged
+  if (user.user_metadata?.must_change_password && routePath !== '/alterar-senha') {
+    return <Navigate to="/alterar-senha" replace />;
   }
 
   // Check route permission if a routePath is provided
@@ -77,6 +83,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      <Route path="/alterar-senha" element={<ProtectedRoute routePath="/alterar-senha"><ChangePassword /></ProtectedRoute>} />
       <Route path="/" element={<ProtectedRoute routePath="/"><Dashboard /></ProtectedRoute>} />
       <Route path="/vendas" element={<ProtectedRoute routePath="/vendas"><Vendas /></ProtectedRoute>} />
       <Route path="/meu-fechamento" element={<ProtectedRoute routePath="/meu-fechamento"><MeuFechamento /></ProtectedRoute>} />
