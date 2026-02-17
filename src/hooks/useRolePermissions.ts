@@ -119,9 +119,11 @@ export function useCanEdit(resourceKey: string): boolean {
 
 /** Hook that returns helper functions for checking permissions */
 export function usePermissionChecks() {
-  const { data: permissions } = useMyPermissions();
-  const { data: userRole } = useCurrentUserRole();
-  const isMaster = userRole?.role === 'MASTER';
+  const myPerms = useMyPermissions();
+  const roleQuery = useCurrentUserRole();
+  const isMaster = roleQuery.data?.role === 'MASTER';
+
+  const permissions = myPerms.data;
 
   const canView = (resourceKey: string): boolean => {
     if (isMaster) return true;
@@ -137,7 +139,11 @@ export function usePermissionChecks() {
     return perm?.can_edit ?? false;
   };
 
-  return { canView, canEdit, isLoading: !permissions && !isMaster };
+  const isLoading =
+    roleQuery.isLoading ||
+    (!isMaster && !!roleQuery.data?.role && !myPerms.isFetched);
+
+  return { canView, canEdit, isLoading };
 }
 
 export function useUpdateRolePermission() {
