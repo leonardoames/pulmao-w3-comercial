@@ -17,6 +17,7 @@ import { DateFilter, DateRange } from '@/hooks/useDashboard';
 import { format, subDays, startOfMonth, differenceInDays, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, FileText, Film, CalendarCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const POSTS_PER_DAY = 6;
 const STORIES_PER_DAY = 10;
@@ -36,10 +37,16 @@ const getVariant = (percent: number): 'success' | 'warning' | 'primary' => {
   return 'primary';
 };
 
-const getAlertLabel = (percent: number): string => {
-  if (percent >= 100) return ' · Meta atingida!';
-  if (percent < 75) return ' · Abaixo da meta';
-  return '';
+const getPillLabel = (percent: number): string => {
+  if (percent >= 100) return 'Meta atingida!';
+  if (percent < 75) return 'Abaixo da meta';
+  return 'Dentro da meta';
+};
+
+const getPillClass = (percent: number): string => {
+  if (percent >= 100) return 'bg-success/15 text-success';
+  if (percent < 75) return 'bg-warning/15 text-warning';
+  return 'bg-primary/15 text-primary';
 };
 
 export default function ConteudoDashboard() {
@@ -96,7 +103,14 @@ export default function ConteudoDashboard() {
     const postsPercent = postsMeta > 0 ? (totalPosts / postsMeta) * 100 : 0;
     const storiesPercent = storiesMeta > 0 ? (totalStories / storiesMeta) * 100 : 0;
 
-    return { totalPosts, totalStories, totalScheduled, postsMeta, storiesMeta, postsPercent, storiesPercent };
+    // Followers variation totals
+    const sortedByDate = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+    const firstLog = sortedByDate[0];
+    const lastLog = sortedByDate[sortedByDate.length - 1];
+    const totalLeoVar = firstLog && lastLog ? lastLog.followers_leo - firstLog.followers_leo : 0;
+    const totalW3Var = firstLog && lastLog ? lastLog.followers_w3 - firstLog.followers_w3 : 0;
+
+    return { totalPosts, totalStories, totalScheduled, postsMeta, storiesMeta, postsPercent, storiesPercent, totalLeoVar, totalW3Var };
   }, [logs, daysInPeriod]);
 
   const postsChartData = useMemo(() => {
@@ -219,19 +233,35 @@ export default function ConteudoDashboard() {
             {postsChartData.length === 0 ? (
               <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
             ) : (
-              <ChartContainer config={postsChartConfig} className="h-48 w-full">
-                <LineChart data={postsChartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <ReferenceLine y={POSTS_PER_DAY} stroke="hsl(var(--primary))" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: `Meta Posts (${POSTS_PER_DAY})`, position: 'insideTopRight', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                  <ReferenceLine y={STORIES_PER_DAY} stroke="hsl(var(--warning))" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: `Meta Stories (${STORIES_PER_DAY})`, position: 'insideTopRight', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                  <Line type="monotone" dataKey="posts" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="stories" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="agendados" stroke="hsl(var(--secondary))" strokeWidth={2} dot={false} strokeDasharray="4 2" />
-                </LineChart>
-              </ChartContainer>
+              <>
+                <ChartContainer config={postsChartConfig} className="h-48 w-full">
+                  <LineChart data={postsChartData} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                    <XAxis dataKey="date" className="text-xs" />
+                    <YAxis width={35} className="text-xs" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ReferenceLine y={POSTS_PER_DAY} stroke="hsl(var(--primary))" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: `Meta Posts (${POSTS_PER_DAY})`, position: 'insideTopRight', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                    <ReferenceLine y={STORIES_PER_DAY} stroke="hsl(var(--warning))" strokeDasharray="6 3" strokeOpacity={0.5} label={{ value: `Meta Stories (${STORIES_PER_DAY})`, position: 'insideTopRight', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                    <Line type="monotone" dataKey="posts" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="stories" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="agendados" stroke="hsl(var(--secondary))" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                  </LineChart>
+                </ChartContainer>
+                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
+                    <span>Posts Publicados: {stats.totalPosts} no período</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--warning))' }} />
+                    <span>Stories: {stats.totalStories} no período</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--secondary))' }} />
+                    <span>Agendados: {stats.totalScheduled} no período</span>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -244,16 +274,28 @@ export default function ConteudoDashboard() {
             {followersChartData.length === 0 ? (
               <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
             ) : (
-              <ChartContainer config={followersChartConfig} className="h-48 w-full">
-                <LineChart data={followersChartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line type="monotone" dataKey="leo" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="w3" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ChartContainer>
+              <>
+                <ChartContainer config={followersChartConfig} className="h-48 w-full">
+                  <LineChart data={followersChartData} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                    <XAxis dataKey="date" className="text-xs" />
+                    <YAxis width={35} className="text-xs" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line type="monotone" dataKey="leo" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="w3" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ChartContainer>
+                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
+                    <span>@leo: {stats.totalLeoVar >= 0 ? '+' : ''}{stats.totalLeoVar} no período</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--warning))' }} />
+                    <span>@w3: {stats.totalW3Var >= 0 ? '+' : ''}{stats.totalW3Var} no período</span>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -264,17 +306,27 @@ export default function ConteudoDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard
           title="Posts Publicados"
-          value={stats.totalPosts}
-          subtitle={`Meta: ${stats.postsMeta} · ${stats.postsPercent.toFixed(0)}% atingido${getAlertLabel(stats.postsPercent)}`}
+          value={`${stats.totalPosts} / ${stats.postsMeta}`}
+          subtitle={`${stats.postsPercent.toFixed(0)}% da meta`}
           icon={<FileText className="h-5 w-5" />}
           variant={getVariant(stats.postsPercent)}
+          badge={
+            <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.postsPercent))}>
+              {getPillLabel(stats.postsPercent)}
+            </span>
+          }
         />
         <StatCard
           title="Stories Realizados"
-          value={stats.totalStories}
-          subtitle={`Meta: ${stats.storiesMeta} · ${stats.storiesPercent.toFixed(0)}% atingido${getAlertLabel(stats.storiesPercent)}`}
+          value={`${stats.totalStories} / ${stats.storiesMeta}`}
+          subtitle={`${stats.storiesPercent.toFixed(0)}% da meta`}
           icon={<Film className="h-5 w-5" />}
           variant={getVariant(stats.storiesPercent)}
+          badge={
+            <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.storiesPercent))}>
+              {getPillLabel(stats.storiesPercent)}
+            </span>
+          }
         />
         <StatCard
           title="Posts Agendados"
