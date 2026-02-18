@@ -1,153 +1,123 @@
 
-# Revisao Completa de Acessos por Role
+# Integracao Facebook Ads no Dashboard de Marketing
 
-## Problemas Identificados
+## Visao Geral
 
-### Problema 1: ANALISTA_CONTEUDO nao consegue editar no Acompanhamento Diario
+Adicionar uma secao no Dashboard de Marketing que permite ao gestor configurar o acesso a API do Facebook Marketing e visualizar metricas das campanhas (gastos, impressoes, cliques, CTR, leads e conversoes) diretamente no dashboard, ao lado das metricas ja existentes.
 
-**Frontend**: `ConteudoAcompanhamento.tsx` (linha 25) usa `useCanAccessAdminPanel()` que so retorna `true` para MASTER, DIRETORIA, GESTOR_COMERCIAL e SDR. O ANALISTA_CONTEUDO fica sem botao "Novo registro" e sem botoes de editar/excluir.
+## Arquitetura
 
-**Backend (RLS)**: As policies de INSERT/UPDATE em `content_daily_logs` e `content_post_items` usam `can_access_admin_panel()` -- mesma restricao. Mesmo que o frontend mostrasse os botoes, o banco bloquearia a operacao.
+A API do Facebook exige um Access Token e um Ad Account ID. Como sao credenciais privadas, serao armazenadas de forma segura no backend e acessadas apenas por uma Edge Function que faz proxy das chamadas a API do Facebook.
 
-**Correcao**:
-- Criar funcao SQL `can_edit_content()` incluindo ANALISTA_CONTEUDO
-- Atualizar 5 RLS policies (INSERT/UPDATE de `content_daily_logs`, INSERT/UPDATE/DELETE de `content_post_items`)
-- Trocar `useCanAccessAdminPanel()` por `useCanEdit('route:conteudo-acompanhamento')` no frontend
-
----
-
-### Problema 2: ANALISTA_CONTEUDO ve rotas que nao deveria (loop de redirecionamento)
-
-O `ProtectedRoute` em `App.tsx` redireciona para `/` quando a rota e bloqueada. ANALISTA_CONTEUDO nao tem acesso a `/` (dashboard comercial), criando um loop infinito.
-
-**Correcao**: Quando uma rota e bloqueada, calcular a primeira rota acessivel do usuario a partir de `ROUTE_TO_RESOURCE` e redirecionar para la. Se nenhuma rota estiver acessivel, redirecionar para `/auth`.
-
----
-
-### Problema 3: SOCIAL_SELLING preso em loop
-
-SOCIAL_SELLING so tem acesso a `route:social-selling`. Como a rota padrao `/` e bloqueada e o redirect vai para `/`, ocorre o mesmo loop.
-
-**Correcao**: Mesmo fix do Problema 2 resolve este caso. O SOCIAL_SELLING sera redirecionado automaticamente para `/social-selling`.
-
----
-
-### Problema 4: Hardcoded role checks inconsistentes com a matriz de permissoes
-
-Varias paginas usam hooks de role hardcoded em vez do sistema RBAC (`role_permissions`):
-
-| Pagina | Hook usado | Problema |
-|---|---|---|
-| `Dashboard.tsx` | `useCanAccessAdminPanel()` | Controla "compartilhar dashboard" -- OK pra agora, mas deveria usar permissao |
-| `MarketingDashboard.tsx` | `useCanAccessAdminPanel()` | Controla edicao de investimentos -- nao respeita RBAC |
-| `Vendas.tsx` | `useCanEditAnyFechamento()` + `useIsCloser()` | Funciona mas nao consulta `section:vendas:criar/editar` |
-| `MeuFechamento.tsx` | `useCanEditAnyFechamento()` | OK - logica de negocio (quem pode ver closers de terceiros) |
-| `SocialSelling.tsx` | `useCanEditAnyFechamento()` + `useIsSocialSelling()` | Funciona mas nao consulta RBAC |
-| `OteTracking.tsx` | Hardcoded role check | Nao consulta RBAC |
-| `ConteudoAcompanhamento.tsx` | `useCanAccessAdminPanel()` | **Bloqueio principal do analista** |
-
-**Correcao prioritaria**: Alinhar `ConteudoAcompanhamento.tsx` e `MarketingDashboard.tsx` ao RBAC. As demais paginas comerciais funcionam corretamente com os hooks atuais porque as regras de negocio (quem pode ver closers, quem pode editar vendas) sao intrinsecas ao dominio e coincidem com as roles.
-
----
-
-### Problema 5: RLS do `conteudos_marketing` permite DELETE somente para MASTER/DIRETORIA/GESTOR_COMERCIAL
-
-O ANALISTA_CONTEUDO tem `can_edit: true` para `route:conteudo-controle` mas a policy de DELETE nao o inclui. Se o analista precisar deletar conteudos no Kanban, sera bloqueado.
-
-**Correcao**: Atualizar policy de DELETE para incluir ANALISTA_CONTEUDO (usando `can_edit_content()`).
-
----
-
-## Plano de Implementacao
-
-### Etapa 1: Migration SQL
-
-```sql
--- 1. Criar funcao can_edit_content()
-CREATE OR REPLACE FUNCTION public.can_edit_content()
-RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = auth.uid()
-      AND role IN ('MASTER','DIRETORIA','GESTOR_COMERCIAL','SDR','ANALISTA_CONTEUDO')
-  )
-$$;
-
--- 2. content_daily_logs: trocar INSERT policy
-DROP POLICY "Gestores podem inserir content_daily_logs" ON content_daily_logs;
-CREATE POLICY "Editores conteudo podem inserir content_daily_logs"
-  ON content_daily_logs FOR INSERT
-  WITH CHECK (can_edit_content());
-
--- 3. content_daily_logs: trocar UPDATE policy
-DROP POLICY "Gestores podem atualizar content_daily_logs" ON content_daily_logs;
-CREATE POLICY "Editores conteudo podem atualizar content_daily_logs"
-  ON content_daily_logs FOR UPDATE
-  USING (can_edit_content());
-
--- 4. content_post_items: trocar INSERT policy
-DROP POLICY "Gestores podem inserir content_post_items" ON content_post_items;
-CREATE POLICY "Editores conteudo podem inserir content_post_items"
-  ON content_post_items FOR INSERT
-  WITH CHECK (can_edit_content());
-
--- 5. content_post_items: trocar UPDATE policy
-DROP POLICY "Gestores podem atualizar content_post_items" ON content_post_items;
-CREATE POLICY "Editores conteudo podem atualizar content_post_items"
-  ON content_post_items FOR UPDATE
-  USING (can_edit_content());
-
--- 6. content_post_items: trocar DELETE policy
-DROP POLICY "Gestores podem deletar content_post_items" ON content_post_items;
-CREATE POLICY "Editores conteudo podem deletar content_post_items"
-  ON content_post_items FOR DELETE
-  USING (can_edit_content());
-
--- 7. conteudos_marketing: atualizar DELETE policy
-DROP POLICY "Gestores podem deletar conteudos" ON conteudos_marketing;
-CREATE POLICY "Editores conteudo podem deletar conteudos"
-  ON conteudos_marketing FOR DELETE
-  USING (can_edit_content());
+```text
+Frontend (Dashboard)
+    |
+    v
+Edge Function (facebook-ads-insights)
+    |
+    |--> Le secrets: FB_ACCESS_TOKEN, FB_AD_ACCOUNT_ID
+    |--> Chama graph.facebook.com/v24.0/act_{ID}/insights
+    |
+    v
+Retorna metricas ao frontend
 ```
 
-### Etapa 2: Frontend - ConteudoAcompanhamento.tsx
+## Etapas
 
-- Remover import de `useCanAccessAdminPanel`
-- Importar `usePermissionChecks` de `useRolePermissions`
-- Trocar `const canEdit = useCanAccessAdminPanel()` por:
-  ```typescript
-  const { canEdit: canEditPerm } = usePermissionChecks();
-  const canEdit = canEditPerm('route:conteudo-acompanhamento');
-  ```
+### 1. Configuracao de Secrets
 
-### Etapa 3: Frontend - App.tsx (ProtectedRoute)
+Solicitar ao usuario duas credenciais:
+- **FB_ACCESS_TOKEN**: Token de acesso da API de Marketing do Facebook (obtido em developers.facebook.com > Tools > Access Token Tool, com permissao `ads_read`)
+- **FB_AD_ACCOUNT_ID**: ID da conta de anuncios (formato numerico, sem o prefixo `act_`)
 
-Corrigir o redirecionamento quando rota e bloqueada:
+Ambas serao armazenadas como secrets do backend, acessiveis apenas pela Edge Function.
 
-- Em vez de `<Navigate to="/" replace />`, calcular a primeira rota acessivel:
-  ```typescript
-  const firstAccessible = Object.entries(ROUTE_TO_RESOURCE)
-    .find(([path, key]) => canView(key));
-  return <Navigate to={firstAccessible?.[0] || '/auth'} replace />;
-  ```
+### 2. Edge Function: `facebook-ads-insights`
 
-### Etapa 4: Frontend - MarketingDashboard.tsx
+Criar `supabase/functions/facebook-ads-insights/index.ts`:
 
-- Trocar `useCanAccessAdminPanel()` por `useCanEdit('route:marketing-dashboard')` para controle de edicao de investimentos.
+- Recebe via query params: `date_start`, `date_end`
+- Autenticacao: valida JWT do usuario (apenas usuarios autenticados)
+- Le as secrets `FB_ACCESS_TOKEN` e `FB_AD_ACCOUNT_ID`
+- Faz GET para `https://graph.facebook.com/v24.0/act_{AD_ACCOUNT_ID}/insights` com:
+  - `fields=spend,impressions,clicks,ctr,actions`
+  - `time_range={"since":"YYYY-MM-DD","until":"YYYY-MM-DD"}`
+  - `access_token=FB_ACCESS_TOKEN`
+- Filtra `actions` para extrair `lead` e `offsite_conversion` (ou outros tipos de conversao)
+- Retorna JSON com: `spend`, `impressions`, `clicks`, `ctr`, `leads`, `conversions`
+- CORS headers incluidos
+
+Adicionar ao `supabase/config.toml`:
+```toml
+[functions.facebook-ads-insights]
+verify_jwt = false
+```
+
+### 3. Hook: `useFacebookAdsInsights`
+
+Criar em `src/hooks/useFacebookAdsInsights.ts`:
+
+- Recebe `filter` (DateFilter) e `customRange` (DateRange)
+- Usa `useQuery` para chamar a edge function via `supabase.functions.invoke('facebook-ads-insights', { body: { date_start, date_end } })`
+- Retorna dados tipados: `spend`, `impressions`, `clicks`, `ctr`, `leads`, `conversions`
+- `enabled` somente quando o usuario tem permissao de gerenciar o dashboard
+
+### 4. Frontend: Nova secao no Dashboard
+
+No `MarketingDashboard.tsx`, adicionar uma nova secao "Facebook Ads" (visivel apenas para gestores) com 6 StatCards:
+
+| Card | Dado | Formato |
+|---|---|---|
+| Gasto Facebook | spend | R$ (moeda) |
+| Impressoes | impressions | numero |
+| Cliques | clicks | numero |
+| CTR | ctr | percentual |
+| Leads | leads (da action "lead") | numero |
+| Conversoes | conversions (da action "offsite_conversion") | numero |
+
+A secao mostra um estado de "nao configurado" caso a edge function retorne erro de credenciais ausentes, com um link/instrucoes para o gestor solicitar a configuracao.
+
+### 5. Tratamento de Erros
+
+- Se as secrets nao estiverem configuradas, a edge function retorna `{ error: "not_configured" }` com status 200
+- O frontend exibe um card informativo: "Facebook Ads nao configurado. Entre em contato com o administrador."
+- Se o token estiver expirado, a API do Facebook retorna 190 -- a edge function retorna `{ error: "token_expired" }` e o frontend exibe aviso para renovar o token
 
 ---
 
-## Resumo de impacto por role apos as correcoes
+## Detalhes Tecnicos
 
-| Role | Acesso esperado | Status atual | Apos correcao |
-|---|---|---|---|
-| MASTER | Tudo | OK | OK |
-| DIRETORIA | Tudo | OK | OK |
-| GESTOR_COMERCIAL | Tudo | OK | OK |
-| SDR | Tudo (view conteudo, edit comercial) | OK | OK |
-| CLOSER | Dashboard + Vendas + Fechamento + OTE + Social | OK | OK |
-| SOCIAL_SELLING | Apenas Social Selling | Loop infinito no `/` | Redirecionado para `/social-selling` |
-| ANALISTA_CONTEUDO | Apenas modulo Conteudo + Marketing Dashboard (view) | Nao edita, loop no `/` | Edita conteudo, redirecionado para `/conteudo/dashboard` |
+### Edge Function - Estrutura
+
+```typescript
+// Valida auth via getClaims
+// Le FB_ACCESS_TOKEN e FB_AD_ACCOUNT_ID do env
+// GET https://graph.facebook.com/v24.0/act_{id}/insights
+//   ?fields=spend,impressions,clicks,ctr,actions
+//   &time_range={"since":"...","until":"..."}
+//   &access_token=...
+// Parseia actions para extrair leads e conversoes
+// Retorna JSON estruturado
+```
+
+### Campos retornados pela API do Facebook
+
+- `spend`: valor gasto (string numerica)
+- `impressions`: total de impressoes
+- `clicks`: total de cliques
+- `ctr`: click-through rate (percentual)
+- `actions`: array de objetos `{ action_type, value }` -- filtrar por `lead` e `offsite_conversion.*`
+
+### Arquivos criados/modificados
+
+| Arquivo | Acao |
+|---|---|
+| `supabase/functions/facebook-ads-insights/index.ts` | Criar |
+| `supabase/config.toml` | Adicionar config da funcao |
+| `src/hooks/useFacebookAdsInsights.ts` | Criar |
+| `src/pages/MarketingDashboard.tsx` | Adicionar secao Facebook Ads |
+
+### Secrets necessarias
+
+- `FB_ACCESS_TOKEN` -- sera solicitado ao usuario
+- `FB_AD_ACCOUNT_ID` -- sera solicitado ao usuario
