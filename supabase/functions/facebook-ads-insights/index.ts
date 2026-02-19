@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
       row.actions || [];
 
     const leads = actions
-      .filter((a) => a.action_type === "lead")
+      .filter((a) => a.action_type === "schedule")
       .reduce((s, a) => s + parseInt(a.value, 10), 0);
 
     const conversions = actions
