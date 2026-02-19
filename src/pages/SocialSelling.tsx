@@ -208,7 +208,8 @@ export default function SocialSellingPage() {
       </PageHeader>
 
       {/* Date Filters */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="flex flex-wrap items-center gap-2 mb-6 min-w-max md:min-w-0">
         {DATE_FILTERS.map(f => (
           <Button
             key={f.value}
@@ -243,8 +244,7 @@ export default function SocialSellingPage() {
           </div>
         )}
       </div>
-
-      {/* Dashboard */}
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <StatCard title="Conversas Iniciadas" value={totalConversas.toLocaleString('pt-BR')} icon={<MessageCircle className="h-5 w-5" />} />
         <StatCard title="Convites Enviados" value={totalConvites.toLocaleString('pt-BR')} icon={<Link2 className="h-5 w-5" />} />
@@ -282,6 +282,7 @@ export default function SocialSellingPage() {
           <CardTitle>Histórico</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -316,6 +317,7 @@ export default function SocialSellingPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </AppLayout>
