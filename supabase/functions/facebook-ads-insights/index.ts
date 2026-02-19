@@ -115,6 +115,8 @@ Deno.serve(async (req) => {
     const actions: { action_type: string; value: string }[] =
       row.actions || [];
 
+    console.log("FB actions:", JSON.stringify(actions));
+
     const leads = actions
       .filter((a) => a.action_type === "lead")
       .reduce((s, a) => s + parseInt(a.value, 10), 0);
@@ -136,6 +138,7 @@ Deno.serve(async (req) => {
         leads,
         scheduled,
         conversions,
+        _debug_actions: actions,
       }),
       {
         status: 200,
