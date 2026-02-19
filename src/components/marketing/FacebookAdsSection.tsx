@@ -2,7 +2,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Card, CardContent } from '@/components/ui/card';
 import { FacebookAdsResult } from '@/hooks/useFacebookAdsInsights';
-import { DollarSign, Eye, MousePointerClick, Percent, Users, ShoppingBag, AlertTriangle, Settings } from 'lucide-react';
+import { DollarSign, Eye, MousePointerClick, Percent, Users, ShoppingBag, AlertTriangle, Settings, CalendarCheck } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface FacebookAdsSectionProps {
@@ -114,10 +114,15 @@ export function FacebookAdsSection({ result, isLoading }: FacebookAdsSectionProp
           variant="success"
         />
         <StatCard
+          title="ScheduledCG"
+          value={formatNumber(data.scheduled)}
+          icon={<CalendarCheck className="h-5 w-5" />}
+          variant="warning"
+        />
+        <StatCard
           title="Conversões"
           value={formatNumber(data.conversions)}
           icon={<ShoppingBag className="h-5 w-5" />}
-          variant="warning"
         />
       </div>
     </>

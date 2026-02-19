@@ -96,12 +96,13 @@ Deno.serve(async (req) => {
     const row = fbData.data?.[0];
     if (!row) {
       return new Response(
-        JSON.stringify({
+      JSON.stringify({
           spend: 0,
           impressions: 0,
           clicks: 0,
           ctr: 0,
           leads: 0,
+          scheduled: 0,
           conversions: 0,
         }),
         {
@@ -115,6 +116,10 @@ Deno.serve(async (req) => {
       row.actions || [];
 
     const leads = actions
+      .filter((a) => a.action_type === "lead")
+      .reduce((s, a) => s + parseInt(a.value, 10), 0);
+
+    const scheduled = actions
       .filter((a) => a.action_type === "schedule")
       .reduce((s, a) => s + parseInt(a.value, 10), 0);
 
@@ -129,6 +134,7 @@ Deno.serve(async (req) => {
         clicks: parseInt(row.clicks || "0", 10),
         ctr: parseFloat(row.ctr || "0"),
         leads,
+        scheduled,
         conversions,
       }),
       {

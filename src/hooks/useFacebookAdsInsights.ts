@@ -8,6 +8,7 @@ export interface FacebookAdsData {
   clicks: number;
   ctr: number;
   leads: number;
+  scheduled: number;
   conversions: number;
 }
 
