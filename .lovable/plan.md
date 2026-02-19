@@ -1,123 +1,68 @@
 
-# Integracao Facebook Ads no Dashboard de Marketing
 
-## Visao Geral
+# Usar Spend do Facebook Ads como Investimento no Dashboard
 
-Adicionar uma secao no Dashboard de Marketing que permite ao gestor configurar o acesso a API do Facebook Marketing e visualizar metricas das campanhas (gastos, impressoes, cliques, CTR, leads e conversoes) diretamente no dashboard, ao lado das metricas ja existentes.
+## Objetivo
 
-## Arquitetura
+Substituir o uso do valor manual de investimento (tabela `marketing_investimentos`) pelo valor de `spend` retornado pela API do Facebook Ads para alimentar automaticamente todas as metricas dependentes de investimento: CPA, Custo por Call, CAC, ROAS Global e ROAS Imediato.
 
-A API do Facebook exige um Access Token e um Ad Account ID. Como sao credenciais privadas, serao armazenadas de forma segura no backend e acessadas apenas por uma Edge Function que faz proxy das chamadas a API do Facebook.
+## Como funciona hoje
+
+1. O gestor registra manualmente o investimento diario na tabela `marketing_investimentos`
+2. O hook `useMarketingStats` busca esses registros e calcula `investimentoTotal`
+3. Esse valor alimenta CPA, CAC, ROAS Global e ROAS Imediato
+4. A secao Facebook Ads exibe os dados da API separadamente, sem influencia nas metricas
+
+## O que vai mudar
+
+O `useMarketingStats` passara a receber o `spend` do Facebook Ads como fonte primaria de investimento. Se os dados do Facebook estiverem disponiveis, o `spend` substitui o valor manual. Se nao estiverem (token expirado, nao configurado), o sistema continua usando o registro manual como fallback.
 
 ```text
-Frontend (Dashboard)
+Facebook Ads API (spend)
     |
     v
-Edge Function (facebook-ads-insights)
-    |
-    |--> Le secrets: FB_ACCESS_TOKEN, FB_AD_ACCOUNT_ID
-    |--> Chama graph.facebook.com/v24.0/act_{ID}/insights
-    |
-    v
-Retorna metricas ao frontend
+useFacebookAdsInsights --> spend disponivel?
+    |                          |
+   SIM                        NAO
+    |                          |
+    v                          v
+spend = investimentoTotal   marketing_investimentos = investimentoTotal
+    |                          |
+    +----------+---------------+
+               |
+               v
+         CPA, CAC, ROAS
 ```
 
-## Etapas
+## Mudancas tecnicas
 
-### 1. Configuracao de Secrets
+### 1. `src/pages/MarketingDashboard.tsx`
 
-Solicitar ao usuario duas credenciais:
-- **FB_ACCESS_TOKEN**: Token de acesso da API de Marketing do Facebook (obtido em developers.facebook.com > Tools > Access Token Tool, com permissao `ads_read`)
-- **FB_AD_ACCOUNT_ID**: ID da conta de anuncios (formato numerico, sem o prefixo `act_`)
+- Extrair o valor de `spend` do resultado do Facebook Ads quando `status === 'ok'`
+- Passar esse valor como parametro opcional `fbSpend` para o hook `useMarketingStats`
+- A secao de Facebook Ads continua visivel para gestores
 
-Ambas serao armazenadas como secrets do backend, acessiveis apenas pela Edge Function.
+### 2. `src/hooks/useMarketingDashboard.ts` - `useMarketingStats`
 
-### 2. Edge Function: `facebook-ads-insights`
+- Adicionar parametro opcional `fbSpend?: number | null`
+- Logica de `investimentoTotal`:
+  - Se `fbSpend` for um numero valido (nao null/undefined): usar `fbSpend`
+  - Caso contrario: manter o calculo atual a partir de `marketing_investimentos`
+- Todas as metricas derivadas (CPA, custo por call, CAC, ROAS) continuam calculadas da mesma forma, apenas usando a nova fonte de investimento
 
-Criar `supabase/functions/facebook-ads-insights/index.ts`:
+### 3. Card "Investimento em Trafego"
 
-- Recebe via query params: `date_start`, `date_end`
-- Autenticacao: valida JWT do usuario (apenas usuarios autenticados)
-- Le as secrets `FB_ACCESS_TOKEN` e `FB_AD_ACCOUNT_ID`
-- Faz GET para `https://graph.facebook.com/v24.0/act_{AD_ACCOUNT_ID}/insights` com:
-  - `fields=spend,impressions,clicks,ctr,actions`
-  - `time_range={"since":"YYYY-MM-DD","until":"YYYY-MM-DD"}`
-  - `access_token=FB_ACCESS_TOKEN`
-- Filtra `actions` para extrair `lead` e `offsite_conversion` (ou outros tipos de conversao)
-- Retorna JSON com: `spend`, `impressions`, `clicks`, `ctr`, `leads`, `conversions`
-- CORS headers incluidos
+- Quando usando dados do Facebook, exibir um subtitle indicando "Via Facebook Ads" para transparencia
+- Manter o formulario de registro manual disponivel (como fallback / controle)
 
-Adicionar ao `supabase/config.toml`:
-```toml
-[functions.facebook-ads-insights]
-verify_jwt = false
-```
+## Arquivos modificados
 
-### 3. Hook: `useFacebookAdsInsights`
-
-Criar em `src/hooks/useFacebookAdsInsights.ts`:
-
-- Recebe `filter` (DateFilter) e `customRange` (DateRange)
-- Usa `useQuery` para chamar a edge function via `supabase.functions.invoke('facebook-ads-insights', { body: { date_start, date_end } })`
-- Retorna dados tipados: `spend`, `impressions`, `clicks`, `ctr`, `leads`, `conversions`
-- `enabled` somente quando o usuario tem permissao de gerenciar o dashboard
-
-### 4. Frontend: Nova secao no Dashboard
-
-No `MarketingDashboard.tsx`, adicionar uma nova secao "Facebook Ads" (visivel apenas para gestores) com 6 StatCards:
-
-| Card | Dado | Formato |
-|---|---|---|
-| Gasto Facebook | spend | R$ (moeda) |
-| Impressoes | impressions | numero |
-| Cliques | clicks | numero |
-| CTR | ctr | percentual |
-| Leads | leads (da action "lead") | numero |
-| Conversoes | conversions (da action "offsite_conversion") | numero |
-
-A secao mostra um estado de "nao configurado" caso a edge function retorne erro de credenciais ausentes, com um link/instrucoes para o gestor solicitar a configuracao.
-
-### 5. Tratamento de Erros
-
-- Se as secrets nao estiverem configuradas, a edge function retorna `{ error: "not_configured" }` com status 200
-- O frontend exibe um card informativo: "Facebook Ads nao configurado. Entre em contato com o administrador."
-- Se o token estiver expirado, a API do Facebook retorna 190 -- a edge function retorna `{ error: "token_expired" }` e o frontend exibe aviso para renovar o token
-
----
-
-## Detalhes Tecnicos
-
-### Edge Function - Estrutura
-
-```typescript
-// Valida auth via getClaims
-// Le FB_ACCESS_TOKEN e FB_AD_ACCOUNT_ID do env
-// GET https://graph.facebook.com/v24.0/act_{id}/insights
-//   ?fields=spend,impressions,clicks,ctr,actions
-//   &time_range={"since":"...","until":"..."}
-//   &access_token=...
-// Parseia actions para extrair leads e conversoes
-// Retorna JSON estruturado
-```
-
-### Campos retornados pela API do Facebook
-
-- `spend`: valor gasto (string numerica)
-- `impressions`: total de impressoes
-- `clicks`: total de cliques
-- `ctr`: click-through rate (percentual)
-- `actions`: array de objetos `{ action_type, value }` -- filtrar por `lead` e `offsite_conversion.*`
-
-### Arquivos criados/modificados
-
-| Arquivo | Acao |
+| Arquivo | Mudanca |
 |---|---|
-| `supabase/functions/facebook-ads-insights/index.ts` | Criar |
-| `supabase/config.toml` | Adicionar config da funcao |
-| `src/hooks/useFacebookAdsInsights.ts` | Criar |
-| `src/pages/MarketingDashboard.tsx` | Adicionar secao Facebook Ads |
+| `src/hooks/useMarketingDashboard.ts` | Adicionar parametro `fbSpend` ao `useMarketingStats` e usar como fonte primaria de investimento |
+| `src/pages/MarketingDashboard.tsx` | Extrair `spend` do resultado do Facebook e passar ao hook; ajustar subtitle do card de investimento |
 
-### Secrets necessarias
+## Fallback
 
-- `FB_ACCESS_TOKEN` -- sera solicitado ao usuario
-- `FB_AD_ACCOUNT_ID` -- sera solicitado ao usuario
+O registro manual de investimento e o formulario permanecem funcionais. Caso o Facebook Ads nao esteja configurado ou o token expire, o dashboard volta a usar os dados manuais automaticamente, sem intervencao do usuario.
+
