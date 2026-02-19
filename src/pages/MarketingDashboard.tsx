@@ -55,8 +55,9 @@ export default function MarketingDashboard() {
   const { canEdit: canEditPerm } = usePermissionChecks();
   const canManage = canEditPerm('route:marketing-dashboard');
   const { data: closers } = useClosers();
-  const { data: stats, isLoading } = useMarketingStats(filter, customRange, selectedCloser);
   const { data: fbResult, isLoading: fbLoading } = useFacebookAdsInsights(filter, customRange);
+  const fbSpend = fbResult?.status === 'ok' ? fbResult.data.spend : null;
+  const { data: stats, isLoading } = useMarketingStats(filter, customRange, selectedCloser, fbSpend);
   const { data: investimentoDia } = useMarketingInvestimentoDia(investDate);
   const upsertInvestimento = useUpsertInvestimento();
 
@@ -215,6 +216,7 @@ export default function MarketingDashboard() {
         <StatCard
           title="Investimento em Tráfego"
           value={formatMetric(stats?.investimentoTotal ?? null)}
+          subtitle={fbSpend != null ? 'Via Facebook Ads' : undefined}
           icon={<DollarSign className="h-5 w-5" />}
           variant="primary"
         />

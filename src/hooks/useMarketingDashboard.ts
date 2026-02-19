@@ -75,11 +75,11 @@ export function useUpsertInvestimento() {
 }
 
 // Main marketing dashboard stats
-export function useMarketingStats(filter: DateFilter, customRange?: DateRange, closerId?: string) {
+export function useMarketingStats(filter: DateFilter, customRange?: DateRange, closerId?: string, fbSpend?: number | null) {
   const { start, end } = getDateRange(filter, customRange);
 
   return useQuery({
-    queryKey: ['marketing-stats', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString(), closerId],
+    queryKey: ['marketing-stats', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString(), closerId, fbSpend],
     queryFn: async () => {
       // 1. Investimento total do período (always ALL closers)
       const { data: investimentos } = await supabase
@@ -88,9 +88,12 @@ export function useMarketingStats(filter: DateFilter, customRange?: DateRange, c
         .gte('data', start.toISOString().split('T')[0])
         .lte('data', end.toISOString().split('T')[0]);
 
-      const investimentoTotal = investimentos && investimentos.length > 0
+      const investimentoManual = investimentos && investimentos.length > 0
         ? investimentos.reduce((sum, i) => sum + Number(i.valor), 0)
-        : null; // null = no data
+        : null;
+
+      // Use Facebook Ads spend as primary source, fallback to manual
+      const investimentoTotal = (fbSpend != null && fbSpend > 0) ? fbSpend : investimentoManual;
 
       // 2. Fechamentos GERAL (all closers) for CPA geral
       const { data: fechamentosGeral } = await supabase
