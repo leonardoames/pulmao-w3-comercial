@@ -29,6 +29,27 @@ import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
+function AuthOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function ProtectedRoute({ children, routePath }: { children: React.ReactNode; routePath?: string }) {
   const { user, loading } = useAuth();
   const { data: userRole, isLoading: roleLoading } = useCurrentUserRole();
@@ -85,7 +106,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
-      <Route path="/alterar-senha" element={<ProtectedRoute routePath="/alterar-senha"><ChangePassword /></ProtectedRoute>} />
+      <Route path="/alterar-senha" element={<AuthOnlyRoute><ChangePassword /></AuthOnlyRoute>} />
       <Route path="/" element={<ProtectedRoute routePath="/"><Dashboard /></ProtectedRoute>} />
       <Route path="/vendas" element={<ProtectedRoute routePath="/vendas"><Vendas /></ProtectedRoute>} />
       <Route path="/meu-fechamento" element={<ProtectedRoute routePath="/meu-fechamento"><MeuFechamento /></ProtectedRoute>} />
