@@ -251,7 +251,7 @@ export default function MeuFechamentoPage() {
               <p className="text-muted-foreground text-center py-8">Carregando...</p>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="calls_realizadas">Calls Realizadas</Label>
                     <Input
