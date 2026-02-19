@@ -1,68 +1,75 @@
 
 
-# Usar Spend do Facebook Ads como Investimento no Dashboard
+# Corrigir acesso do Otto (ANALISTA_CONTEUDO) e alinhar permissoes
 
-## Objetivo
+## Diagnostico
 
-Substituir o uso do valor manual de investimento (tabela `marketing_investimentos`) pelo valor de `spend` retornado pela API do Facebook Ads para alimentar automaticamente todas as metricas dependentes de investimento: CPA, Custo por Call, CAC, ROAS Global e ROAS Imediato.
+Otto tem o role `ANALISTA_CONTEUDO` e no banco de dados de teste as permissoes estao corretas (`can_view: true`, `can_edit: true` para `route:conteudo-acompanhamento`). Porem, o botao "Novo registro" na pagina de Acompanhamento Diario nao aparece para ele.
 
-## Como funciona hoje
+A causa mais provavel e que o banco de dados de producao (live) nao possui os registros de `role_permissions` para o role `ANALISTA_CONTEUDO`, pois esses dados foram inseridos manualmente via Painel Admin e podem nao ter sido replicados ao publicar (a publicacao sincroniza schema, nao dados).
 
-1. O gestor registra manualmente o investimento diario na tabela `marketing_investimentos`
-2. O hook `useMarketingStats` busca esses registros e calcula `investimentoTotal`
-3. Esse valor alimenta CPA, CAC, ROAS Global e ROAS Imediato
-4. A secao Facebook Ads exibe os dados da API separadamente, sem influencia nas metricas
+## Solucao
 
-## O que vai mudar
+### 1. Migracdo de seed para garantir permissoes padrao
 
-O `useMarketingStats` passara a receber o `spend` do Facebook Ads como fonte primaria de investimento. Se os dados do Facebook estiverem disponiveis, o `spend` substitui o valor manual. Se nao estiverem (token expirado, nao configurado), o sistema continua usando o registro manual como fallback.
+Criar uma migracao SQL que insere as permissoes padrao para todos os roles, usando `ON CONFLICT DO NOTHING` para nao sobrescrever configuracoes existentes. Isso garante que ao publicar, o banco de producao receba as permissoes base.
 
-```text
-Facebook Ads API (spend)
-    |
-    v
-useFacebookAdsInsights --> spend disponivel?
-    |                          |
-   SIM                        NAO
-    |                          |
-    v                          v
-spend = investimentoTotal   marketing_investimentos = investimentoTotal
-    |                          |
-    +----------+---------------+
-               |
-               v
-         CPA, CAC, ROAS
-```
+Permissoes que serao garantidas para `ANALISTA_CONTEUDO`:
 
-## Mudancas tecnicas
+| Recurso | can_view | can_edit |
+|---|---|---|
+| route:conteudo-dashboard | true | true |
+| route:conteudo-acompanhamento | true | true |
+| route:conteudo-controle | true | true |
+| route:conteudo-twitter | true | true |
+| route:conteudo-ai | true | true |
+| route:marketing-dashboard | true | false |
+| Todas as rotas comerciais | false | false |
 
-### 1. `src/pages/MarketingDashboard.tsx`
+Tambem serao garantidos os registros para os demais roles (SDR, CLOSER, SOCIAL_SELLING) caso faltem.
 
-- Extrair o valor de `spend` do resultado do Facebook Ads quando `status === 'ok'`
-- Passar esse valor como parametro opcional `fbSpend` para o hook `useMarketingStats`
-- A secao de Facebook Ads continua visivel para gestores
+### 2. Adicionar fallback de permissao por role no codigo
 
-### 2. `src/hooks/useMarketingDashboard.ts` - `useMarketingStats`
+Atualmente, se a tabela `role_permissions` estiver vazia para um role, o usuario nao ve nada. Vamos adicionar um fallback inteligente no hook `usePermissionChecks`:
 
-- Adicionar parametro opcional `fbSpend?: number | null`
-- Logica de `investimentoTotal`:
-  - Se `fbSpend` for um numero valido (nao null/undefined): usar `fbSpend`
-  - Caso contrario: manter o calculo atual a partir de `marketing_investimentos`
-- Todas as metricas derivadas (CPA, custo por call, CAC, ROAS) continuam calculadas da mesma forma, apenas usando a nova fonte de investimento
+- Se as permissoes foram carregadas mas estao vazias para o role, aplicar permissoes padrao baseadas no role do usuario
+- `ANALISTA_CONTEUDO` automaticamente tem acesso de visualizacao e edicao a todas as rotas de conteudo
+- Isso protege contra o cenario onde os dados de seed nao existem no banco
 
-### 3. Card "Investimento em Trafego"
+### 3. Revisao do fluxo completo
 
-- Quando usando dados do Facebook, exibir um subtitle indicando "Via Facebook Ads" para transparencia
-- Manter o formulario de registro manual disponivel (como fallback / controle)
+Nenhuma alteracao necessaria nos seguintes pontos (ja estao corretos):
+
+- RLS: funcao `can_edit_content()` ja inclui `ANALISTA_CONTEUDO`
+- Sidebar: filtra itens via `canView()` que lera as permissoes corretamente
+- ProtectedRoute: aguarda carregamento de permissoes antes de renderizar
 
 ## Arquivos modificados
 
 | Arquivo | Mudanca |
 |---|---|
-| `src/hooks/useMarketingDashboard.ts` | Adicionar parametro `fbSpend` ao `useMarketingStats` e usar como fonte primaria de investimento |
-| `src/pages/MarketingDashboard.tsx` | Extrair `spend` do resultado do Facebook e passar ao hook; ajustar subtitle do card de investimento |
+| Nova migracao SQL | Seed de permissoes padrao para todos os roles com `ON CONFLICT DO NOTHING` |
+| `src/hooks/useRolePermissions.ts` | Adicionar mapa de permissoes padrao por role como fallback quando a tabela estiver vazia |
 
-## Fallback
+## Detalhes tecnicos do fallback
 
-O registro manual de investimento e o formulario permanecem funcionais. Caso o Facebook Ads nao esteja configurado ou o token expire, o dashboard volta a usar os dados manuais automaticamente, sem intervencao do usuario.
+```text
+usePermissionChecks()
+    |
+    v
+Permissoes carregadas do banco?
+    |               |
+   SIM             NAO (vazio)
+    |               |
+    v               v
+Usar dados       Usar DEFAULT_PERMISSIONS[role]
+do banco         como fallback
+    |               |
+    +------+--------+
+           |
+           v
+    canView / canEdit
+```
+
+O mapa `DEFAULT_PERMISSIONS` sera definido no proprio hook, espelhando exatamente a configuracao que ja existe no banco de teste. O Painel Admin continuara podendo sobrescrever qualquer permissao -- o fallback so atua quando nao ha registros na tabela para aquele role.
 
