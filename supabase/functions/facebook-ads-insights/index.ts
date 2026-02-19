@@ -115,14 +115,12 @@ Deno.serve(async (req) => {
     const actions: { action_type: string; value: string }[] =
       row.actions || [];
 
-    console.log("FB actions:", JSON.stringify(actions));
-
     const leads = actions
-      .filter((a) => a.action_type === "lead")
+      .filter((a) => a.action_type === "offsite_content_view_add_meta_leads")
       .reduce((s, a) => s + parseInt(a.value, 10), 0);
 
     const scheduled = actions
-      .filter((a) => a.action_type === "schedule")
+      .filter((a) => a.action_type === "offsite_conversion.custom.823314883920077")
       .reduce((s, a) => s + parseInt(a.value, 10), 0);
 
     const conversions = actions
@@ -138,7 +136,6 @@ Deno.serve(async (req) => {
         leads,
         scheduled,
         conversions,
-        _debug_actions: actions,
       }),
       {
         status: 200,
