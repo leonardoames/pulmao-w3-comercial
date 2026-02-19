@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-content]
 verify_jwt = false
+
+[functions.facebook-ads-insights]
+verify_jwt = false

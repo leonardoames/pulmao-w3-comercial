@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
+import { FacebookAdsSection } from '@/components/marketing/FacebookAdsSection';
+import { useFacebookAdsInsights } from '@/hooks/useFacebookAdsInsights';
 import { StatCard } from '@/components/ui/stat-card';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +56,7 @@ export default function MarketingDashboard() {
   const canManage = canEditPerm('route:marketing-dashboard');
   const { data: closers } = useClosers();
   const { data: stats, isLoading } = useMarketingStats(filter, customRange, selectedCloser);
+  const { data: fbResult, isLoading: fbLoading } = useFacebookAdsInsights(filter, customRange);
   const { data: investimentoDia } = useMarketingInvestimentoDia(investDate);
   const upsertInvestimento = useUpsertInvestimento();
 
@@ -281,6 +284,13 @@ export default function MarketingDashboard() {
           variant="primary"
         />
       </div>
+
+      {/* Facebook Ads */}
+      {canManage && (
+        <div className="mt-10">
+          <FacebookAdsSection result={fbResult} isLoading={fbLoading} />
+        </div>
+      )}
     </AppLayout>
   );
 }
