@@ -4,6 +4,59 @@ import { AppRole } from '@/types/roles';
 import { useCurrentUserRole } from './useUserRoles';
 import { toast } from 'sonner';
 
+// Default permissions fallback per role (used when DB has no records for a role)
+const DEFAULT_PERMISSIONS: Partial<Record<AppRole, Record<string, { can_view: boolean; can_edit: boolean }>>> = {
+  ANALISTA_CONTEUDO: {
+    'route:dashboard': { can_view: false, can_edit: false },
+    'route:vendas': { can_view: false, can_edit: false },
+    'route:meu-fechamento': { can_view: false, can_edit: false },
+    'route:meta-ote': { can_view: false, can_edit: false },
+    'route:social-selling': { can_view: false, can_edit: false },
+    'route:conteudo-dashboard': { can_view: true, can_edit: true },
+    'route:conteudo-acompanhamento': { can_view: true, can_edit: true },
+    'route:conteudo-controle': { can_view: true, can_edit: true },
+    'route:conteudo-twitter': { can_view: true, can_edit: true },
+    'route:conteudo-ai': { can_view: true, can_edit: true },
+    'route:marketing-dashboard': { can_view: true, can_edit: false },
+    'route:painel-admin': { can_view: false, can_edit: false },
+    'section:dashboard:receita': { can_view: false, can_edit: false },
+    'section:dashboard:performance': { can_view: false, can_edit: false },
+    'section:dashboard:destaques': { can_view: false, can_edit: false },
+    'section:dashboard:ote': { can_view: false, can_edit: false },
+    'section:vendas:criar': { can_view: false, can_edit: false },
+    'section:vendas:exportar': { can_view: false, can_edit: false },
+    'section:vendas:editar': { can_view: false, can_edit: false },
+  },
+  SOCIAL_SELLING: {
+    'route:dashboard': { can_view: false, can_edit: false },
+    'route:vendas': { can_view: false, can_edit: false },
+    'route:meu-fechamento': { can_view: false, can_edit: false },
+    'route:meta-ote': { can_view: false, can_edit: false },
+    'route:social-selling': { can_view: true, can_edit: true },
+    'route:conteudo-dashboard': { can_view: false, can_edit: false },
+    'route:conteudo-acompanhamento': { can_view: false, can_edit: false },
+    'route:conteudo-controle': { can_view: false, can_edit: false },
+    'route:conteudo-twitter': { can_view: false, can_edit: false },
+    'route:conteudo-ai': { can_view: false, can_edit: false },
+    'route:marketing-dashboard': { can_view: false, can_edit: false },
+    'route:painel-admin': { can_view: false, can_edit: false },
+  },
+  CLOSER: {
+    'route:dashboard': { can_view: true, can_edit: true },
+    'route:vendas': { can_view: true, can_edit: true },
+    'route:meu-fechamento': { can_view: true, can_edit: true },
+    'route:meta-ote': { can_view: true, can_edit: true },
+    'route:social-selling': { can_view: true, can_edit: true },
+    'route:conteudo-dashboard': { can_view: false, can_edit: false },
+    'route:conteudo-acompanhamento': { can_view: false, can_edit: false },
+    'route:conteudo-controle': { can_view: false, can_edit: false },
+    'route:conteudo-twitter': { can_view: false, can_edit: false },
+    'route:conteudo-ai': { can_view: false, can_edit: false },
+    'route:marketing-dashboard': { can_view: false, can_edit: false },
+    'route:painel-admin': { can_view: false, can_edit: false },
+  },
+};
+
 export interface RolePermission {
   id: string;
   role: AppRole;
@@ -122,11 +175,18 @@ export function usePermissionChecks() {
   const myPerms = useMyPermissions();
   const roleQuery = useCurrentUserRole();
   const isMaster = roleQuery.data?.role === 'MASTER';
+  const role = roleQuery.data?.role;
 
   const permissions = myPerms.data;
+  // Use fallback when DB returned empty for this role
+  const useFallback = myPerms.isFetched && (!permissions || permissions.length === 0) && !!role;
+  const fallbackMap = role ? DEFAULT_PERMISSIONS[role] : undefined;
 
   const canView = (resourceKey: string): boolean => {
     if (isMaster) return true;
+    if (useFallback && fallbackMap) {
+      return fallbackMap[resourceKey]?.can_view ?? false;
+    }
     if (!permissions) return false;
     const perm = permissions.find(p => p.resource_key === resourceKey);
     return perm?.can_view ?? false;
@@ -134,6 +194,9 @@ export function usePermissionChecks() {
 
   const canEdit = (resourceKey: string): boolean => {
     if (isMaster) return true;
+    if (useFallback && fallbackMap) {
+      return fallbackMap[resourceKey]?.can_edit ?? false;
+    }
     if (!permissions) return false;
     const perm = permissions.find(p => p.resource_key === resourceKey);
     return perm?.can_edit ?? false;
