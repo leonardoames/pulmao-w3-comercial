@@ -257,9 +257,9 @@ export default function DashboardPage() {
               variant="destructive"
             />
             <StatCard
-              title="No-Show Total"
-              value={(stats?.reagendados ?? 0) + (stats?.noShows ?? 0)}
-              subtitle={`${stats?.reagendados ?? 0} reag. + ${stats?.noShows ?? 0} no-shows`}
+              title="% No-Show Total"
+              value={`${(stats?.callsAgendadas ?? 0) > 0 ? (((stats?.reagendados ?? 0) + (stats?.noShows ?? 0)) / (stats?.callsAgendadas ?? 1) * 100).toFixed(1) : '0.0'}%`}
+              subtitle={`${(stats?.reagendados ?? 0) + (stats?.noShows ?? 0)} total (${stats?.reagendados ?? 0} reag. + ${stats?.noShows ?? 0} no-shows)`}
               icon={<Ban className="h-5 w-5" />}
               variant="destructive"
             />
