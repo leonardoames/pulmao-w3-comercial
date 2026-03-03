@@ -9,9 +9,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
-import { Phone, PhoneOff, TrendingUp, Target, Trophy, Tv, CalendarIcon, AlertCircle, ShoppingCart, RefreshCw } from 'lucide-react';
+import { Phone, PhoneOff, TrendingUp, Target, Trophy, Tv, CalendarIcon, AlertCircle, ShoppingCart, RefreshCw, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 import { OteDashboardCard } from '@/components/ote/OteDashboardCard';
@@ -30,6 +32,21 @@ const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'custom', label: 'Personalizado' },
 ];
 
+function useTvMetaMensal() {
+  return useQuery({
+    queryKey: ['tv-settings', 'meta_mensal'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tv_settings')
+        .select('value')
+        .eq('key', 'meta_mensal')
+        .maybeSingle();
+      if (error) throw error;
+      return data ? Number(data.value) : 100000;
+    },
+  });
+}
+
 export default function DashboardPage() {
   const [filter, setFilter] = useState<DateFilter>('month');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
@@ -43,6 +60,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useDashboardStats(filter, customRange, selectedCloser);
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
   const { data: noShowByCloser } = useNoShowByCloser(filter, customRange);
+  const { data: metaMensal } = useTvMetaMensal();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -166,7 +184,7 @@ export default function DashboardPage() {
         </>
       )}
       {canViewSection('section:dashboard:ote') && (
-        <div className="mb-10">
+        <div className="mb-6">
           <OteDashboardCard
             monthRef={format(new Date(), 'yyyy-MM')}
             selectedCloser={selectedCloser}
@@ -175,11 +193,37 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Meta Mensal (TV) */}
+      {canViewSection('section:dashboard:ote') && metaMensal !== undefined && (
+        <div className="mb-10 p-5 rounded-xl bg-card border">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Meta Mensal</p>
+              <p className="text-xl font-bold">
+                {formatCurrency(stats?.volumeVendas ?? 0)} / {formatCurrency(metaMensal)}
+              </p>
+            </div>
+            <p className="text-3xl font-bold text-primary">
+              {metaMensal > 0 ? ((stats?.volumeVendas ?? 0) / metaMensal * 100).toFixed(0) : 0}%
+            </p>
+          </div>
+          <div className="h-3 bg-muted rounded-full overflow-hidden">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-1000',
+                metaMensal > 0 && (stats?.volumeVendas ?? 0) >= metaMensal ? 'bg-success' : 'bg-primary'
+              )}
+              style={{ width: `${Math.min(metaMensal > 0 ? ((stats?.volumeVendas ?? 0) / metaMensal * 100) : 0, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* BLOCO 2 — Performance Comercial */}
       {canViewSection('section:dashboard:performance') && (
         <>
           <SectionLabel title="Performance Comercial" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             <StatCard
               title="Taxa de Conversão"
               value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
@@ -210,6 +254,13 @@ export default function DashboardPage() {
               value={`${(stats?.percentNoShow ?? 0).toFixed(1)}%`}
               subtitle={`${stats?.noShows ?? 0} no-shows`}
               icon={<PhoneOff className="h-5 w-5" />}
+              variant="destructive"
+            />
+            <StatCard
+              title="No-Show Total"
+              value={(stats?.reagendados ?? 0) + (stats?.noShows ?? 0)}
+              subtitle={`${stats?.reagendados ?? 0} reag. + ${stats?.noShows ?? 0} no-shows`}
+              icon={<Ban className="h-5 w-5" />}
               variant="destructive"
             />
           </div>
