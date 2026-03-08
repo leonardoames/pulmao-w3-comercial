@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Pause, Play, X, MessageSquare, Send, FileTex
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, startOfMonth } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
