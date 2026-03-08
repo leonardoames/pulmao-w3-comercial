@@ -42,8 +42,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="md:pl-64">
-        <div className="pt-14 md:pt-0 p-6 md:p-8">
-          {children}
+        <div className="pt-14 md:pt-0 px-6 md:px-8 pb-6 md:pb-8" style={{ paddingTop: 'max(3.5rem, 32px)' }}>
+          <div className="md:pt-8">
+            {children}
+          </div>
         </div>
       </main>
     </div>

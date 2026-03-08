@@ -514,51 +514,39 @@ export default function VendasPage() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total de Vendas</p>
-                <p className="text-2xl font-bold">{totalVendas}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Faturamento Total</p>
-                <p className="text-2xl font-bold text-primary">{formatCurrency(totalFaturamento)}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-primary/10">
-                <DollarSign className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Ticket Médio</p>
-                <p className="text-2xl font-bold">{formatCurrency(ticketMedio)}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted">
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="stat-card flex items-center justify-between">
+          <div>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Total de Vendas</p>
+            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-foreground">{totalVendas}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-primary/10">
+            <Users className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+        <div className="stat-card flex items-center justify-between">
+          <div className="min-w-0">
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Faturamento Total</p>
+            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-primary truncate">{formatCurrency(totalFaturamento)}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-primary/10 shrink-0">
+            <DollarSign className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+        <div className="stat-card flex items-center justify-between">
+          <div className="min-w-0">
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Ticket Médio</p>
+            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-foreground truncate">{formatCurrency(ticketMedio)}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-muted shrink-0">
+            <TrendingUp className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
       </div>
 
       {/* Search + Filter Toggle */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-4">
+        <div className="relative w-full md:flex-1 md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Pesquisar lead, empresa ou closer..."
@@ -568,7 +556,7 @@ export default function VendasPage() {
           />
         </div>
         <Select value={closerFilter} onValueChange={setCloserFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px]">
             <SelectValue placeholder="Closer" />
           </SelectTrigger>
           <SelectContent>
@@ -581,7 +569,7 @@ export default function VendasPage() {
         <Button
           variant={showFilters ? "secondary" : "outline"}
           onClick={() => setShowFilters(!showFilters)}
-          className="gap-2"
+          className="gap-2 w-full md:w-auto"
         >
           <Filter className="h-4 w-4" />
           Filtros
@@ -713,11 +701,11 @@ export default function VendasPage() {
               <TableRow>
                 <TableHead>Data</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Duração</TableHead>
+                <TableHead className="hidden md:table-cell">Duração</TableHead>
                 <TableHead>Valor Total</TableHead>
-                <TableHead>Detalhes Pagamento</TableHead>
-                <TableHead>Closer</TableHead>
-                <TableHead className="w-28">Flags</TableHead>
+                <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
+                <TableHead className="hidden md:table-cell">Closer</TableHead>
+                <TableHead className="w-28 hidden md:table-cell">Flags</TableHead>
                 {canEdit && <TableHead className="w-10"></TableHead>}
               </TableRow>
             </TableHeader>
@@ -751,11 +739,11 @@ export default function VendasPage() {
                           <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{venda.duracao_contrato_meses} meses</TableCell>
+                      <TableCell className="hidden md:table-cell">{venda.duracao_contrato_meses} meses</TableCell>
                       <TableCell className="font-bold text-primary">
                         {formatCurrency(venda.valor_total)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="text-xs space-y-1">
                           {venda.valor_pix > 0 && <p>Pix: {formatCurrency(venda.valor_pix)}</p>}
                           {venda.valor_cartao > 0 && <p>Cartão: {formatCurrency(venda.valor_cartao)}</p>}
@@ -764,8 +752,8 @@ export default function VendasPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{(venda.closer as any)?.nome}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">{(venda.closer as any)?.nome}</TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <TooltipProvider>
                           <div className="flex gap-1">
                             <Tooltip>
