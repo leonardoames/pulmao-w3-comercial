@@ -739,7 +739,7 @@ export default function VendasPage() {
                           <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{venda.duracao_contrato_meses} meses</TableCell>
+                      <TableCell className="hidden md:table-cell">{venda.duracao_contrato_meses} meses</TableCell>
                       <TableCell className="font-bold text-primary">
                         {formatCurrency(venda.valor_total)}
                       </TableCell>
