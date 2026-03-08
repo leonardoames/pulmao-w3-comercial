@@ -281,14 +281,6 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* TV Mode button */}
-        <Link to="/tv">
-          <Button variant="ghost" size="sm" className="gap-2" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-            <Tv className="h-4 w-4" />
-            Modo TV
-          </Button>
-        </Link>
-
         {/* Timestamp */}
         <div className="flex items-center gap-2 shrink-0">
           <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '14px' }}>|</span>
