@@ -868,6 +868,23 @@ export default function VendasPage() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
+                        {(() => {
+                          const origem = venda.origem_lead;
+                          if (!origem) return <span className="text-muted-foreground text-xs">—</span>;
+                          const colors: Record<string, string> = {
+                            'Tráfego Pago': 'bg-blue-500/15 text-blue-400',
+                            'Formulário Direto': 'bg-green-500/15 text-green-400',
+                            'Bio': 'bg-purple-500/15 text-purple-400',
+                            'SDR': 'bg-orange-500/15 text-orange-400',
+                            'Social Selling': 'bg-pink-500/15 text-pink-400',
+                          };
+                          return (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[origem] ?? 'bg-muted text-muted-foreground'}`}>
+                              {origem}
+                            </span>
+                          );
+                        })()}
+                      <TableCell className="hidden md:table-cell">
                         <div className="text-xs space-y-1">
                           {venda.valor_pix > 0 && <p>Pix: {formatCurrency(venda.valor_pix)}</p>}
                           {venda.valor_cartao > 0 && <p>Cartão: {formatCurrency(venda.valor_cartao)}</p>}
