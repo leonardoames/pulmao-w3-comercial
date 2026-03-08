@@ -6,6 +6,7 @@ interface OteProgressBarProps {
   showMarkers?: boolean;
   height?: 'sm' | 'md' | 'lg';
   className?: string;
+  expectedPercent?: number;
 }
 
 export function OteProgressBar({ 
