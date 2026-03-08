@@ -176,6 +176,10 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
         .select(`
           closer_user_id,
           valor_total,
+          valor_pix,
+          valor_cartao,
+          valor_boleto_parcela,
+          quantidade_parcelas_boleto,
           closer:profiles!vendas_closer_user_id_fkey(id, nome)
         `)
         .gte('data_fechamento', start.toISOString().split('T')[0])
@@ -221,12 +225,15 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
         noShow: number; 
         vendas: number;
         volume: number;
+        valorPix: number;
+        valorCartao: number;
+        valorBoleto: number;
       }>();
 
       fechamentos?.forEach(f => {
         const id = f.closer_user_id;
         const nome = (f.closer as any)?.nome || 'Desconhecido';
-        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, reagendado: 0, noShow: 0, vendas: 0, volume: 0 };
+        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, reagendado: 0, noShow: 0, vendas: 0, volume: 0, valorPix: 0, valorCartao: 0, valorBoleto: 0 };
         current.callsRealizadas += f.calls_realizadas;
         current.reagendado += (f.reagendado || 0);
         current.noShow += f.no_show;
@@ -236,9 +243,12 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
       vendasPeriodo?.forEach(v => {
         const id = v.closer_user_id;
         const nome = (v.closer as any)?.nome || 'Desconhecido';
-        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, reagendado: 0, noShow: 0, vendas: 0, volume: 0 };
+        const current = closerMetricsMap.get(id) || { nome, callsRealizadas: 0, reagendado: 0, noShow: 0, vendas: 0, volume: 0, valorPix: 0, valorCartao: 0, valorBoleto: 0 };
         current.vendas += 1;
         current.volume += Number(v.valor_total);
+        current.valorPix += Number(v.valor_pix || 0);
+        current.valorCartao += Number(v.valor_cartao || 0);
+        current.valorBoleto += Number(v.valor_boleto_parcela || 0) * Number(v.quantidade_parcelas_boleto || 0);
         closerMetricsMap.set(id, current);
       });
 
@@ -275,9 +285,11 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
         .filter(([id]) => !EXCLUDED_FROM_RANKING.includes(id))
         .map(([id, data]) => {
           const agendadas = data.callsRealizadas + data.reagendado + data.noShow;
+          const oteRealizado = (data.valorPix * 1.2) + (data.valorCartao * 1.0) + (data.valorBoleto * 0.5);
           return { 
             id, 
             ...data,
+            oteRealizado,
             taxaConversao: data.callsRealizadas > 0 ? (data.vendas / data.callsRealizadas) * 100 : 0,
             percentNoShow: agendadas > 0 ? (data.noShow / agendadas) * 100 : 0
           };
