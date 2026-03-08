@@ -761,6 +761,57 @@ export type Database = {
           },
         ]
       }
+      webhooks: {
+        Row: {
+          ambiente: string
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          criado_por: string
+          evento: string
+          id: string
+          nome: string
+          url: string
+        }
+        Insert: {
+          ambiente?: string
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por: string
+          evento?: string
+          id?: string
+          nome?: string
+          url: string
+        }
+        Update: {
+          ambiente?: string
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string
+          evento?: string
+          id?: string
+          nome?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhooks_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       profiles_safe: {
