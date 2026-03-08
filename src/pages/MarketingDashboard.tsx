@@ -20,7 +20,6 @@ import {
   CalendarIcon, DollarSign, Phone, PhoneOff, Target, TrendingUp,
   ShoppingCart, BarChart3, Zap, Save,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -47,7 +46,6 @@ export default function MarketingDashboard() {
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedCloser, setSelectedCloser] = useState<string>('all');
 
-  // Investment form state
   const [investDate, setInvestDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [investValor, setInvestValor] = useState('');
   const [investCalendarOpen, setInvestCalendarOpen] = useState(false);
@@ -88,7 +86,6 @@ export default function MarketingDashboard() {
     );
   };
 
-  // When investimentoDia loads, populate the field
   const displayInvestDia = investimentoDia
     ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(Number(investimentoDia.valor))
     : '';
@@ -100,54 +97,66 @@ export default function MarketingDashboard() {
   return (
     <AppLayout>
       <PageHeader title="Dashboard de Marketing" description="Métricas de aquisição e performance de tráfego">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Select value={selectedCloser} onValueChange={setSelectedCloser}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por closer" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Closers</SelectItem>
-              {closers?.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select value={selectedCloser} onValueChange={setSelectedCloser}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filtrar por closer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Closers</SelectItem>
+            {closers?.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <div className="flex gap-1 p-1 bg-muted rounded-lg flex-wrap">
-            {filterOptions.map((option) => (
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          {filterOptions.map((option) => {
+            const isActive = filter === option.value;
+            return (
               <Button
                 key={option.value}
-                variant={filter === option.value ? 'default' : 'ghost'}
+                variant={isActive ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleFilterChange(option.value)}
                 className="min-w-[70px]"
+                style={
+                  isActive
+                    ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                    : {
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.6)',
+                      }
+                }
               >
                 {option.value === 'custom' && displayRange ? displayRange : option.label}
               </Button>
-            ))}
-          </div>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0">
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" align="end">
-              <Calendar
-                mode="range"
-                selected={{ from: tempRange.from, to: tempRange.to }}
-                onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
-                locale={ptBR}
-                numberOfMonths={2}
-              />
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
-                  Aplicar
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+            );
+          })}
         </div>
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0">
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-4" align="end">
+            <Calendar
+              mode="range"
+              selected={{ from: tempRange.from, to: tempRange.to }}
+              onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
+              locale={ptBR}
+              numberOfMonths={2}
+            />
+            <div className="flex justify-end mt-4">
+              <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
+                Aplicar
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </PageHeader>
 
       {/* Investment input (gestores only) */}
@@ -155,7 +164,12 @@ export default function MarketingDashboard() {
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-primary" />
+              <div
+                className="flex items-center justify-center"
+                style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(249,115,22,0.1)' }}
+              >
+                <DollarSign className="h-4 w-4" style={{ color: '#F97316' }} />
+              </div>
               Registrar Investimento em Tráfego
             </CardTitle>
           </CardHeader>
@@ -201,7 +215,7 @@ export default function MarketingDashboard() {
                 Salvar
               </Button>
               {investimentoDia && (
-                <p className="text-sm text-muted-foreground">
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
                   Cadastrado: {formatCurrency(Number(investimentoDia.valor))}
                 </p>
               )}
@@ -212,7 +226,7 @@ export default function MarketingDashboard() {
 
       {/* Row 1: Investimento, Calls Agendadas, Calls Realizadas */}
       <SectionLabel title="Investimento e Agendamentos" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <StatCard
           title="Investimento em Tráfego"
           value={formatMetric(stats?.investimentoTotal ?? null)}
@@ -236,7 +250,7 @@ export default function MarketingDashboard() {
 
       {/* Row 2: CPA, Custo por Call, Volume, Qtd vendas */}
       <SectionLabel title="Custos e Vendas" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           title="Custo por Agendamento"
           value={formatMetric(stats?.custoAgendamento ?? null)}
@@ -263,7 +277,7 @@ export default function MarketingDashboard() {
 
       {/* Row 3: CAC, ROAS Global, ROAS Imediato */}
       <SectionLabel title="Retorno" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           title="CAC"
           value={formatMetric(stats?.cac ?? null)}
@@ -289,7 +303,7 @@ export default function MarketingDashboard() {
 
       {/* Facebook Ads */}
       {canManage && (
-        <div className="mt-10">
+        <div className="mt-8">
           <FacebookAdsSection result={fbResult} isLoading={fbLoading} />
         </div>
       )}
