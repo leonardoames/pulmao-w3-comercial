@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook } from 'lucide-react';
+import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
@@ -43,6 +43,7 @@ import { RolePermissionsPanel } from '@/components/admin/RolePermissionsPanel';
 import { WebhooksPanel } from '@/components/admin/WebhooksPanel';
 
 const AREAS: UserArea[] = ['Comercial', 'CS', 'Financeiro', 'Marketing', 'Diretoria'];
+const PAGE_SIZE = 10;
 
 export default function UserManagement() {
   const { data: userRole, isLoading: roleLoading } = useCurrentUserRole();
@@ -58,6 +59,13 @@ export default function UserManagement() {
   const [resetUser, setResetUser] = useState<any>(null);
   const [tempPassword, setTempPassword] = useState('');
   const [resetting, setResetting] = useState(false);
+
+  // Filters
+  const [filterNome, setFilterNome] = useState('');
+  const [filterArea, setFilterArea] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [page, setPage] = useState(1);
 
   // Create form state
   const [newUser, setNewUser] = useState({
@@ -77,7 +85,26 @@ export default function UserManagement() {
     role: 'CLOSER' as AppRole
   });
 
-  // Wait for role to load before deciding
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    return users.filter(u => {
+      if (filterNome && !u.nome.toLowerCase().includes(filterNome.toLowerCase()) && !u.email.toLowerCase().includes(filterNome.toLowerCase())) return false;
+      if (filterArea !== 'all' && u.area !== filterArea) return false;
+      if (filterRole !== 'all' && (u.user_role?.role || 'CLOSER') !== filterRole) return false;
+      if (filterStatus !== 'all') {
+        if (filterStatus === 'ativo' && !u.ativo) return false;
+        if (filterStatus === 'inativo' && u.ativo) return false;
+      }
+      return true;
+    });
+  }, [users, filterNome, filterArea, filterRole, filterStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const paginatedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset page when filters change
+  useMemo(() => { setPage(1); }, [filterNome, filterArea, filterRole, filterStatus]);
+
   if (roleLoading || isLoading) {
     return (
       <AppLayout>
@@ -91,7 +118,6 @@ export default function UserManagement() {
     );
   }
 
-  // Redirect if not authorized to access admin panel
   if (!canAccessAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -99,13 +125,7 @@ export default function UserManagement() {
   const handleCreate = async () => {
     await createUser.mutateAsync(newUser);
     setIsCreateOpen(false);
-    setNewUser({
-      nome: '',
-      email: '',
-      password: '',
-      area: 'Comercial',
-      role: 'CLOSER'
-    });
+    setNewUser({ nome: '', email: '', password: '', area: 'Comercial', role: 'CLOSER' });
   };
 
   const handleEdit = (user: any) => {
@@ -121,7 +141,6 @@ export default function UserManagement() {
 
   const handleUpdate = async () => {
     if (!editingUser) return;
-
     await updateProfile.mutateAsync({
       id: editingUser.id,
       nome: editForm.nome,
@@ -129,12 +148,10 @@ export default function UserManagement() {
       area: editForm.area,
       ativo: editForm.ativo
     });
-
     await updateUserRole.mutateAsync({
       userId: editingUser.id,
       role: editForm.role
     });
-
     setEditingUser(null);
   };
 
@@ -147,7 +164,7 @@ export default function UserManagement() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`Senha de ${resetUser.nome} resetada! Ele precisará criar uma nova senha no próximo login.`);
+      toast.success(`Senha de ${resetUser.nome} resetada!`);
       setResetUser(null);
       setTempPassword('');
     } catch (err: any) {
@@ -159,24 +176,17 @@ export default function UserManagement() {
 
   const getRoleBadgeVariant = (role: AppRole) => {
     switch (role) {
-      case 'MASTER':
-        return 'destructive';
-      case 'DIRETORIA':
-        return 'default';
-      case 'GESTOR_COMERCIAL':
-        return 'secondary';
-      default:
-        return 'outline';
+      case 'MASTER': return 'destructive';
+      case 'DIRETORIA': return 'default';
+      case 'GESTOR_COMERCIAL': return 'secondary';
+      default: return 'outline';
     }
   };
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        <PageHeader
-          title="Painel Admin"
-          description="Gerencie usuários e permissões do sistema"
-        />
+        <PageHeader title="Painel Admin" description="Gerencie usuários e permissões do sistema" />
 
         <Tabs defaultValue="users">
           <TabsList>
@@ -199,7 +209,47 @@ export default function UserManagement() {
           </TabsList>
 
           <TabsContent value="users" className="mt-6 space-y-4">
-            <div className="flex justify-end">
+            {/* Filters */}
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[200px]">
+                <Input
+                  placeholder="Buscar por nome ou email..."
+                  value={filterNome}
+                  onChange={(e) => setFilterNome(e.target.value)}
+                />
+              </div>
+              <Select value={filterArea} onValueChange={setFilterArea}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Área" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as áreas</SelectItem>
+                  {AREAS.map(a => (
+                    <SelectItem key={a} value={a}>{AREA_LABELS[a]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as roles</SelectItem>
+                  {ALL_ROLES.map(r => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS_NEW[r]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="ativo">Ativos</SelectItem>
+                  <SelectItem value="inativo">Inativos</SelectItem>
+                </SelectContent>
+              </Select>
               <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -210,90 +260,45 @@ export default function UserManagement() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Criar Novo Usuário</DialogTitle>
-                    <DialogDescription>
-                      Preencha os dados para criar um novo usuário no sistema.
-                    </DialogDescription>
+                    <DialogDescription>Preencha os dados para criar um novo usuário no sistema.</DialogDescription>
                   </DialogHeader>
-                  
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label>Nome</Label>
-                      <Input 
-                        value={newUser.nome}
-                        onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })}
-                        placeholder="Nome completo"
-                      />
+                      <Input value={newUser.nome} onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })} placeholder="Nome completo" />
                     </div>
-                    
                     <div className="space-y-2">
                       <Label>Email</Label>
-                      <Input 
-                        type="email"
-                        value={newUser.email}
-                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                        placeholder="email@exemplo.com"
-                      />
+                      <Input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} placeholder="email@exemplo.com" />
                     </div>
-                    
                     <div className="space-y-2">
                       <Label>Senha</Label>
-                      <Input 
-                        type="password"
-                        value={newUser.password}
-                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                        placeholder="Senha inicial"
-                      />
+                      <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Senha inicial" />
                     </div>
-                    
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Área</Label>
-                        <Select 
-                          value={newUser.area} 
-                          onValueChange={(v) => setNewUser({ ...newUser, area: v as UserArea })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
+                        <Select value={newUser.area} onValueChange={(v) => setNewUser({ ...newUser, area: v as UserArea })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {AREAS.map((area) => (
-                              <SelectItem key={area} value={area}>
-                                {AREA_LABELS[area]}
-                              </SelectItem>
-                            ))}
+                            {AREAS.map(a => <SelectItem key={a} value={a}>{AREA_LABELS[a]}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
-                      
                       <div className="space-y-2">
                         <Label>Role</Label>
-                        <Select 
-                          value={newUser.role} 
-                          onValueChange={(v) => setNewUser({ ...newUser, role: v as AppRole })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
+                        <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v as AppRole })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {ALL_ROLES.map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {ROLE_LABELS_NEW[role]}
-                              </SelectItem>
-                            ))}
+                            {ALL_ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS_NEW[r]}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                   </div>
-                  
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button 
-                      onClick={handleCreate}
-                      disabled={createUser.isPending || !newUser.nome || !newUser.email || !newUser.password}
-                    >
+                    <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleCreate} disabled={createUser.isPending || !newUser.nome || !newUser.email || !newUser.password}>
                       {createUser.isPending ? 'Criando...' : 'Criar Usuário'}
                     </Button>
                   </DialogFooter>
@@ -315,15 +320,13 @@ export default function UserManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users?.length === 0 ? (
+                  {paginatedUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        Nenhum usuário encontrado
-                      </TableCell>
+                      <TableCell colSpan={6} className="text-center py-8">Nenhum usuário encontrado</TableCell>
                     </TableRow>
                   ) : (
-                    users?.map((user) => (
-                      <TableRow key={user.id}>
+                    paginatedUsers.map((user) => (
+                      <TableRow key={user.id} className={!user.ativo ? 'opacity-50' : ''}>
                         <TableCell className="font-medium">{user.nome}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{AREA_LABELS[user.area]}</TableCell>
@@ -339,21 +342,11 @@ export default function UserManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEdit(user)}
-                            title="Editar"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(user)} title="Editar">
                             <Pencil className="h-4 w-4" />
                           </Button>
                           {canManageUsers && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => { setResetUser(user); setTempPassword(''); }}
-                              title="Resetar Senha"
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => { setResetUser(user); setTempPassword(''); }} title="Resetar Senha">
                               <KeyRound className="h-4 w-4" />
                             </Button>
                           )}
@@ -363,6 +356,23 @@ export default function UserManagement() {
                   )}
                 </TableBody>
               </Table>
+
+              {/* Pagination */}
+              {filteredUsers.length > PAGE_SIZE && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    {filteredUsers.length} usuário{filteredUsers.length !== 1 ? 's' : ''} • Página {page} de {totalPages}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -384,87 +394,45 @@ export default function UserManagement() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Editar Usuário</DialogTitle>
-              <DialogDescription>
-                Atualize os dados do usuário selecionado.
-              </DialogDescription>
+              <DialogDescription>Atualize os dados do usuário selecionado.</DialogDescription>
             </DialogHeader>
-            
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Nome</Label>
-                <Input 
-                  value={editForm.nome}
-                  onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
-                />
+                <Input value={editForm.nome} onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })} />
               </div>
-              
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input 
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                />
+                <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Área</Label>
-                  <Select 
-                    value={editForm.area} 
-                    onValueChange={(v) => setEditForm({ ...editForm, area: v as UserArea })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={editForm.area} onValueChange={(v) => setEditForm({ ...editForm, area: v as UserArea })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {AREAS.map((area) => (
-                        <SelectItem key={area} value={area}>
-                          {AREA_LABELS[area]}
-                        </SelectItem>
-                      ))}
+                      {AREAS.map(a => <SelectItem key={a} value={a}>{AREA_LABELS[a]}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-                
                 <div className="space-y-2">
                   <Label>Role</Label>
-                  <Select 
-                    value={editForm.role} 
-                    onValueChange={(v) => setEditForm({ ...editForm, role: v as AppRole })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={editForm.role} onValueChange={(v) => setEditForm({ ...editForm, role: v as AppRole })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {ALL_ROLES.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {ROLE_LABELS_NEW[role]}
-                        </SelectItem>
-                      ))}
+                      {ALL_ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS_NEW[r]}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
               <div className="flex items-center space-x-2">
-                <Switch
-                  id="ativo"
-                  checked={editForm.ativo}
-                  onCheckedChange={(checked) => setEditForm({ ...editForm, ativo: checked })}
-                />
+                <Switch id="ativo" checked={editForm.ativo} onCheckedChange={(checked) => setEditForm({ ...editForm, ativo: checked })} />
                 <Label htmlFor="ativo">Usuário Ativo</Label>
               </div>
             </div>
-            
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingUser(null)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleUpdate}
-                disabled={updateProfile.isPending || updateUserRole.isPending}
-              >
+              <Button variant="outline" onClick={() => setEditingUser(null)}>Cancelar</Button>
+              <Button onClick={handleUpdate} disabled={updateProfile.isPending || updateUserRole.isPending}>
                 {updateProfile.isPending ? 'Salvando...' : 'Salvar'}
               </Button>
             </DialogFooter>
@@ -480,31 +448,19 @@ export default function UserManagement() {
                 Resetar Senha
               </DialogTitle>
               <DialogDescription>
-                Defina uma senha temporária para <strong>{resetUser?.nome}</strong>. 
+                Defina uma senha temporária para <strong>{resetUser?.nome}</strong>.
                 Ao fazer login, o usuário será obrigado a criar uma nova senha.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Senha Temporária</Label>
-                <Input
-                  type="text"
-                  value={tempPassword}
-                  onChange={(e) => setTempPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  minLength={6}
-                />
+                <Input type="text" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setResetUser(null)}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleResetPassword}
-                disabled={resetting || tempPassword.length < 6}
-                variant="destructive"
-              >
+              <Button variant="outline" onClick={() => setResetUser(null)}>Cancelar</Button>
+              <Button onClick={handleResetPassword} disabled={resetting || tempPassword.length < 6} variant="destructive">
                 {resetting ? 'Resetando...' : 'Resetar Senha'}
               </Button>
             </DialogFooter>
