@@ -701,11 +701,11 @@ export default function VendasPage() {
               <TableRow>
                 <TableHead>Data</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Duração</TableHead>
+                <TableHead className="hidden md:table-cell">Duração</TableHead>
                 <TableHead>Valor Total</TableHead>
-                <TableHead>Detalhes Pagamento</TableHead>
-                <TableHead>Closer</TableHead>
-                <TableHead className="w-28">Flags</TableHead>
+                <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
+                <TableHead className="hidden md:table-cell">Closer</TableHead>
+                <TableHead className="w-28 hidden md:table-cell">Flags</TableHead>
                 {canEdit && <TableHead className="w-10"></TableHead>}
               </TableRow>
             </TableHeader>
