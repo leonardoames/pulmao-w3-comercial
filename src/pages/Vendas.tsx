@@ -106,6 +106,7 @@ export default function VendasPage() {
     setFlagContrato(false);
     setFlagFinanceiro(false);
     setFlagCS(false);
+    setFiltroOrigem('Todas');
   };
 
   const filteredVendas = vendas?.filter(venda => {
