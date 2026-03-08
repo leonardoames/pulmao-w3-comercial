@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useClosers } from '@/hooks/useProfiles';
