@@ -468,7 +468,23 @@ export default function VendasPage() {
                       defaultValue={editingVenda?.nome_lead}
                       required 
                     />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Origem do Lead</Label>
+                    <Select value={origemLead} onValueChange={setOrigemLead}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a origem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ORIGEM_LEAD_OPTIONS.map((opcao) => (
+                          <SelectItem key={opcao} value={opcao}>{opcao}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
                   <div className="space-y-2">
                     <Label htmlFor="nome_empresa">Nome da Empresa *</Label>
                     <Input 
