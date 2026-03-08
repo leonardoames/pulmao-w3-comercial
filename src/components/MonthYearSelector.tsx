@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, subMonths, addMonths, startOfMonth, isBefore } from 'date-fns';
+import { format, subMonths, addMonths, startOfMonth, isBefore, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface MonthYearSelectorProps {
@@ -9,7 +9,8 @@ interface MonthYearSelectorProps {
 }
 
 export function MonthYearSelector({ value, onChange }: MonthYearSelectorProps) {
-  const current = new Date(value + '-01');
+  // Use parse to avoid UTC timezone issues with new Date()
+  const current = parse(value + '-01', 'yyyy-MM-dd', new Date());
   const now = startOfMonth(new Date());
 
   const canGoNext = isBefore(startOfMonth(current), now);
