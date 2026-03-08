@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ptBR } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
