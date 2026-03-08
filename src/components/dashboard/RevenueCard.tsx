@@ -50,7 +50,7 @@ export function RevenueCard({
           <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>
             {formatCurrency(volumeVendas)}
           </p>
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+          <span style={{ fontSize: '12px', fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>
             / {formatCurrency(caixaDoMes)} em caixa ({proporcaoCaixa.toFixed(0)}%)
           </span>
         </div>
@@ -58,8 +58,11 @@ export function RevenueCard({
           {totalVendas} {totalVendas === 1 ? 'venda' : 'vendas'} no período
         </p>
 
-        {/* Segmented bar */}
-        <div className="flex rounded-full overflow-hidden mt-6 gap-0.5" style={{ height: '6px' }}>
+        {/* Segmented bar — 6px, gradient colors */}
+        <div
+          className="flex overflow-hidden mt-6 gap-0.5"
+          style={{ height: '6px', borderRadius: '999px' }}
+        >
           {segments.map((seg) => (
             <div
               key={seg.label}

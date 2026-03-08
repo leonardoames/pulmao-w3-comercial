@@ -11,7 +11,12 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen"
+      style={{
+        background: 'radial-gradient(ellipse at 15% 0%, rgba(249,115,22,0.05) 0%, transparent 55%), hsl(var(--background))',
+      }}
+    >
       {/* Mobile topbar */}
       <header
         className="md:hidden fixed top-0 left-0 right-0 z-20 h-14 flex items-center px-4 gap-3"
@@ -37,10 +42,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="md:pl-64">
-        <div className="pt-14 md:pt-0" style={{ padding: '24px 32px', paddingTop: '24px' }}>
-          <div className="pt-14 md:pt-0">
-            {children}
-          </div>
+        <div className="pt-14 md:pt-0 p-6 md:p-8">
+          {children}
         </div>
       </main>
     </div>

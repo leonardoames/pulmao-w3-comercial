@@ -16,28 +16,28 @@ export function OteProgressBar({
   className,
   expectedPercent,
 }: OteProgressBarProps) {
-  // Cap display at 130% for visual purposes
   const displayPercent = Math.min(percentAchieved, 130);
-
-  const barHeight = height === 'lg' ? '8px' : '6px';
 
   return (
     <div className={cn('relative w-full', className)}>
-      {/* Background track */}
+      {/* Background track — always 6px */}
       <div
-        className="w-full rounded-full overflow-hidden"
+        className="w-full overflow-hidden"
         style={{
-          height: barHeight,
+          height: '6px',
+          borderRadius: '999px',
           background: 'rgba(255,255,255,0.08)',
         }}
       >
-        {/* Progress fill with gradient */}
         <div
           className={cn(
-            'h-full rounded-full transition-all duration-700',
+            'h-full transition-all duration-700',
             percentAchieved >= 120 ? 'progress-fill-success' : 'progress-fill'
           )}
-          style={{ width: `${Math.min(displayPercent / 1.3, 100)}%` }}
+          style={{
+            width: `${Math.min(displayPercent / 1.3, 100)}%`,
+            borderRadius: '999px',
+          }}
         />
       </div>
 
@@ -72,7 +72,6 @@ export function OteProgressBar({
             </span>
           ))}
 
-          {/* Expected progress ghost ruler */}
           {expectedPercent !== undefined && (
             <>
               <div
