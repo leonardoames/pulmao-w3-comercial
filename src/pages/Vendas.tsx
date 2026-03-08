@@ -21,6 +21,7 @@ import { useIsCloser, useCanEditAnyFechamento, useIsMaster } from '@/hooks/useUs
 import { Venda, ORIGEM_LEAD_OPTIONS, OrigemLead } from '@/types/crm';
 import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote, Pencil, MoreVertical } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -856,18 +857,16 @@ export default function VendasPage() {
                             <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
                           </div>
                           {venda.observacoes && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex shrink-0 cursor-default">
-                                    <StickyNote className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
-                                  {venda.observacoes}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <HoverCard openDelay={200}>
+                              <HoverCardTrigger asChild>
+                                <span className="inline-flex shrink-0 cursor-default">
+                                  <StickyNote className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                                </span>
+                              </HoverCardTrigger>
+                              <HoverCardContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
+                                {venda.observacoes}
+                              </HoverCardContent>
+                            </HoverCard>
                           )}
                         </div>
                       </TableCell>
