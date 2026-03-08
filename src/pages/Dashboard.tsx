@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
-import { Phone, TrendingUp, Target, Trophy, Tv, CalendarIcon, AlertCircle, ShoppingCart, Ban } from 'lucide-react';
+import { Phone, TrendingUp, Target, Trophy, CalendarIcon, AlertCircle, ShoppingCart, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,78 +93,70 @@ export default function DashboardPage() {
         title="Dashboard Comercial"
         description="Visão geral do desempenho de vendas"
       >
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Closer Filter */}
-          <Select value={selectedCloser} onValueChange={setSelectedCloser}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por closer" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Closers</SelectItem>
-              {closers?.map((closer) => (
-                <SelectItem key={closer.id} value={closer.id}>
-                  {closer.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Single row: closer + filters + actions */}
+        <Select value={selectedCloser} onValueChange={setSelectedCloser}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filtrar por closer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Closers</SelectItem>
+            {closers?.map((closer) => (
+              <SelectItem key={closer.id} value={closer.id}>
+                {closer.nome}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            {filterOptions.map((option) => {
-              const isActive = filter === option.value;
-              return (
-                <Button
-                  key={option.value}
-                  variant={isActive ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => handleFilterChange(option.value)}
-                  className="min-w-[70px]"
-                  style={
-                    isActive
-                      ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
-                      : {
-                          background: 'transparent',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: '8px',
-                          fontSize: '13px',
-                          color: 'rgba(255,255,255,0.6)',
-                        }
-                  }
-                >
-                  {option.value === 'custom' && displayRange ? displayRange : option.label}
-                </Button>
-              );
-            })}
-          </div>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0">
-                <CalendarIcon className="h-4 w-4" />
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          {filterOptions.map((option) => {
+            const isActive = filter === option.value;
+            return (
+              <Button
+                key={option.value}
+                variant={isActive ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => handleFilterChange(option.value)}
+                className="min-w-[70px]"
+                style={
+                  isActive
+                    ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                    : {
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.6)',
+                      }
+                }
+              >
+                {option.value === 'custom' && displayRange ? displayRange : option.label}
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" align="end">
-              <Calendar
-                mode="range"
-                selected={{ from: tempRange.from, to: tempRange.to }}
-                onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
-                locale={ptBR}
-                numberOfMonths={2}
-              />
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
-                  Aplicar
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-          {canShare && <ShareDashboardDialog />}
-          <Link to="/tv">
-            <Button variant="outline" className="gap-2">
-              <Tv className="h-4 w-4" />
-              Modo TV
-            </Button>
-          </Link>
+            );
+          })}
         </div>
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0">
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-4" align="end">
+            <Calendar
+              mode="range"
+              selected={{ from: tempRange.from, to: tempRange.to }}
+              onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
+              locale={ptBR}
+              numberOfMonths={2}
+            />
+            <div className="flex justify-end mt-4">
+              <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
+                Aplicar
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+        {canShare && <ShareDashboardDialog />}
       </PageHeader>
 
       {/* BLOCO 1 — Receita */}
@@ -186,12 +178,14 @@ export default function DashboardPage() {
                 title="Ticket Médio"
                 value={formatCurrency(stats?.ticketMedio ?? 0)}
                 icon={<TrendingUp className="h-5 w-5" />}
+                trendLabel="tendência"
               />
               <StatCard
                 title="Faturamento por Call"
                 value={formatCurrency(stats?.faturamentoPorCall ?? 0)}
                 subtitle="Volume / Calls realizadas"
                 icon={<TrendingUp className="h-5 w-5" />}
+                trendLabel="tendência"
               />
             </div>
           </div>
@@ -241,13 +235,16 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="relative">
-              <div className="progress-track progress-track-lg">
+              <div
+                className="w-full overflow-hidden"
+                style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
+              >
                 <div
                   className={cn(
-                    'h-full rounded-full transition-all duration-1000',
+                    'h-full transition-all duration-1000',
                     actualPercent >= 100 ? 'progress-fill-success' : 'progress-fill'
                   )}
-                  style={{ width: `${Math.min(actualPercent, 100)}%` }}
+                  style={{ width: `${Math.min(actualPercent, 100)}%`, borderRadius: '999px' }}
                 />
               </div>
               {/* Ghost ruler */}
@@ -477,9 +474,7 @@ export default function DashboardPage() {
                             </p>
                           </div>
                           <span
-                            className={cn(
-                              "text-lg font-bold px-3 py-1 rounded-full",
-                            )}
+                            className="text-lg font-bold px-3 py-1 rounded-full"
                             style={{
                               background: closer.percentNoShow > 30
                                 ? 'rgba(239, 68, 68, 0.12)'

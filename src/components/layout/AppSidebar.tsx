@@ -6,7 +6,6 @@ import {
   LogOut,
   ClipboardList,
   ChevronDown,
-  ChevronRight,
   Settings,
   Target,
   Users,
@@ -15,6 +14,7 @@ import {
   Sparkles,
   PenTool,
   CalendarCheck,
+  Tv,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -98,14 +98,54 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
     onClose?.();
   };
 
+  const renderNavLink = (path: string, icon: any, label: string) => {
+    const Icon = icon;
+    const isActive = location.pathname === path;
+    return (
+      <Link
+        key={path}
+        to={path}
+        onClick={handleLinkClick}
+        className={cn(
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150',
+          isActive ? 'font-semibold text-foreground' : 'font-normal hover:text-foreground/80'
+        )}
+        style={
+          isActive
+            ? { background: 'rgba(249, 115, 22, 0.15)', borderLeft: '3px solid #F97316', color: '#FFFFFF' }
+            : { color: 'rgba(255,255,255,0.5)', borderLeft: '3px solid transparent' }
+        }
+        onMouseEnter={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+            e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
+          }
+        }}
+      >
+        <div
+          className="flex items-center justify-center shrink-0"
+          style={{
+            width: '28px', height: '28px', borderRadius: '6px',
+            background: isActive ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
+          }}
+        >
+          <Icon className="h-4 w-4" style={{ color: isActive ? '#F97316' : 'inherit' }} />
+        </div>
+        <span>{label}</span>
+      </Link>
+    );
+  };
+
   return (
     <>
-      {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/60 md:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={onClose} />
       )}
 
       <aside
@@ -114,10 +154,7 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
           '-translate-x-full md:translate-x-0',
           isOpen && 'translate-x-0'
         )}
-        style={{
-          background: 'hsl(var(--sidebar-background))',
-          borderRight: '1px solid rgba(255,255,255,0.06)',
-        }}
+        style={{ background: 'hsl(var(--sidebar-background))', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
         {/* Logo */}
         <div className="p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -138,133 +175,31 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
                   onClick={() => toggleGroup(group.label)}
                   className="w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-colors duration-150"
                   style={{
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    letterSpacing: '0.15em',
-                    textTransform: 'uppercase',
-                    color: 'rgba(255,255,255,0.25)',
-                    marginBottom: '8px',
+                    fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em',
+                    textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: '8px',
                   }}
                 >
                   <span>{group.label}</span>
-                  <ChevronDown
-                    className={cn(
-                      'h-3 w-3 transition-transform duration-200',
-                      !isGroupOpen && '-rotate-90'
-                    )}
-                  />
+                  <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', !isGroupOpen && '-rotate-90')} />
                 </button>
-                <div
-                  className={cn(
-                    'space-y-0.5 overflow-hidden transition-all duration-200',
-                    isGroupOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                  )}
-                >
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={handleLinkClick}
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150',
-                          isActive
-                            ? 'font-semibold text-foreground'
-                            : 'font-normal hover:text-foreground/80'
-                        )}
-                        style={
-                          isActive
-                            ? {
-                                background: 'rgba(249, 115, 22, 0.15)',
-                                borderLeft: '3px solid #F97316',
-                                color: '#FFFFFF',
-                              }
-                            : {
-                                color: 'rgba(255,255,255,0.5)',
-                                borderLeft: '3px solid transparent',
-                              }
-                        }
-                        onMouseEnter={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                            e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
-                          }
-                        }}
-                      >
-                        <div
-                          className="flex items-center justify-center shrink-0"
-                          style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '6px',
-                            background: isActive ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
-                          }}
-                        >
-                          <item.icon
-                            className="h-4 w-4"
-                            style={{ color: isActive ? '#F97316' : 'inherit' }}
-                          />
-                        </div>
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
+                <div className={cn(
+                  'space-y-0.5 overflow-hidden transition-all duration-200',
+                  isGroupOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                )}>
+                  {group.items.map((item) => renderNavLink(item.path, item.icon, item.label))}
                 </div>
               </div>
             );
           })}
         </nav>
 
-        {/* Admin Panel Link */}
-        {canViewAdmin && (
-          <div className="px-3 pb-2">
-            <Link
-              to="/painel-admin"
-              onClick={handleLinkClick}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150',
-                location.pathname === '/painel-admin'
-                  ? 'font-semibold'
-                  : 'font-normal'
-              )}
-              style={
-                location.pathname === '/painel-admin'
-                  ? {
-                      background: 'rgba(249, 115, 22, 0.15)',
-                      borderLeft: '3px solid #F97316',
-                      color: '#FFFFFF',
-                    }
-                  : {
-                      color: 'rgba(255,255,255,0.5)',
-                      borderLeft: '3px solid transparent',
-                    }
-              }
-            >
-              <div
-                className="flex items-center justify-center shrink-0"
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px',
-                  background: location.pathname === '/painel-admin' ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
-                }}
-              >
-                <Settings
-                  className="h-4 w-4"
-                  style={{ color: location.pathname === '/painel-admin' ? '#F97316' : 'inherit' }}
-                />
-              </div>
-              <span>Painel Admin</span>
-            </Link>
-          </div>
-        )}
+        {/* Bottom links */}
+        <div className="px-3 pb-2 space-y-1">
+          {/* TV Mode */}
+          {renderNavLink('/tv', Tv, 'Modo TV')}
+          {/* Admin Panel */}
+          {canViewAdmin && renderNavLink('/painel-admin', Settings, 'Painel Admin')}
+        </div>
 
         {/* User Profile */}
         {profile && (

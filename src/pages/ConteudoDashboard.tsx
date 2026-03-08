@@ -44,9 +44,9 @@ const getPillLabel = (percent: number): string => {
 };
 
 const getPillClass = (percent: number): string => {
-  if (percent >= 100) return 'bg-success/15 text-success';
-  if (percent < 75) return 'bg-warning/15 text-warning';
-  return 'bg-primary/15 text-primary';
+  if (percent >= 100) return 'trend-pill-positive';
+  if (percent < 75) return 'trend-pill-negative';
+  return 'trend-pill';
 };
 
 export default function ConteudoDashboard() {
@@ -103,7 +103,6 @@ export default function ConteudoDashboard() {
     const postsPercent = postsMeta > 0 ? (totalPosts / postsMeta) * 100 : 0;
     const storiesPercent = storiesMeta > 0 ? (totalStories / storiesMeta) * 100 : 0;
 
-    // Followers variation totals
     const sortedByDate = [...logs].sort((a, b) => a.date.localeCompare(b.date));
     const firstLog = sortedByDate[0];
     const lastLog = sortedByDate[sortedByDate.length - 1];
@@ -172,59 +171,71 @@ export default function ConteudoDashboard() {
   return (
     <AppLayout>
       <PageHeader title="Dashboard de Conteúdo" description="Visão geral do desempenho de conteúdo">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Responsável" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {RESPONSIBLE_OPTIONS.map(r => (
-                <SelectItem key={r} value={r}>{r}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Responsável" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {RESPONSIBLE_OPTIONS.map(r => (
+              <SelectItem key={r} value={r}>{r}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <div className="flex gap-1 p-1 bg-muted rounded-lg flex-wrap">
-            {filterOptions.map((option) => (
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          {filterOptions.map((option) => {
+            const isActive = filter === option.value;
+            return (
               <Button
                 key={option.value}
-                variant={filter === option.value ? 'default' : 'ghost'}
+                variant={isActive ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleFilterChange(option.value)}
                 className="min-w-[70px]"
+                style={
+                  isActive
+                    ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                    : {
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.6)',
+                      }
+                }
               >
                 {option.value === 'custom' && displayRange ? displayRange : option.label}
               </Button>
-            ))}
-          </div>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0">
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" align="end">
-              <Calendar
-                mode="range"
-                selected={{ from: tempRange.from, to: tempRange.to }}
-                onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
-                locale={ptBR}
-                numberOfMonths={2}
-              />
-              <div className="flex justify-end mt-4">
-                <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
-                  Aplicar
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+            );
+          })}
         </div>
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0">
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-4" align="end">
+            <Calendar
+              mode="range"
+              selected={{ from: tempRange.from, to: tempRange.to }}
+              onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
+              locale={ptBR}
+              numberOfMonths={2}
+            />
+            <div className="flex justify-end mt-4">
+              <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
+                Aplicar
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </PageHeader>
 
       {/* BLOCO 1 — Resultado (Gráficos) */}
       <SectionLabel title="Resultado" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Posts e Stories por dia</CardTitle>
@@ -247,7 +258,7 @@ export default function ConteudoDashboard() {
                     <Line type="monotone" dataKey="agendados" stroke="hsl(var(--secondary))" strokeWidth={2} dot={false} strokeDasharray="4 2" />
                   </LineChart>
                 </ChartContainer>
-                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-4 mt-3 flex-wrap" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
                     <span>Posts Publicados: {stats.totalPosts} no período</span>
@@ -285,7 +296,7 @@ export default function ConteudoDashboard() {
                     <Line type="monotone" dataKey="w3" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ChartContainer>
-                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-4 mt-3 flex-wrap" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
                     <span>@leo: {stats.totalLeoVar >= 0 ? '+' : ''}{stats.totalLeoVar} no período</span>
@@ -303,41 +314,35 @@ export default function ConteudoDashboard() {
 
       {/* BLOCO 2 — Operacional (KPIs) */}
       <SectionLabel title="Operacional" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <Card className={cn(
-          stats.postsPercent >= 100 ? 'border-success/30' :
-          stats.postsPercent < 75 ? 'border-warning/30' : 'border-primary/30'
-        )}>
-          <CardContent className="p-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Posts Publicados</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card style={{ borderColor: stats.postsPercent >= 100 ? 'rgba(34,197,94,0.3)' : stats.postsPercent < 75 ? 'rgba(251,191,36,0.3)' : 'rgba(249,115,22,0.3)' }}>
+          <CardContent className="p-6">
+            <p className="section-label-text mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Posts Publicados</p>
             <div className="flex items-baseline gap-3 flex-wrap">
-              <p className="text-4xl font-bold tracking-tight text-primary">{stats.totalPosts}</p>
-              <span className="text-sm text-muted-foreground font-medium">
+              <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>{stats.totalPosts}</p>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
                 / {stats.postsMeta} de meta ({stats.postsPercent.toFixed(0)}%)
               </span>
             </div>
             <div className="mt-2">
-              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.postsPercent))}>
+              <span className={cn('trend-pill', getPillClass(stats.postsPercent))}>
                 {getPillLabel(stats.postsPercent)}
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className={cn(
-          stats.storiesPercent >= 100 ? 'border-success/30' :
-          stats.storiesPercent < 75 ? 'border-warning/30' : 'border-primary/30'
-        )}>
-          <CardContent className="p-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Stories Realizados</p>
+        <Card style={{ borderColor: stats.storiesPercent >= 100 ? 'rgba(34,197,94,0.3)' : stats.storiesPercent < 75 ? 'rgba(251,191,36,0.3)' : 'rgba(249,115,22,0.3)' }}>
+          <CardContent className="p-6">
+            <p className="section-label-text mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Stories Realizados</p>
             <div className="flex items-baseline gap-3 flex-wrap">
-              <p className="text-4xl font-bold tracking-tight text-primary">{stats.totalStories}</p>
-              <span className="text-sm text-muted-foreground font-medium">
+              <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>{stats.totalStories}</p>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
                 / {stats.storiesMeta} de meta ({stats.storiesPercent.toFixed(0)}%)
               </span>
             </div>
             <div className="mt-2">
-              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', getPillClass(stats.storiesPercent))}>
+              <span className={cn('trend-pill', getPillClass(stats.storiesPercent))}>
                 {getPillLabel(stats.storiesPercent)}
               </span>
             </div>

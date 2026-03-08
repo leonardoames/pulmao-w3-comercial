@@ -11,6 +11,7 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
+  trendLabel?: string;
   className?: string;
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'destructive';
 }
@@ -22,24 +23,23 @@ export function StatCard({
   badge,
   icon,
   trend,
+  trendLabel,
   className,
   variant = 'default'
 }: StatCardProps) {
   return (
-    <div className={cn(
-      'stat-card animate-fade-in',
-      className
-    )}>
+    <div
+      className={cn('stat-card animate-fade-in', className)}
+      style={{ minHeight: '130px', padding: '24px' }}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          {/* Card label: 13px, weight 400, muted */}
           <p
             className="font-normal"
             style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}
           >
             {title}
           </p>
-          {/* Main metric: 36px, weight 700 */}
           <p
             className="mt-2 tracking-tight truncate"
             style={{
@@ -65,6 +65,13 @@ export function StatCard({
                 trend.isPositive ? 'trend-pill-positive' : 'trend-pill-negative'
               )}>
                 {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+              </span>
+            </div>
+          )}
+          {trendLabel && !trend && (
+            <div className="mt-2">
+              <span className="trend-pill trend-pill-positive">
+                ↑ {trendLabel}
               </span>
             </div>
           )}
