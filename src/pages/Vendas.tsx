@@ -26,6 +26,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function VendasPage() {
+  type QuickFilter = 'today' | 'yesterday' | '7days' | 'month' | '30days' | 'custom';
+
   const [closerFilter, setCloserFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -34,10 +36,13 @@ export default function VendasPage() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCloserId, setSelectedCloserId] = useState<string>('');
 
+  // Quick date filter — default to "Este mês"
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('month');
+
   // Advanced filters
   const [showFilters, setShowFilters] = useState(false);
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
   const [duracaoFilter, setDuracaoFilter] = useState<string>('all');
@@ -46,6 +51,29 @@ export default function VendasPage() {
   const [flagContrato, setFlagContrato] = useState(false);
   const [flagFinanceiro, setFlagFinanceiro] = useState(false);
   const [flagCS, setFlagCS] = useState(false);
+
+  // Compute effective date range from quick filter
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+    switch (quickFilter) {
+      case 'today':
+        return { dateFrom: startOfDay(now), dateTo: endOfDay(now) };
+      case 'yesterday': {
+        const y = subDays(now, 1);
+        return { dateFrom: startOfDay(y), dateTo: endOfDay(y) };
+      }
+      case '7days':
+        return { dateFrom: startOfDay(subDays(now, 6)), dateTo: endOfDay(now) };
+      case 'month':
+        return { dateFrom: startOfMonth(now), dateTo: endOfMonth(now) };
+      case '30days':
+        return { dateFrom: startOfDay(subDays(now, 29)), dateTo: endOfDay(now) };
+      case 'custom':
+        return { dateFrom: customDateFrom, dateTo: customDateTo };
+      default:
+        return { dateFrom: undefined, dateTo: undefined };
+    }
+  }, [quickFilter, customDateFrom, customDateTo]);
   
   const { data: vendas, isLoading } = useVendas();
   const { data: closers } = useClosers();
