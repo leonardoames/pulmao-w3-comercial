@@ -15,6 +15,7 @@ import {
   PenTool,
   CalendarCheck,
   Tv,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -144,25 +145,38 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
 
   return (
     <>
+      {/* Overlay — visible on <1024px when sidebar is open */}
       {isOpen && (
-        <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={onClose} />
+        <div className="fixed inset-0 z-[998] lg:hidden" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose} />
       )}
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 h-screen w-64 flex flex-col transition-transform duration-300',
-          '-translate-x-full md:translate-x-0',
-          isOpen && 'translate-x-0'
+          'fixed left-0 top-0 z-[999] h-screen w-[260px] flex flex-col transition-transform duration-300',
+          // Mobile/tablet: hidden by default, shown when isOpen
+          'lg:translate-x-0',
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
         style={{ background: 'hsl(var(--sidebar-background))', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {/* Logo */}
-        <div className="p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <h1 className="text-xl font-bold tracking-tight">
-            <span className="text-primary">Pulmão</span>{' '}
-            <span className="text-foreground">W3</span>
-          </h1>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>Gestão Integrada</p>
+        {/* Logo + Close button */}
+        <div className="p-6 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">
+              <span className="text-primary">Pulmão</span>{' '}
+              <span className="text-foreground">W3</span>
+            </h1>
+            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>Gestão Integrada</p>
+          </div>
+          {/* Close button — only on <1024px */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="lg:hidden text-foreground/60 hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Navigation */}
@@ -195,9 +209,7 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
 
         {/* Bottom links */}
         <div className="px-3 pb-2 space-y-1">
-          {/* TV Mode */}
           {renderNavLink('/tv', Tv, 'Modo TV')}
-          {/* Admin Panel */}
           {canViewAdmin && renderNavLink('/painel-admin', Settings, 'Painel Admin')}
         </div>
 
