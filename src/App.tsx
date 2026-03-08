@@ -26,6 +26,10 @@ import ConteudoAcompanhamento from "./pages/ConteudoAcompanhamento";
 import NotFound from "./pages/NotFound";
 import SharedDashboard from "./pages/SharedDashboard";
 import ChangePassword from "./pages/ChangePassword";
+import TrafegoPagoDashboard from "./pages/TrafegoPagoDashboard";
+import TrafegoPagoClientes from "./pages/TrafegoPagoClientes";
+import MarketplaceDashboard from "./pages/MarketplaceDashboard";
+import MarketplaceClientes from "./pages/MarketplaceClientes";
 
 const queryClient = new QueryClient();
 
