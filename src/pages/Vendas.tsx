@@ -174,8 +174,8 @@ export default function VendasPage() {
   const handleOpenNew = () => {
     setEditingVenda(null);
     setDataVenda(new Date());
-    // Se for closer, usa o próprio ID; se não, limpa para forçar seleção
     setSelectedCloserId(isCloser ? (profile?.id || '') : '');
+    setOrigemLead('');
     setDialogOpen(true);
   };
 
