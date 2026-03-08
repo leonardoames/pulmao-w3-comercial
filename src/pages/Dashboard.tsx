@@ -265,23 +265,9 @@ export default function DashboardPage() {
               icon={<Phone className="h-5 w-5" />}
             />
             <StatCard
-              title="% Reagendado"
-              value={`${(stats?.percentReagendado ?? 0).toFixed(1)}%`}
-              subtitle={`${stats?.reagendados ?? 0} reagendados`}
-              icon={<RefreshCw className="h-5 w-5" />}
-              variant="warning"
-            />
-            <StatCard
-              title="% No-Show"
-              value={`${(stats?.percentNoShow ?? 0).toFixed(1)}%`}
-              subtitle={`${stats?.noShows ?? 0} no-shows`}
-              icon={<PhoneOff className="h-5 w-5" />}
-              variant="destructive"
-            />
-            <StatCard
               title="% No-Show Total"
               value={`${(stats?.callsAgendadas ?? 0) > 0 ? (((stats?.reagendados ?? 0) + (stats?.noShows ?? 0)) / (stats?.callsAgendadas ?? 1) * 100).toFixed(1) : '0.0'}%`}
-              subtitle={`${(stats?.reagendados ?? 0) + (stats?.noShows ?? 0)} total (${stats?.reagendados ?? 0} reag. + ${stats?.noShows ?? 0} no-shows)`}
+              subtitle={`${(stats?.reagendados ?? 0) + (stats?.noShows ?? 0)} total — ${stats?.noShows ?? 0} no-shows · ${stats?.reagendados ?? 0} reagend.`}
               icon={<Ban className="h-5 w-5" />}
               variant="destructive"
             />
