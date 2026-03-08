@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
         enviado_financeiro: venda.enviado_financeiro,
         enviado_cs: venda.enviado_cs,
         status: venda.status,
+        origem_lead: venda.origem_lead ?? null,
         observacoes: venda.observacoes,
       },
     };
