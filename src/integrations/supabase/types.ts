@@ -656,6 +656,7 @@ export type Database = {
           nome_empresa: string
           nome_lead: string
           observacoes: string | null
+          origem_lead: string | null
           pago: boolean
           quantidade_parcelas_boleto: number
           reembolsado_em: string | null
@@ -681,6 +682,7 @@ export type Database = {
           nome_empresa?: string
           nome_lead?: string
           observacoes?: string | null
+          origem_lead?: string | null
           pago?: boolean
           quantidade_parcelas_boleto?: number
           reembolsado_em?: string | null
@@ -706,6 +708,7 @@ export type Database = {
           nome_empresa?: string
           nome_lead?: string
           observacoes?: string | null
+          origem_lead?: string | null
           pago?: boolean
           quantidade_parcelas_boleto?: number
           reembolsado_em?: string | null

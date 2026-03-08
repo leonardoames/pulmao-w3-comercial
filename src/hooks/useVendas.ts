@@ -114,6 +114,7 @@ interface UpdateVendaInput {
   enviado_cs?: boolean;
   status?: VendaStatus;
   observacoes?: string;
+  origem_lead?: string | null;
 }
 
 export function useUpdateVenda() {

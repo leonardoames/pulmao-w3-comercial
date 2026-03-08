@@ -46,6 +46,7 @@ export interface Venda {
   motivo_reembolso?: string;
   reembolsado_por?: string;
   reembolsado_em?: string;
+  origem_lead?: OrigemLead | null;
   // Relations
   closer?: Profile;
 }
