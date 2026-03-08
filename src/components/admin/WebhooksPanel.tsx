@@ -44,6 +44,7 @@ export function WebhooksPanel() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<WebhookType | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WebhookType | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     nome: '',
