@@ -210,9 +210,25 @@ export function RevenueCard({
         {/* Main value block */}
         <div className="flex items-start justify-between">
           <div>
-            <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316', lineHeight: 1.1 }}>
-              {formatCurrency(volumeVendas)}
-            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316', lineHeight: 1.1 }}>
+                {formatCurrency(volumeVendas)}
+              </p>
+              <span
+                className="inline-flex items-center gap-1"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '9999px',
+                  padding: '3px 10px',
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  color: 'rgba(255,255,255,0.5)',
+                }}
+              >
+                💰 {formatCurrencyShort(caixaDoMes)} em caixa ({proporcaoCaixa.toFixed(0)}%)
+              </span>
+            </div>
             <p className="mt-1.5" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
               {totalVendas} {totalVendas === 1 ? 'venda' : 'vendas'} no período
             </p>
@@ -223,24 +239,6 @@ export function RevenueCard({
             </p>
             <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>do esperado</p>
           </div>
-        </div>
-
-        {/* Caixa badge */}
-        <div className="mt-3">
-          <span
-            className="inline-flex items-center gap-1.5"
-            style={{
-              background: 'rgba(249,115,22,0.10)',
-              border: '1px solid rgba(249,115,22,0.25)',
-              borderRadius: '9999px',
-              padding: '4px 12px',
-              fontSize: '13px',
-              fontWeight: 500,
-              color: 'rgba(255,255,255,0.8)',
-            }}
-          >
-            💰 Em caixa: {formatCurrencyShort(caixaDoMes)} ({proporcaoCaixa.toFixed(0)}%)
-          </span>
         </div>
 
         {/* Divider before metas */}
