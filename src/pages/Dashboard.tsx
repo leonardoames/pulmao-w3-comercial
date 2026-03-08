@@ -520,6 +520,13 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+
+      {/* Origem dos Leads */}
+      {canViewSection('section:dashboard:receita') && vendasOrigem && vendasOrigem.length > 0 && (
+        <div className="mb-6">
+          <OrigemLeadCard vendas={vendasOrigem} />
+        </div>
+      )}
     </AppLayout>
   );
 }
