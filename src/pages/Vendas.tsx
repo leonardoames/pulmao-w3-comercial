@@ -292,7 +292,7 @@ export default function VendasPage() {
   return (
     <AppLayout>
       <PageHeader title="Vendas" description="Contratos e faturamento">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:items-center">
           <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
             <FileDown className="h-4 w-4" />
             Exportar PDF
