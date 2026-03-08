@@ -857,18 +857,16 @@ export default function VendasPage() {
                             <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
                           </div>
                           {venda.observacoes && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="inline-flex shrink-0 cursor-default">
-                                    <StickyNote className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
-                                  {venda.observacoes}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <HoverCard openDelay={200}>
+                              <HoverCardTrigger asChild>
+                                <span className="inline-flex shrink-0 cursor-default">
+                                  <StickyNote className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                                </span>
+                              </HoverCardTrigger>
+                              <HoverCardContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
+                                {venda.observacoes}
+                              </HoverCardContent>
+                            </HoverCard>
                           )}
                         </div>
                       </TableCell>
