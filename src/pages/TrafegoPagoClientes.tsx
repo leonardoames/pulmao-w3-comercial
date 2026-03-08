@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Plus, Search, CalendarIcon, Edit, AlertTriangle, Upload } from 'lucide-react';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
+import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
