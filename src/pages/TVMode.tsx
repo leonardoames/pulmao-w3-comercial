@@ -479,7 +479,16 @@ export default function TVModePage() {
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#0d0d0d" }}>
       {/* Content area — exactly 100vh minus bottom bar */}
       <div
-        className="flex-1 flex flex-col overflow-hidden px-8 lg:px-12 pt-6 pb-14 transition-opacity"
+        className="flex-1 flex flex-col overflow-hidden transition-opacity"
+        style={{ opacity, transitionDuration: `${FADE_DURATION / 2}ms`, padding: "16px 32px 48px 32px" }}
+      >
+        {/* Dummy to replace the double style attr */}
+      </div>
+      {/* Re-render correctly below */}
+      <div
+        className="fixed inset-0 z-50 flex flex-col"
+        style={{ background: "#0d0d0d", display: "none" }}
+      >
         style={{ opacity, transitionDuration: `${FADE_DURATION / 2}ms` }}
       >
         {/* Header row */}
