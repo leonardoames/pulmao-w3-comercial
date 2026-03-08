@@ -4,11 +4,11 @@ import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMarketplaceClientes, useMarketplaceAllRegistros } from '@/hooks/useMarketplaces';
 import { useClosers } from '@/hooks/useProfiles';
+import { MonthYearSelector } from '@/components/MonthYearSelector';
 import { DollarSign, TrendingUp, TrendingDown, Users, BarChart3, AlertTriangle, Trophy, Percent } from 'lucide-react';
 import { format, subMonths } from 'date-fns';
 
@@ -123,7 +123,7 @@ export default function MarketplaceDashboard() {
   return (
     <AppLayout>
       <PageHeader title="Dashboard — Marketplaces" description="Métricas de gestão de marketplaces">
-        <Input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)} className="w-[180px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
+        <MonthYearSelector value={mesAno} onChange={setMesAno} />
       </PageHeader>
 
       <SectionLabel title="Receita Recorrente" />

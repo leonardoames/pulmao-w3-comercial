@@ -1,4 +1,4 @@
-export type AppRole = 'MASTER' | 'DIRETORIA' | 'GESTOR_COMERCIAL' | 'SDR' | 'CLOSER' | 'SOCIAL_SELLING' | 'ANALISTA_CONTEUDO';
+export type AppRole = 'MASTER' | 'DIRETORIA' | 'GESTOR_COMERCIAL' | 'SDR' | 'CLOSER' | 'SOCIAL_SELLING' | 'ANALISTA_CONTEUDO' | 'GESTOR_TRAFEGO' | 'GESTOR_MARKETPLACE';
 
 export interface UserRole {
   id: string;
@@ -16,9 +16,11 @@ export const ROLE_LABELS_NEW: Record<AppRole, string> = {
   CLOSER: 'Closer',
   SOCIAL_SELLING: 'Social Seller',
   ANALISTA_CONTEUDO: 'Analista de Conteúdo',
+  GESTOR_TRAFEGO: 'Gestor de Tráfego',
+  GESTOR_MARKETPLACE: 'Gestor de Marketplace',
 };
 
-export const ALL_ROLES: AppRole[] = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR', 'CLOSER', 'SOCIAL_SELLING', 'ANALISTA_CONTEUDO'];
+export const ALL_ROLES: AppRole[] = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR', 'CLOSER', 'SOCIAL_SELLING', 'ANALISTA_CONTEUDO', 'GESTOR_TRAFEGO', 'GESTOR_MARKETPLACE'];
 
 // Check if role can manage closers (select any closer for fechamento/vendas)
 export const canRoleManageClosers = (role: AppRole): boolean => {

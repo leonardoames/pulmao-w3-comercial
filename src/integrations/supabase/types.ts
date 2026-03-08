@@ -1140,6 +1140,8 @@ export type Database = {
         | "SOCIAL_SELLING"
         | "SDR"
         | "ANALISTA_CONTEUDO"
+        | "GESTOR_TRAFEGO"
+        | "GESTOR_MARKETPLACE"
       billing_model: "percentual_faixas" | "fixo_percentual" | "somente_fixo"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
@@ -1331,6 +1333,8 @@ export const Constants = {
         "SOCIAL_SELLING",
         "SDR",
         "ANALISTA_CONTEUDO",
+        "GESTOR_TRAFEGO",
+        "GESTOR_MARKETPLACE",
       ],
       billing_model: ["percentual_faixas", "fixo_percentual", "somente_fixo"],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],
