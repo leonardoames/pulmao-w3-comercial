@@ -212,7 +212,13 @@ export default function DashboardPage() {
         </>
       )}
 
-      {canViewSection('section:dashboard:ote') && (
+      {/* Origem dos Leads */}
+      {canViewSection('section:dashboard:receita') && vendasOrigem && vendasOrigem.length > 0 && (
+        <div className="mb-6">
+          <OrigemLeadCard vendas={vendasOrigem} />
+        </div>
+      )}
+
         <div className="mb-6">
           <OteDashboardCard
             monthRef={format(new Date(), 'yyyy-MM')}
