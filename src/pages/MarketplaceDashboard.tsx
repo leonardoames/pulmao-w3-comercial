@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -6,21 +6,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMarketplaceClientes, useMarketplaceAllRegistros } from '@/hooks/useMarketplaces';
+import { useMarketplaceClientes, useMarketplaceRegistrosByMonths } from '@/hooks/useMarketplaces';
 import { useClosers } from '@/hooks/useProfiles';
-import { MonthYearSelector } from '@/components/MonthYearSelector';
+import { DateFilterBar, DateFilter, DateRange, getDateRange, getMonthsInRange } from '@/components/DateFilterBar';
 import { DollarSign, TrendingUp, TrendingDown, Users, BarChart3, AlertTriangle, Trophy, Percent } from 'lucide-react';
-import { format, subMonths } from 'date-fns';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 const STATUS_COLORS: Record<string, string> = { Ativo: '#22C55E', Pausado: '#FBBF24', Cancelado: '#888888', Trial: '#0EA5E9' };
 
 export default function MarketplaceDashboard() {
-  const [mesAno, setMesAno] = useState(format(new Date(), 'yyyy-MM'));
+  const [filter, setFilter] = useState<DateFilter>('month');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date>(new Date());
+
+  const dateRange = useMemo(() => getDateRange(filter, customRange), [filter, customRange]);
+  const months = useMemo(() => getMonthsInRange(dateRange), [dateRange]);
 
   const { data: clientes } = useMarketplaceClientes();
-  const { data: regsAtual } = useMarketplaceAllRegistros(mesAno);
+  const { data: regsAtual, dataUpdatedAt } = useMarketplaceRegistrosByMonths(months);
   const { data: closers } = useClosers();
+
+  useEffect(() => {
+    if (dataUpdatedAt) setLastUpdatedAt(new Date(dataUpdatedAt));
+  }, [dataUpdatedAt]);
 
   const gestorMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -34,20 +44,22 @@ export default function MarketplaceDashboard() {
     return m;
   }, [clientes]);
 
+  const primaryMonth = months[months.length - 1] || format(new Date(), 'yyyy-MM');
+
   const clientesAtivos = clientes?.filter(c => c.status === 'Ativo') || [];
   const mrrTotal = regsAtual?.reduce((s, r) => {
     const c = clienteMap[r.cliente_id];
     return c?.status === 'Ativo' ? s + Number(r.total_a_receber) : s;
   }, 0) ?? 0;
 
-  const clientesNovos = clientes?.filter(c => c.data_entrada?.startsWith(mesAno)) || [];
+  const clientesNovos = clientes?.filter(c => c.data_entrada?.startsWith(primaryMonth)) || [];
   const mrrNovo = clientesNovos.reduce((s, c) => {
     const reg = regsAtual?.find(r => r.cliente_id === c.id);
     return s + (reg ? Number(reg.total_a_receber) : 0);
   }, 0);
 
   const clientesCancelados = clientes?.filter(c =>
-    (c.status === 'Cancelado' || c.status === 'Pausado') && c.atualizado_em?.startsWith(mesAno)
+    (c.status === 'Cancelado' || c.status === 'Pausado') && c.atualizado_em?.startsWith(primaryMonth)
   ) || [];
   const churn = clientesCancelados.reduce((s, c) => {
     const reg = regsAtual?.find(r => r.cliente_id === c.id);
@@ -120,10 +132,33 @@ export default function MarketplaceDashboard() {
     return clientesAtivos.filter(c => !comRegistro.has(c.id));
   }, [clientes, regsAtual, clientesAtivos]);
 
+  // Timestamp
+  const minutesSinceUpdate = Math.floor((Date.now() - lastUpdatedAt.getTime()) / 60000);
+  const timestampColor = minutesSinceUpdate < 5 ? '#22C55E' : minutesSinceUpdate <= 15 ? '#FBBF24' : '#888888';
+  const timestampPulse = minutesSinceUpdate < 5;
+
   return (
     <AppLayout>
       <PageHeader title="Dashboard — Marketplaces" description="Métricas de gestão de marketplaces">
-        <MonthYearSelector value={mesAno} onChange={setMesAno} />
+        <DateFilterBar
+          filter={filter}
+          onFilterChange={setFilter}
+          customRange={customRange}
+          onCustomRangeChange={setCustomRange}
+        />
+        <div className="flex items-center gap-2 shrink-0">
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '14px' }}>|</span>
+          <div
+            className="flex items-center gap-1.5"
+            style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}
+          >
+            <span
+              className={cn('inline-block w-2 h-2 rounded-full', timestampPulse && 'animate-pulse')}
+              style={{ background: timestampColor }}
+            />
+            Atualizado às {format(lastUpdatedAt, 'HH:mm')}
+          </div>
+        </div>
       </PageHeader>
 
       <SectionLabel title="Receita Recorrente" />
