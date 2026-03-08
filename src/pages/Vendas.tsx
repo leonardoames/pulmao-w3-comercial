@@ -534,8 +534,9 @@ export default function VendasPage() {
       </div>
 
       {/* Search + Filter Toggle */}
-      <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-4">
-        <div className="relative w-full md:flex-1 md:max-w-sm">
+      <div className="flex flex-col gap-2 mb-4">
+        {/* Row 1: Search (full width on mobile) */}
+        <div className="relative w-full lg:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Pesquisar lead, empresa ou closer..."
@@ -544,30 +545,33 @@ export default function VendasPage() {
             className="pl-9"
           />
         </div>
-        <Select value={closerFilter} onValueChange={setCloserFilter}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Closer" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os closers</SelectItem>
-            {closers?.map(closer => (
-              <SelectItem key={closer.id} value={closer.id}>{closer.nome}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          variant={showFilters ? "secondary" : "outline"}
-          onClick={() => setShowFilters(!showFilters)}
-          className="gap-2 w-full md:w-auto"
-        >
-          <Filter className="h-4 w-4" />
-          Filtros
-          {hasActiveFilters && (
-            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-              !
-            </span>
-          )}
-        </Button>
+        {/* Row 2: Closer + Filters side by side on mobile */}
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:gap-4">
+          <Select value={closerFilter} onValueChange={setCloserFilter}>
+            <SelectTrigger className="w-full lg:w-[180px]">
+              <SelectValue placeholder="Closer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os closers</SelectItem>
+              {closers?.map(closer => (
+                <SelectItem key={closer.id} value={closer.id}>{closer.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant={showFilters ? "secondary" : "outline"}
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2 w-full lg:w-auto"
+          >
+            <Filter className="h-4 w-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                !
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Advanced Filters */}
