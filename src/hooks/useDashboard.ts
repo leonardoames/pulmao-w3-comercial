@@ -285,9 +285,11 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
         .filter(([id]) => !EXCLUDED_FROM_RANKING.includes(id))
         .map(([id, data]) => {
           const agendadas = data.callsRealizadas + data.reagendado + data.noShow;
+          const oteRealizado = (data.valorPix * 1.2) + (data.valorCartao * 1.0) + (data.valorBoleto * 0.5);
           return { 
             id, 
             ...data,
+            oteRealizado,
             taxaConversao: data.callsRealizadas > 0 ? (data.vendas / data.callsRealizadas) * 100 : 0,
             percentNoShow: agendadas > 0 ? (data.noShow / agendadas) * 100 : 0
           };
