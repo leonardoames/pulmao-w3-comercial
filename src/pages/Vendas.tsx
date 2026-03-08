@@ -815,6 +815,7 @@ export default function VendasPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead className="hidden md:table-cell">Duração</TableHead>
                 <TableHead>Valor Total</TableHead>
+                <TableHead className="hidden md:table-cell">Origem</TableHead>
                 <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Closer</TableHead>
                 <TableHead className="w-28 hidden md:table-cell">Flags</TableHead>
