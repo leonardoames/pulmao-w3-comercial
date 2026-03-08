@@ -34,6 +34,9 @@ export interface Venda {
   criado_em: string;
   atualizado_em: string;
   atualizado_por?: string;
+  motivo_reembolso?: string;
+  reembolsado_por?: string;
+  reembolsado_em?: string;
   // Relations
   closer?: Profile;
 }
