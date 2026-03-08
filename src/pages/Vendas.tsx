@@ -754,6 +754,22 @@ export default function VendasPage() {
                     <SelectItem value="50000+">Acima de R$ 50.000</SelectItem>
                   </SelectContent>
                 </Select>
+            </div>
+
+              {/* Origem */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Origem do Lead</Label>
+                <Select value={filtroOrigem} onValueChange={setFiltroOrigem}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todas">Todas as origens</SelectItem>
+                    {ORIGEM_LEAD_OPTIONS.map(o => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
