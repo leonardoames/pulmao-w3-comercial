@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { startOfMonth, endOfMonth, startOfDay, subDays, endOfDay } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -25,6 +26,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function VendasPage() {
+  type QuickFilter = 'today' | 'yesterday' | '7days' | 'month' | '30days' | 'custom';
+
   const [closerFilter, setCloserFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -33,10 +36,13 @@ export default function VendasPage() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCloserId, setSelectedCloserId] = useState<string>('');
 
+  // Quick date filter — default to "Este mês"
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('month');
+
   // Advanced filters
   const [showFilters, setShowFilters] = useState(false);
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
   const [duracaoFilter, setDuracaoFilter] = useState<string>('all');
@@ -45,6 +51,29 @@ export default function VendasPage() {
   const [flagContrato, setFlagContrato] = useState(false);
   const [flagFinanceiro, setFlagFinanceiro] = useState(false);
   const [flagCS, setFlagCS] = useState(false);
+
+  // Compute effective date range from quick filter
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+    switch (quickFilter) {
+      case 'today':
+        return { dateFrom: startOfDay(now), dateTo: endOfDay(now) };
+      case 'yesterday': {
+        const y = subDays(now, 1);
+        return { dateFrom: startOfDay(y), dateTo: endOfDay(y) };
+      }
+      case '7days':
+        return { dateFrom: startOfDay(subDays(now, 6)), dateTo: endOfDay(now) };
+      case 'month':
+        return { dateFrom: startOfMonth(now), dateTo: endOfMonth(now) };
+      case '30days':
+        return { dateFrom: startOfDay(subDays(now, 29)), dateTo: endOfDay(now) };
+      case 'custom':
+        return { dateFrom: customDateFrom, dateTo: customDateTo };
+      default:
+        return { dateFrom: undefined, dateTo: undefined };
+    }
+  }, [quickFilter, customDateFrom, customDateTo]);
   
   const { data: vendas, isLoading } = useVendas();
   const { data: closers } = useClosers();
@@ -54,11 +83,12 @@ export default function VendasPage() {
   const createVenda = useCreateVenda();
   const updateVenda = useUpdateVenda();
 
-  const hasActiveFilters = !!dateFrom || !!dateTo || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS;
+  const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo;
 
   const clearFilters = () => {
-    setDateFrom(undefined);
-    setDateTo(undefined);
+    setQuickFilter('month');
+    setCustomDateFrom(undefined);
+    setCustomDateTo(undefined);
     setDuracaoFilter('all');
     setValorFilter('all');
     setFlagPago(false);
@@ -292,6 +322,41 @@ export default function VendasPage() {
   return (
     <AppLayout>
       <PageHeader title="Vendas" description="Contratos e faturamento">
+        {/* Quick date filter pills */}
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          {([
+            { value: 'today' as QuickFilter, label: 'Hoje' },
+            { value: 'yesterday' as QuickFilter, label: 'Ontem' },
+            { value: '7days' as QuickFilter, label: '7 dias' },
+            { value: 'month' as QuickFilter, label: 'Este mês' },
+            { value: '30days' as QuickFilter, label: '30 dias' },
+          ]).map((option) => {
+            const isActive = quickFilter === option.value;
+            return (
+              <Button
+                key={option.value}
+                variant={isActive ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setQuickFilter(option.value)}
+                className="min-w-[60px]"
+                style={
+                  isActive
+                    ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                    : {
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.6)',
+                      }
+                }
+              >
+                {option.label}
+              </Button>
+            );
+          })}
+        </div>
+
         <div className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:items-center">
           <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
             <FileDown className="h-4 w-4" />
@@ -587,15 +652,16 @@ export default function VendasPage() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start gap-2 font-normal">
                       <CalendarIcon className="h-4 w-4" />
-                      {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Início"}
+                      {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : "Início"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={dateFrom}
-                      onSelect={(date) => { setDateFrom(date || undefined); setDateFromOpen(false); }}
+                      selected={customDateFrom}
+                      onSelect={(date) => { setCustomDateFrom(date || undefined); setQuickFilter('custom'); setDateFromOpen(false); }}
                       locale={ptBR}
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -608,15 +674,16 @@ export default function VendasPage() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start gap-2 font-normal">
                       <CalendarIcon className="h-4 w-4" />
-                      {dateTo ? format(dateTo, "dd/MM/yyyy") : "Fim"}
+                      {customDateTo ? format(customDateTo, "dd/MM/yyyy") : "Fim"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={dateTo}
-                      onSelect={(date) => { setDateTo(date || undefined); setDateToOpen(false); }}
+                      selected={customDateTo}
+                      onSelect={(date) => { setCustomDateTo(date || undefined); setQuickFilter('custom'); setDateToOpen(false); }}
                       locale={ptBR}
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
