@@ -17,23 +17,25 @@ export function AppLayout({ children }: AppLayoutProps) {
       }}
     >
       {/* Hamburger button — visible below 1024px */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="fixed lg:hidden z-[1000] flex items-center justify-center"
-        style={{
-          top: '16px',
-          left: '16px',
-          width: '44px',
-          height: '44px',
-          background: 'hsl(var(--card))',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '8px',
-          color: 'hsl(var(--foreground))',
-        }}
-        aria-label="Abrir menu"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed lg:hidden z-[1000] flex items-center justify-center"
+          style={{
+            top: '16px',
+            left: '16px',
+            width: '44px',
+            height: '44px',
+            background: 'hsl(var(--card))',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '8px',
+            color: 'hsl(var(--foreground))',
+          }}
+          aria-label="Abrir menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      )}
 
       <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
