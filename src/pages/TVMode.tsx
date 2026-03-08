@@ -477,13 +477,13 @@ export default function TVModePage() {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#0d0d0d" }}>
-      {/* Content area — exactly 100vh minus bottom bar */}
+      {/* Content area */}
       <div
-        className="flex-1 flex flex-col overflow-hidden px-8 lg:px-12 pt-6 pb-14 transition-opacity"
-        style={{ opacity, transitionDuration: `${FADE_DURATION / 2}ms` }}
+        className="flex-1 flex flex-col overflow-hidden transition-opacity"
+        style={{ opacity, transitionDuration: `${FADE_DURATION / 2}ms`, padding: "16px 32px 48px 32px" }}
       >
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-4 shrink-0">
+        {/* Header row — 48px */}
+        <div className="flex items-center justify-between shrink-0" style={{ height: "48px" }}>
           <h1 style={{ fontSize: "22px", fontWeight: 700 }}>
             <span style={{ color: "#F97316" }}>Pulmão</span>{" "}
             <span style={{ color: "#FFFFFF" }}>W3</span>
@@ -523,7 +523,6 @@ export default function TVModePage() {
         <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 text-white/40 hover:text-white/80">
           <ChevronLeft className="h-4 w-4" />
         </Button>
-
         <div className="flex gap-2">
           {Array.from({ length: SCREEN_COUNT }).map((_, i) => (
             <button
@@ -539,11 +538,9 @@ export default function TVModePage() {
             />
           ))}
         </div>
-
         <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8 text-white/40 hover:text-white/80">
           <ChevronRight className="h-4 w-4" />
         </Button>
-
         <Button
           variant="ghost"
           size="icon"
@@ -558,11 +555,7 @@ export default function TVModePage() {
       <div className="fixed bottom-0 left-0 right-0 z-50" style={{ height: "3px", background: "rgba(255,255,255,0.06)" }}>
         <div
           className="h-full"
-          style={{
-            width: `${progress}%`,
-            background: "#F97316",
-            transition: "width 50ms linear",
-          }}
+          style={{ width: `${progress}%`, background: "#F97316", transition: "width 50ms linear" }}
         />
       </div>
     </div>
