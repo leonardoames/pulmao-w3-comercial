@@ -28,9 +28,12 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Pencil, Webhook, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Pencil, Webhook, AlertTriangle, Send, Loader2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useWebhooks, useCreateWebhook, useUpdateWebhook, useDeleteWebhook, Webhook as WebhookType } from '@/hooks/useWebhooks';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function WebhooksPanel() {
   const { profile } = useAuth();
@@ -42,6 +45,7 @@ export function WebhooksPanel() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<WebhookType | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<WebhookType | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     nome: '',
@@ -99,6 +103,25 @@ export function WebhooksPanel() {
     setDeleteTarget(null);
   };
 
+  const handleTest = async (webhook: WebhookType) => {
+    setTestingId(webhook.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-webhook', {
+        body: { webhook_url: webhook.url },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Teste enviado com sucesso! Venda usada: ${data.venda_usada?.nome_lead} (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.venda_usada?.valor_total)})`);
+      } else {
+        toast.error(`Webhook retornou status ${data?.status}: ${data?.response?.substring(0, 100) || 'sem resposta'}`);
+      }
+    } catch (err: any) {
+      toast.error('Erro ao enviar teste: ' + (err.message || 'erro desconhecido'));
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-8 text-muted-foreground">Carregando webhooks...</div>;
   }
@@ -145,6 +168,25 @@ export function WebhooksPanel() {
                   <p className="text-xs text-muted-foreground mt-1">Evento: {webhook.evento}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={testingId === webhook.id}
+                        onClick={() => handleTest(webhook)}
+                      >
+                        {testingId === webhook.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
+                        Enviar Teste
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Envia a última venda registrada para este webhook</TooltipContent>
+                  </Tooltip>
                   <Switch
                     checked={webhook.ativo}
                     onCheckedChange={() => handleToggle(webhook)}
