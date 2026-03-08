@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Search, CalendarIcon, Edit, AlertTriangle } from 'lucide-react';
+import { Plus, Search, CalendarIcon, Edit, AlertTriangle, Upload } from 'lucide-react';
+import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -46,6 +47,7 @@ export default function TrafegoPagoClientes() {
   const [filterGestor, setFilterGestor] = useState('all');
   const [filterPlataforma, setFilterPlataforma] = useState('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<TrafegoPagoCliente | null>(null);
   const [activeTab, setActiveTab] = useState('dados');
 
@@ -230,6 +232,9 @@ export default function TrafegoPagoClientes() {
             {closers?.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-2">
+          <Upload className="h-4 w-4" /> Importar CSV
+        </Button>
         <Button onClick={openNew} className="gap-2">
           <Plus className="h-4 w-4" /> Novo Cliente
         </Button>
@@ -486,6 +491,8 @@ export default function TrafegoPagoClientes() {
           </Tabs>
         </SheetContent>
       </Sheet>
+
+      <CSVImportModal open={csvImportOpen} onOpenChange={setCsvImportOpen} />
     </AppLayout>
   );
 }
