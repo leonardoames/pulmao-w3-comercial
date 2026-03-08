@@ -9,13 +9,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange, getDateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
-import { Phone, TrendingUp, Target, Trophy, AlertCircle, ShoppingCart, Ban, User, Tv, X } from 'lucide-react';
+import { Phone, TrendingUp, Target, Trophy, AlertCircle, ShoppingCart, Ban, User, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ptBR } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+
 import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
@@ -280,14 +280,6 @@ export default function DashboardPage() {
             );
           })}
         </div>
-
-        {/* TV Mode button */}
-        <Link to="/tv">
-          <Button variant="ghost" size="sm" className="gap-2" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-            <Tv className="h-4 w-4" />
-            Modo TV
-          </Button>
-        </Link>
 
         {/* Timestamp */}
         <div className="flex items-center gap-2 shrink-0">
