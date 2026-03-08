@@ -36,6 +36,7 @@ export default function VendasPage() {
   const [dataVenda, setDataVenda] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCloserId, setSelectedCloserId] = useState<string>('');
+  const [origemLead, setOrigemLead] = useState<string>('');
 
   // Quick date filter — default to "Este mês"
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('month');
