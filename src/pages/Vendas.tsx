@@ -53,6 +53,7 @@ export default function VendasPage() {
   const [flagContrato, setFlagContrato] = useState(false);
   const [flagFinanceiro, setFlagFinanceiro] = useState(false);
   const [flagCS, setFlagCS] = useState(false);
+  const [filtroOrigem, setFiltroOrigem] = useState<string>('Todas');
 
   // Compute effective date range from quick filter
   const { dateFrom, dateTo } = useMemo(() => {
