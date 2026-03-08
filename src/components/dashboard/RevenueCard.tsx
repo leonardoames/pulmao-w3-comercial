@@ -1,4 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { OteProgressBar } from '@/components/ote/OteProgressBar';
+import { OteBadge } from '@/components/ote/OteBadge';
+import { cn } from '@/lib/utils';
+import { TrendingUp } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface RevenueCardProps {
   volumeVendas: number;
@@ -8,10 +15,38 @@ interface RevenueCardProps {
   valorBoleto: number;
   caixaDoMes: number;
   proporcaoCaixa: number;
+  // Closer select
+  closers?: { id: string; nome: string }[];
+  selectedCloser: string;
+  onCloserChange: (value: string) => void;
+  // Expected proportion
+  expectedProportion: number;
+  expectedPercent: number;
+  currentDay: number;
+  daysInMonth: number;
+  // Meta Mensal
+  metaMensalValue: number;
+  metaMensalPercent: number;
+  // OTE
+  oteTarget: number;
+  oteRealized: number;
+  otePercentAchieved: number;
+  oteBadge: any;
+  oteLabel: string;
 }
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+const formatCurrencyShort = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+
+function getMetaColor(actual: number, expected: number): string {
+  const ratio = expected > 0 ? actual / expected : 1;
+  if (ratio >= 1) return '#22C55E';
+  if (ratio >= 0.6) return '#FBBF24';
+  return '#EF4444';
+}
 
 export function RevenueCard({
   volumeVendas,
@@ -21,6 +56,20 @@ export function RevenueCard({
   valorBoleto,
   caixaDoMes,
   proporcaoCaixa,
+  closers,
+  selectedCloser,
+  onCloserChange,
+  expectedProportion,
+  expectedPercent,
+  currentDay,
+  daysInMonth,
+  metaMensalValue,
+  metaMensalPercent,
+  oteTarget,
+  oteRealized,
+  otePercentAchieved,
+  oteBadge,
+  oteLabel,
 }: RevenueCardProps) {
   const total = volumeVendas || 1;
   const pctPix = (valorPix / total) * 100;
@@ -33,34 +82,178 @@ export function RevenueCard({
     { label: 'Boleto', value: valorBoleto, pct: pctBoleto, color: 'rgba(249,115,22,0.4)' },
   ];
 
+  // Semantic color for overall expected %
+  const expectedVolumeValue = metaMensalValue * expectedProportion;
+  const overallColor = getMetaColor(volumeVendas, expectedVolumeValue);
+  const overallPctOfExpected = expectedVolumeValue > 0 ? (volumeVendas / expectedVolumeValue) * 100 : 0;
+
+  // Meta Mensal bar colors
+  const metaExpected = metaMensalValue * expectedProportion;
+  const metaColor = getMetaColor(volumeVendas, metaExpected);
+
+  // OTE bar colors
+  const hasOteGoal = oteTarget > 0;
+  const oteExpected = oteTarget * expectedProportion;
+  const oteColor = getMetaColor(oteRealized, oteExpected);
+
   return (
     <Card
       className="lg:col-span-2"
       style={{ borderColor: 'rgba(249, 115, 22, 0.3)' }}
     >
       <CardContent className="p-6">
-        {/* Section title */}
-        <p
-          className="section-label-text mb-2"
-          style={{ color: 'rgba(255,255,255,0.4)' }}
-        >
-          Receita Total
-        </p>
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>
-            {formatCurrency(volumeVendas)}
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <p
+            style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}
+          >
+            Receita
           </p>
-          <span style={{ fontSize: '12px', fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>
-            / {formatCurrency(caixaDoMes)} em caixa ({proporcaoCaixa.toFixed(0)}%)
-          </span>
+          <Select value={selectedCloser} onValueChange={onCloserChange}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Todos os closers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Closers</SelectItem>
+              {closers?.map((closer) => (
+                <SelectItem key={closer.id} value={closer.id}>
+                  {closer.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <p className="mt-2" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
-          {totalVendas} {totalVendas === 1 ? 'venda' : 'vendas'} no período
-        </p>
 
-        {/* Segmented bar — 6px, gradient colors */}
+        {/* Main value block */}
+        <div className="flex items-start justify-between">
+          <div>
+            <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316', lineHeight: 1.1 }}>
+              {formatCurrency(volumeVendas)}
+            </p>
+            <p className="mt-1.5" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+              {totalVendas} {totalVendas === 1 ? 'venda' : 'vendas'} · {formatCurrencyShort(caixaDoMes)} em caixa ({proporcaoCaixa.toFixed(0)}%)
+            </p>
+          </div>
+          <div className="text-right shrink-0 ml-4">
+            <p className="text-2xl font-bold" style={{ color: overallColor }}>
+              {overallPctOfExpected.toFixed(0)}%
+            </p>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>do esperado</p>
+          </div>
+        </div>
+
+        {/* Divider before metas */}
+        <div className="my-5" style={{ borderTop: '1px solid #222' }} />
+
+        {/* Meta Mensal bar */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-1.5">
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+              {formatCurrencyShort(volumeVendas)} / {formatCurrencyShort(metaMensalValue)}
+            </p>
+          </div>
+          <div className="relative pb-5">
+            <div
+              className="w-full overflow-hidden"
+              style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
+            >
+              <div
+                className={cn(
+                  'h-full transition-all duration-1000',
+                  metaMensalPercent >= 100 ? 'progress-fill-success' : 'progress-fill'
+                )}
+                style={{ width: `${Math.min(metaMensalPercent, 100)}%`, borderRadius: '999px' }}
+              />
+            </div>
+            {/* Expected marker */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2"
+              style={{
+                left: `${Math.min(expectedPercent, 100)}%`,
+                width: '2px',
+                height: '14px',
+                background: '#FBBF24',
+                opacity: 0.8,
+                top: '3px',
+              }}
+              title={`Esperado: ${expectedPercent.toFixed(0)}% (dia ${currentDay}/${daysInMonth})`}
+            />
+            <span
+              className="absolute -translate-x-1/2 whitespace-nowrap"
+              style={{
+                left: `${Math.min(expectedPercent, 100)}%`,
+                top: '14px',
+                fontSize: '10px',
+                color: '#FBBF24',
+                fontWeight: 500,
+              }}
+            >
+              Esp.
+            </span>
+            {/* Fixed markers: 50%, 70%, 100% */}
+            {[50, 70, 100].map((m) => (
+              <div key={m}>
+                <div
+                  className="absolute"
+                  style={{
+                    left: `${m}%`,
+                    top: '0px',
+                    width: '1px',
+                    height: '10px',
+                    background: m === 100 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)',
+                  }}
+                />
+                <span
+                  className="absolute -translate-x-1/2"
+                  style={{
+                    left: `${m}%`,
+                    bottom: '0px',
+                    fontSize: '9px',
+                    color: m === 100 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)',
+                  }}
+                >
+                  {m}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Meta OTE bar */}
+        <div className="mb-2">
+          <div className="flex items-center justify-between mb-1.5">
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
+              Meta OTE {oteLabel !== 'Time' ? `— ${oteLabel}` : 'do Time'}
+            </p>
+            {hasOteGoal && (
+              <div className="flex items-center gap-2">
+                <OteBadge badge={oteBadge} />
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+                  {formatCurrencyShort(oteRealized)} / {formatCurrencyShort(oteTarget)}
+                </p>
+              </div>
+            )}
+          </div>
+          {hasOteGoal ? (
+            <div className="pb-5">
+              <OteProgressBar
+                percentAchieved={otePercentAchieved}
+                height="md"
+                expectedPercent={expectedPercent}
+              />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Nenhuma meta OTE cadastrada para este mês.</p>
+          )}
+        </div>
+
+        {/* Divider before breakdown */}
+        <div className="my-4" style={{ borderTop: '1px solid #222' }} />
+
+        {/* Segmented bar — 6px */}
         <div
-          className="flex overflow-hidden mt-6 gap-0.5"
+          className="flex overflow-hidden gap-0.5"
           style={{ height: '6px', borderRadius: '999px' }}
         >
           {segments.map((seg) => (
@@ -90,6 +283,27 @@ export function RevenueCard({
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-5 flex justify-end">
+          <Link to="/meta-ote">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              style={{
+                border: '1px solid #333',
+                color: '#F5F5F5',
+                background: 'transparent',
+              }}
+              onMouseEnter={(e) => { (e.target as HTMLElement).style.background = '#2a2a2a'; }}
+              onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'transparent'; }}
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              Ver detalhes
+            </Button>
+          </Link>
         </div>
       </CardContent>
     </Card>

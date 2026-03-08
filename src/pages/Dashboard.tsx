@@ -273,7 +273,7 @@ export default function DashboardPage() {
         <>
           <SectionLabel title="Receita" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            <RevenueCard
+          <RevenueCard
               volumeVendas={stats?.volumeVendas ?? 0}
               totalVendas={stats?.totalVendas ?? 0}
               valorPix={stats?.valorPix ?? 0}
@@ -281,6 +281,20 @@ export default function DashboardPage() {
               valorBoleto={stats?.valorBoleto ?? 0}
               caixaDoMes={stats?.caixaDoMes ?? 0}
               proporcaoCaixa={stats?.proporcaoCaixa ?? 0}
+              closers={closers}
+              selectedCloser={selectedCloser}
+              onCloserChange={setSelectedCloser}
+              expectedProportion={expectedProportion}
+              expectedPercent={expectedPercent}
+              currentDay={currentDay}
+              daysInMonth={daysInMonth}
+              metaMensalValue={metaMensalValue}
+              metaMensalPercent={metaMensalPercent}
+              oteTarget={oteDisplayData.target}
+              oteRealized={oteDisplayData.realized}
+              otePercentAchieved={oteDisplayData.percentAchieved}
+              oteBadge={oteDisplayData.badge}
+              oteLabel={oteDisplayData.label}
             />
             <div className="flex flex-col gap-4">
               <StatCard
