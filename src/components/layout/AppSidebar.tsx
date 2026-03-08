@@ -30,13 +30,27 @@ import { ROLE_LABELS_NEW } from '@/types/roles';
 
 const navGroups = [
   {
-    label: 'Comercial',
+    label: 'W3 Educação',
     items: [
       { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
       { path: '/vendas', icon: DollarSign, label: 'Vendas' },
       { path: '/meu-fechamento', icon: ClipboardList, label: 'Meu Fechamento' },
       { path: '/meta-ote', icon: Target, label: 'Meta OTE' },
       { path: '/social-selling', icon: Users, label: 'Social Selling' },
+    ],
+  },
+  {
+    label: 'W3 Tráfego Pago',
+    items: [
+      { path: '/trafego-pago/dashboard', icon: BarChart3, label: 'Dashboard' },
+      { path: '/trafego-pago/clientes', icon: Megaphone, label: 'Clientes' },
+    ],
+  },
+  {
+    label: 'W3 Marketplaces',
+    items: [
+      { path: '/marketplaces/dashboard', icon: BarChart3, label: 'Dashboard' },
+      { path: '/marketplaces/clientes', icon: ShoppingBag, label: 'Clientes' },
     ],
   },
   {
