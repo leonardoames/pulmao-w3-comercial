@@ -141,119 +141,163 @@ export default function SocialSellingPage() {
         title="Social Selling"
         description="Registre e acompanhe suas métricas diárias de social selling"
       >
-        <div className="flex items-center gap-3">
-          {showSellerFilter && (
-            <Select value={selectedSellerId} onValueChange={setSelectedSellerId}>
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Todos os Social Sellers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Todos os Social Sellers</SelectItem>
-                {socialSellers.map(s => (
-                  <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="h-4 w-4" /> Registro do Dia</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="flex items-center justify-between">
-                  <span>Registro do Dia</span>
-                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <CalendarIcon className="h-4 w-4" />
-                        {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar mode="single" selected={selectedDate} onSelect={d => { if (d) { setSelectedDate(d); setCalendarOpen(false); } }} locale={ptBR} disabled={d => d > new Date()} />
-                    </PopoverContent>
-                  </Popover>
-                </DialogTitle>
-              </DialogHeader>
-              {isLoading ? (
-                <p className="text-muted-foreground text-center py-8">Carregando...</p>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="conversas" className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> Conversas</Label>
-                      <Input id="conversas" type="number" min="0" value={conversas} onChange={e => setConversas(Number(e.target.value) || 0)} />
-                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.conversas_iniciadas}/dia</p>
+        {showSellerFilter && (
+          <Select value={selectedSellerId} onValueChange={setSelectedSellerId}>
+            <SelectTrigger className="w-[220px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <SelectValue placeholder="Todos os Social Sellers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos os Social Sellers</SelectItem>
+              {socialSellers.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          {DATE_FILTERS.map(f => {
+            const isActive = dateFilter === f.value;
+            if (f.value === 'custom') {
+              return (
+                <Popover key="custom" open={customStartOpen} onOpenChange={setCustomStartOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={isActive ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setDateFilter('custom')}
+                      className="min-w-[70px]"
+                      style={
+                        isActive
+                          ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                          : {
+                              background: 'transparent',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              color: 'rgba(255,255,255,0.6)',
+                            }
+                      }
+                    >
+                      {customRange?.start && customRange?.end
+                        ? `${format(customRange.start, 'dd/MM')} - ${format(customRange.end, 'dd/MM')}`
+                        : 'Custom'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-4" align="end">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium">Selecionar período</p>
+                      <div className="flex gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Início</p>
+                          <Calendar
+                            mode="single"
+                            selected={customRange?.start}
+                            onSelect={d => { if (d) setCustomRange(prev => ({ start: d, end: prev?.end || d })); }}
+                            locale={ptBR}
+                            className="pointer-events-auto"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Fim</p>
+                          <Calendar
+                            mode="single"
+                            selected={customRange?.end}
+                            onSelect={d => { if (d) { setCustomRange(prev => ({ start: prev?.start || d, end: d })); setCustomStartOpen(false); } }}
+                            locale={ptBR}
+                            className="pointer-events-auto"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="convites" className="flex items-center gap-1"><Link2 className="h-3.5 w-3.5" /> Convites</Label>
-                      <Input id="convites" type="number" min="0" value={convites} onChange={e => setConvites(Number(e.target.value) || 0)} />
-                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.convites_enviados}/dia</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="formularios" className="flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> Formulários</Label>
-                      <Input id="formularios" type="number" min="0" value={formularios} onChange={e => setFormularios(Number(e.target.value) || 0)} />
-                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.formularios_preenchidos}/dia</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="agendamentos" className="flex items-center gap-1"><CalendarCheck className="h-3.5 w-3.5" /> Agendamentos</Label>
-                      <Input id="agendamentos" type="number" min="0" value={agendamentos} onChange={e => setAgendamentos(Number(e.target.value) || 0)} />
-                      <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.agendamentos}/dia</p>
-                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
+            }
+            return (
+              <Button
+                key={f.value}
+                variant={isActive ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setDateFilter(f.value)}
+                className="min-w-[70px]"
+                style={
+                  isActive
+                    ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                    : {
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.6)',
+                      }
+                }
+              >
+                {f.label}
+              </Button>
+            );
+          })}
+        </div>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2"><Plus className="h-4 w-4" /> Registro do Dia</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span>Registro do Dia</span>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar mode="single" selected={selectedDate} onSelect={d => { if (d) { setSelectedDate(d); setCalendarOpen(false); } }} locale={ptBR} disabled={d => d > new Date()} className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </DialogTitle>
+            </DialogHeader>
+            {isLoading ? (
+              <p className="text-muted-foreground text-center py-8">Carregando...</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="conversas" className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> Conversas</Label>
+                    <Input id="conversas" type="number" min="0" value={conversas} onChange={e => setConversas(Number(e.target.value) || 0)} />
+                    <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.conversas_iniciadas}/dia</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="obs-ss">Observações</Label>
-                    <Textarea id="obs-ss" value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} placeholder="Alguma observação..." />
+                    <Label htmlFor="convites" className="flex items-center gap-1"><Link2 className="h-3.5 w-3.5" /> Convites</Label>
+                    <Input id="convites" type="number" min="0" value={convites} onChange={e => setConvites(Number(e.target.value) || 0)} />
+                    <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.convites_enviados}/dia</p>
                   </div>
-                  <Button onClick={handleSave} className="w-full gap-2" disabled={upsertMutation.isPending}>
-                    <Save className="h-4 w-4" /> Salvar
-                  </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="formularios" className="flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> Formulários</Label>
+                    <Input id="formularios" type="number" min="0" value={formularios} onChange={e => setFormularios(Number(e.target.value) || 0)} />
+                    <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.formularios_preenchidos}/dia</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="agendamentos" className="flex items-center gap-1"><CalendarCheck className="h-3.5 w-3.5" /> Agendamentos</Label>
+                    <Input id="agendamentos" type="number" min="0" value={agendamentos} onChange={e => setAgendamentos(Number(e.target.value) || 0)} />
+                    <p className="text-xs text-muted-foreground">Meta: {SOCIAL_SELLING_GOALS.agendamentos}/dia</p>
+                  </div>
                 </div>
-              )}
-            </DialogContent>
-          </Dialog>
-        </div>
+                <div className="space-y-2">
+                  <Label htmlFor="obs-ss">Observações</Label>
+                  <Textarea id="obs-ss" value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} placeholder="Alguma observação..." />
+                </div>
+                <Button onClick={handleSave} className="w-full gap-2" disabled={upsertMutation.isPending}>
+                  <Save className="h-4 w-4" /> Salvar
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </PageHeader>
-
-      {/* Date Filters */}
-      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="flex flex-wrap items-center gap-2 mb-6 min-w-max md:min-w-0">
-          {DATE_FILTERS.map(f => (
-            <Button
-              key={f.value}
-              variant={dateFilter === f.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setDateFilter(f.value)}
-            >
-              {f.label}
-            </Button>
-          ))}
-          {dateFilter === 'custom' && (
-            <div className="flex items-center gap-2">
-              <Popover open={customStartOpen} onOpenChange={setCustomStartOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <CalendarIcon className="h-3 w-3" />
-                    {customRange?.start ? format(customRange.start, 'dd/MM/yy') : 'Início'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customRange?.start} onSelect={d => { if (d) { setCustomRange(prev => ({ start: d, end: prev?.end || d })); setCustomStartOpen(false); } }} locale={ptBR} /></PopoverContent>
-              </Popover>
-              <span className="text-muted-foreground">—</span>
-              <Popover open={customEndOpen} onOpenChange={setCustomEndOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <CalendarIcon className="h-3 w-3" />
-                    {customRange?.end ? format(customRange.end, 'dd/MM/yy') : 'Fim'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customRange?.end} onSelect={d => { if (d) { setCustomRange(prev => ({ start: prev?.start || d, end: d })); setCustomEndOpen(false); } }} locale={ptBR} /></PopoverContent>
-              </Popover>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* KPIs */}
       <SocialSellingKPIs data={{
