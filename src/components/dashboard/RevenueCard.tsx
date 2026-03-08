@@ -82,19 +82,102 @@ export function RevenueCard({
     { label: 'Boleto', value: valorBoleto, pct: pctBoleto, color: 'rgba(249,115,22,0.4)' },
   ];
 
+  // Filter segments: hide zero-value ones only if at least one has value
+  const hasAnyValue = segments.some((s) => s.value > 0);
+  const visibleSegments = hasAnyValue ? segments.filter((s) => s.value > 0) : segments;
+
   // Semantic color for overall expected %
   const expectedVolumeValue = metaMensalValue * expectedProportion;
   const overallColor = getMetaColor(volumeVendas, expectedVolumeValue);
   const overallPctOfExpected = expectedVolumeValue > 0 ? (volumeVendas / expectedVolumeValue) * 100 : 0;
 
-  // Meta Mensal bar colors
-  const metaExpected = metaMensalValue * expectedProportion;
-  const metaColor = getMetaColor(volumeVendas, metaExpected);
-
-  // OTE bar colors
+  // OTE
   const hasOteGoal = oteTarget > 0;
-  const oteExpected = oteTarget * expectedProportion;
-  const oteColor = getMetaColor(oteRealized, oteExpected);
+
+  // Unified scale: both bars use 0-120% range
+  const maxScale = 120;
+  const metaMensalBarPct = metaMensalValue > 0 ? (volumeVendas / metaMensalValue) * 100 : 0;
+  const oteBarPct = oteTarget > 0 ? (oteRealized / oteTarget) * 100 : 0;
+
+  // Markers for unified bars
+  const barMarkers = [50, 70, 100, 120];
+
+  const renderUnifiedBar = (percent: number, expectedPct: number) => {
+    const cappedPercent = Math.min(percent, maxScale);
+    const barWidth = (cappedPercent / maxScale) * 100;
+    const espLeft = (Math.min(expectedPct, maxScale) / maxScale) * 100;
+
+    return (
+      <div className="relative pb-5">
+        <div
+          className="w-full overflow-hidden"
+          style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
+        >
+          <div
+            className={cn(
+              'h-full transition-all duration-1000',
+              percent >= 100 ? 'progress-fill-success' : 'progress-fill'
+            )}
+            style={{ width: `${Math.min(barWidth, 100)}%`, borderRadius: '999px' }}
+          />
+        </div>
+        {/* Expected marker */}
+        <div
+          className="absolute"
+          style={{
+            left: `${espLeft}%`,
+            width: '2px',
+            height: '14px',
+            background: '#FBBF24',
+            opacity: 0.8,
+            top: '-1px',
+          }}
+          title={`Esperado: ${expectedPct.toFixed(0)}%`}
+        />
+        <span
+          className="absolute -translate-x-1/2 whitespace-nowrap"
+          style={{
+            left: `${espLeft}%`,
+            top: '14px',
+            fontSize: '10px',
+            color: '#FBBF24',
+            fontWeight: 500,
+          }}
+        >
+          Esp.
+        </span>
+        {/* Fixed markers */}
+        {barMarkers.map((m) => {
+          const mLeft = (m / maxScale) * 100;
+          return (
+            <div key={m}>
+              <div
+                className="absolute"
+                style={{
+                  left: `${mLeft}%`,
+                  top: '0px',
+                  width: '1px',
+                  height: '10px',
+                  background: m === 100 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)',
+                }}
+              />
+              <span
+                className="absolute -translate-x-1/2"
+                style={{
+                  left: `${mLeft}%`,
+                  bottom: '0px',
+                  fontSize: '9px',
+                  color: m === 100 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)',
+                }}
+              >
+                {m}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <Card
@@ -131,7 +214,7 @@ export function RevenueCard({
               {formatCurrency(volumeVendas)}
             </p>
             <p className="mt-1.5" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-              {totalVendas} {totalVendas === 1 ? 'venda' : 'vendas'} · {formatCurrencyShort(caixaDoMes)} em caixa ({proporcaoCaixa.toFixed(0)}%)
+              {totalVendas} {totalVendas === 1 ? 'venda' : 'vendas'} no período
             </p>
           </div>
           <div className="text-right shrink-0 ml-4">
@@ -142,10 +225,28 @@ export function RevenueCard({
           </div>
         </div>
 
+        {/* Caixa badge */}
+        <div className="mt-3">
+          <span
+            className="inline-flex items-center gap-1.5"
+            style={{
+              background: 'rgba(249,115,22,0.10)',
+              border: '1px solid rgba(249,115,22,0.25)',
+              borderRadius: '9999px',
+              padding: '4px 12px',
+              fontSize: '13px',
+              fontWeight: 500,
+              color: 'rgba(255,255,255,0.8)',
+            }}
+          >
+            💰 Em caixa: {formatCurrencyShort(caixaDoMes)} ({proporcaoCaixa.toFixed(0)}%)
+          </span>
+        </div>
+
         {/* Divider before metas */}
         <div className="my-5" style={{ borderTop: '1px solid #222' }} />
 
-        {/* Meta Mensal bar */}
+        {/* Meta Mensal bar — scale 0-120% */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-1.5">
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
@@ -153,74 +254,10 @@ export function RevenueCard({
               {formatCurrencyShort(volumeVendas)} / {formatCurrencyShort(metaMensalValue)}
             </p>
           </div>
-          <div className="relative pb-5">
-            <div
-              className="w-full overflow-hidden"
-              style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
-            >
-              <div
-                className={cn(
-                  'h-full transition-all duration-1000',
-                  metaMensalPercent >= 100 ? 'progress-fill-success' : 'progress-fill'
-                )}
-                style={{ width: `${Math.min(metaMensalPercent, 100)}%`, borderRadius: '999px' }}
-              />
-            </div>
-            {/* Expected marker */}
-            <div
-              className="absolute top-1/2 -translate-y-1/2"
-              style={{
-                left: `${Math.min(expectedPercent, 100)}%`,
-                width: '2px',
-                height: '14px',
-                background: '#FBBF24',
-                opacity: 0.8,
-                top: '3px',
-              }}
-              title={`Esperado: ${expectedPercent.toFixed(0)}% (dia ${currentDay}/${daysInMonth})`}
-            />
-            <span
-              className="absolute -translate-x-1/2 whitespace-nowrap"
-              style={{
-                left: `${Math.min(expectedPercent, 100)}%`,
-                top: '14px',
-                fontSize: '10px',
-                color: '#FBBF24',
-                fontWeight: 500,
-              }}
-            >
-              Esp.
-            </span>
-            {/* Fixed markers: 50%, 70%, 100% */}
-            {[50, 70, 100].map((m) => (
-              <div key={m}>
-                <div
-                  className="absolute"
-                  style={{
-                    left: `${m}%`,
-                    top: '0px',
-                    width: '1px',
-                    height: '10px',
-                    background: m === 100 ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)',
-                  }}
-                />
-                <span
-                  className="absolute -translate-x-1/2"
-                  style={{
-                    left: `${m}%`,
-                    bottom: '0px',
-                    fontSize: '9px',
-                    color: m === 100 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)',
-                  }}
-                >
-                  {m}%
-                </span>
-              </div>
-            ))}
-          </div>
+          {renderUnifiedBar(metaMensalBarPct, expectedPercent)}
         </div>
 
-        {/* Meta OTE bar */}
+        {/* Meta OTE bar — scale 0-120% */}
         <div className="mb-2">
           <div className="flex items-center justify-between mb-1.5">
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
@@ -236,13 +273,7 @@ export function RevenueCard({
             )}
           </div>
           {hasOteGoal ? (
-            <div className="pb-5">
-              <OteProgressBar
-                percentAchieved={otePercentAchieved}
-                height="md"
-                expectedPercent={expectedPercent}
-              />
-            </div>
+            renderUnifiedBar(oteBarPct, expectedPercent)
           ) : (
             <p className="text-xs text-muted-foreground">Nenhuma meta OTE cadastrada para este mês.</p>
           )}
@@ -250,6 +281,14 @@ export function RevenueCard({
 
         {/* Divider before breakdown */}
         <div className="my-4" style={{ borderTop: '1px solid #222' }} />
+
+        {/* Payment breakdown label */}
+        <p
+          className="mb-3"
+          style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)' }}
+        >
+          Formas de Pagamento
+        </p>
 
         {/* Segmented bar — 6px */}
         <div
@@ -268,18 +307,18 @@ export function RevenueCard({
           ))}
         </div>
 
-        {/* Breakdown */}
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          {segments.map((seg) => (
+        {/* Breakdown grid */}
+        <div className={`grid gap-4 mt-4`} style={{ gridTemplateColumns: `repeat(${visibleSegments.length}, minmax(0, 1fr))` }}>
+          {visibleSegments.map((seg) => (
             <div key={seg.label} className="flex items-start gap-2">
               <span
-                className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
+                className="w-2 h-2 rounded-full mt-1.5 shrink-0"
                 style={{ background: seg.color }}
               />
               <div>
-                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{seg.label}</p>
-                <p className="font-semibold text-foreground" style={{ fontSize: '13px' }}>{formatCurrency(seg.value)}</p>
-                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>{seg.pct.toFixed(1)}%</p>
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{seg.label}</p>
+                <p className="font-semibold text-foreground" style={{ fontSize: '15px' }}>{formatCurrency(seg.value)}</p>
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{seg.pct.toFixed(1)}%</p>
               </div>
             </div>
           ))}
