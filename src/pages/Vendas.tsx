@@ -884,6 +884,7 @@ export default function VendasPage() {
                             </span>
                           );
                         })()}
+                      </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="text-xs space-y-1">
                           {venda.valor_pix > 0 && <p>Pix: {formatCurrency(venda.valor_pix)}</p>}
