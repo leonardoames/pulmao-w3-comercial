@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +19,7 @@ import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento, useIsMaster } from '@/hooks/useUserRoles';
 import { Venda, ORIGEM_LEAD_OPTIONS, OrigemLead } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote, Pencil, MoreVertical } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -813,14 +814,13 @@ export default function VendasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
-                <TableHead>Cliente</TableHead>
+                <TableHead style={{ minWidth: 200 }}>Cliente</TableHead>
                 <TableHead className="hidden md:table-cell">Duração</TableHead>
                 <TableHead>Valor Total</TableHead>
                 <TableHead className="hidden md:table-cell">Origem</TableHead>
                 <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Closer</TableHead>
-                <TableHead className="w-28 hidden md:table-cell">Flags</TableHead>
-                {isMaster && <TableHead className="w-20">Ações</TableHead>}
+                <TableHead className="hidden md:table-cell">Flags</TableHead>
                 {canEdit && <TableHead className="w-10"></TableHead>}
               </TableRow>
             </TableHeader>
@@ -843,10 +843,10 @@ export default function VendasPage() {
                   const isRefunded = venda.status === 'Reembolsado';
                   return (
                     <TableRow key={venda.id} style={isRefunded ? { background: 'rgba(234,179,8,0.04)' } : undefined}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium whitespace-nowrap">
                         {(() => {
                           const [year, month, day] = venda.data_fechamento.split('-').map(Number);
-                          return format(new Date(year, month - 1, day), 'dd/MM/yyyy');
+                          return format(new Date(year, month - 1, day), 'dd/MM/yy');
                         })()}
                       </TableCell>
                       <TableCell>
@@ -859,7 +859,9 @@ export default function VendasPage() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <StickyNote className="h-4 w-4 shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-default" />
+                                  <span className="inline-flex shrink-0 cursor-default">
+                                    <StickyNote className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                                  </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
                                   {venda.observacoes}
@@ -912,11 +914,11 @@ export default function VendasPage() {
                       <TableCell className="hidden md:table-cell">{(venda.closer as any)?.nome}</TableCell>
                       <TableCell className="hidden md:table-cell">
                         <TooltipProvider>
-                          <div className="flex gap-1">
+                          <div className="flex flex-col gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.pago ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground opacity-30'}`}>
-                                  <Check className="h-3 w-3" />
+                                  <DollarSign className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>Pagamento confirmado</TooltipContent>
@@ -927,7 +929,7 @@ export default function VendasPage() {
                                   <Edit2 className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>Contrato assinado pelo cliente</TooltipContent>
+                              <TooltipContent>Contrato assinado</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -935,7 +937,7 @@ export default function VendasPage() {
                                   <Landmark className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>Enviado ao setor financeiro</TooltipContent>
+                              <TooltipContent>Enviado ao financeiro</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -943,70 +945,63 @@ export default function VendasPage() {
                                   <Headphones className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>Enviado ao time de Customer Success</TooltipContent>
+                              <TooltipContent>Enviado ao CS</TooltipContent>
                             </Tooltip>
                           </div>
                         </TooltipProvider>
                       </TableCell>
-                      {isMaster && (
-                        <TableCell>
-                          <TooltipProvider>
-                            <div className="flex gap-1">
-                              {isRefunded ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span
-                                      className="inline-flex items-center justify-center"
-                                      style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)' }}
-                                    >
-                                      <RotateCcw className="h-4 w-4" style={{ color: '#EAB308' }} />
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Já reembolsado</TooltipContent>
-                                </Tooltip>
-                              ) : (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => setRefundTarget(venda)}
-                                      className="inline-flex items-center justify-center transition-colors"
-                                      style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}
-                                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(234,179,8,0.12)'; e.currentTarget.style.borderColor = 'rgba(234,179,8,0.3)'; (e.currentTarget.querySelector('svg') as any).style.color = '#EAB308'; }}
-                                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget.querySelector('svg') as any).style.color = 'rgba(255,255,255,0.3)'; }}
-                                    >
-                                      <RotateCcw className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Marcar como reembolsado</TooltipContent>
-                                </Tooltip>
-                              )}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() => setDeleteTarget(venda)}
-                                    className="inline-flex items-center justify-center transition-colors"
-                                    style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; (e.currentTarget.querySelector('svg') as any).style.color = '#EF4444'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget.querySelector('svg') as any).style.color = 'rgba(255,255,255,0.3)'; }}
-                                  >
-                                    <Trash2 className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Excluir venda</TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </TooltipProvider>
-                        </TableCell>
-                      )}
                       {canEdit && (
                         <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleOpenEdit(venda)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleOpenEdit(venda)}>
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, pago: !venda.pago });
+                              }}>
+                                <DollarSign className="h-4 w-4 mr-2" />
+                                {venda.pago ? 'Desmarcar pagamento' : 'Pagamento confirmado'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, contrato_assinado: !venda.contrato_assinado });
+                              }}>
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                {venda.contrato_assinado ? 'Desmarcar contrato' : 'Marcar como assinado'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, enviado_financeiro: !venda.enviado_financeiro });
+                              }}>
+                                <Landmark className="h-4 w-4 mr-2" />
+                                {venda.enviado_financeiro ? 'Desmarcar financeiro' : 'Enviado ao financeiro'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, enviado_cs: !venda.enviado_cs });
+                              }}>
+                                <Headphones className="h-4 w-4 mr-2" />
+                                {venda.enviado_cs ? 'Desmarcar CS' : 'Enviado ao CS'}
+                              </DropdownMenuItem>
+                              {isMaster && !isRefunded && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => setRefundTarget(venda)} className="text-yellow-500">
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Reembolsar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => setDeleteTarget(venda)} className="text-destructive">
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       )}
                     </TableRow>
