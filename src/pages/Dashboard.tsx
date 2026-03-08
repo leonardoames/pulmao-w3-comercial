@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
+import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange, getDateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
 import { Phone, TrendingUp, Target, Trophy, CalendarIcon, AlertCircle, ShoppingCart, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
