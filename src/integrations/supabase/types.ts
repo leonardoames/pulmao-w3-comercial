@@ -389,6 +389,137 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_clientes: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string
+          data_entrada: string | null
+          dia_cobranca: number | null
+          faixas_percentual: Json | null
+          faturamento_ao_entrar: number | null
+          gestor_user_id: string | null
+          id: string
+          marketplaces: string[] | null
+          modelo_cobranca: Database["public"]["Enums"]["billing_model"]
+          nicho: string | null
+          nome_ecommerce: string
+          observacoes: string | null
+          site: string | null
+          status: Database["public"]["Enums"]["client_status"]
+          valor_fixo: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por: string
+          data_entrada?: string | null
+          dia_cobranca?: number | null
+          faixas_percentual?: Json | null
+          faturamento_ao_entrar?: number | null
+          gestor_user_id?: string | null
+          id?: string
+          marketplaces?: string[] | null
+          modelo_cobranca?: Database["public"]["Enums"]["billing_model"]
+          nicho?: string | null
+          nome_ecommerce: string
+          observacoes?: string | null
+          site?: string | null
+          status?: Database["public"]["Enums"]["client_status"]
+          valor_fixo?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string
+          data_entrada?: string | null
+          dia_cobranca?: number | null
+          faixas_percentual?: Json | null
+          faturamento_ao_entrar?: number | null
+          gestor_user_id?: string | null
+          id?: string
+          marketplaces?: string[] | null
+          modelo_cobranca?: Database["public"]["Enums"]["billing_model"]
+          nicho?: string | null
+          nome_ecommerce?: string
+          observacoes?: string | null
+          site?: string | null
+          status?: Database["public"]["Enums"]["client_status"]
+          valor_fixo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_clientes_gestor_user_id_fkey"
+            columns: ["gestor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_clientes_gestor_user_id_fkey"
+            columns: ["gestor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_registros: {
+        Row: {
+          atualizado_em: string
+          cliente_id: string
+          criado_em: string
+          criado_por: string
+          faturamento_informado: number | null
+          fixo_cobrado: number | null
+          id: string
+          mes_ano: string
+          observacao: string | null
+          percentual_aplicado: number | null
+          status_pagamento: Database["public"]["Enums"]["payment_status"]
+          total_a_receber: number | null
+          valor_variavel: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente_id: string
+          criado_em?: string
+          criado_por: string
+          faturamento_informado?: number | null
+          fixo_cobrado?: number | null
+          id?: string
+          mes_ano: string
+          observacao?: string | null
+          percentual_aplicado?: number | null
+          status_pagamento?: Database["public"]["Enums"]["payment_status"]
+          total_a_receber?: number | null
+          valor_variavel?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          cliente_id?: string
+          criado_em?: string
+          criado_por?: string
+          faturamento_informado?: number | null
+          fixo_cobrado?: number | null
+          id?: string
+          mes_ano?: string
+          observacao?: string | null
+          percentual_aplicado?: number | null
+          status_pagamento?: Database["public"]["Enums"]["payment_status"]
+          total_a_receber?: number | null
+          valor_variavel?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_registros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ote_goals: {
         Row: {
           atualizado_em: string
@@ -588,6 +719,128 @@ export type Database = {
             columns: ["closer_user_id"]
             isOneToOne: false
             referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trafego_pago_clientes: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string
+          data_entrada: string | null
+          dia_cobranca: number | null
+          faturamento_ao_entrar: number | null
+          gestor_user_id: string | null
+          id: string
+          nicho: string | null
+          nome_ecommerce: string
+          observacoes: string | null
+          plataformas: string[] | null
+          site: string | null
+          status: Database["public"]["Enums"]["client_status"]
+          tabela_precos: string | null
+          valor_mrr: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por: string
+          data_entrada?: string | null
+          dia_cobranca?: number | null
+          faturamento_ao_entrar?: number | null
+          gestor_user_id?: string | null
+          id?: string
+          nicho?: string | null
+          nome_ecommerce: string
+          observacoes?: string | null
+          plataformas?: string[] | null
+          site?: string | null
+          status?: Database["public"]["Enums"]["client_status"]
+          tabela_precos?: string | null
+          valor_mrr?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string
+          data_entrada?: string | null
+          dia_cobranca?: number | null
+          faturamento_ao_entrar?: number | null
+          gestor_user_id?: string | null
+          id?: string
+          nicho?: string | null
+          nome_ecommerce?: string
+          observacoes?: string | null
+          plataformas?: string[] | null
+          site?: string | null
+          status?: Database["public"]["Enums"]["client_status"]
+          tabela_precos?: string | null
+          valor_mrr?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trafego_pago_clientes_gestor_user_id_fkey"
+            columns: ["gestor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trafego_pago_clientes_gestor_user_id_fkey"
+            columns: ["gestor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trafego_pago_registros: {
+        Row: {
+          atualizado_em: string
+          cliente_id: string
+          criado_em: string
+          criado_por: string
+          id: string
+          investimento_gerenciado: number | null
+          mes_ano: string
+          observacao: string | null
+          roas_entregue: number | null
+          status_pagamento: Database["public"]["Enums"]["payment_status"]
+          valor_pago: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente_id: string
+          criado_em?: string
+          criado_por: string
+          id?: string
+          investimento_gerenciado?: number | null
+          mes_ano: string
+          observacao?: string | null
+          roas_entregue?: number | null
+          status_pagamento?: Database["public"]["Enums"]["payment_status"]
+          valor_pago?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          cliente_id?: string
+          criado_em?: string
+          criado_por?: string
+          id?: string
+          investimento_gerenciado?: number | null
+          mes_ano?: string
+          observacao?: string | null
+          roas_entregue?: number | null
+          status_pagamento?: Database["public"]["Enums"]["payment_status"]
+          valor_pago?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trafego_pago_registros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "trafego_pago_clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -887,6 +1140,7 @@ export type Database = {
         | "SOCIAL_SELLING"
         | "SDR"
         | "ANALISTA_CONTEUDO"
+      billing_model: "percentual_faixas" | "fixo_percentual" | "somente_fixo"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
         | "Agendada"
@@ -894,6 +1148,7 @@ export type Database = {
         | "No-show"
         | "Remarcada"
         | "Cancelada"
+      client_status: "Ativo" | "Pausado" | "Cancelado" | "Trial"
       content_item_platform: "instagram" | "tiktok" | "youtube" | "other"
       content_item_status: "pendente" | "feito" | "agendado"
       content_item_type: "reels" | "feed" | "stories" | "youtube" | "other"
@@ -918,6 +1173,7 @@ export type Database = {
         | "NoShow"
         | "Perdido"
         | "Ganho"
+      payment_status: "Pago" | "Pendente" | "Atrasado"
       user_area: "Comercial" | "CS" | "Financeiro" | "Marketing" | "Diretoria"
       user_role:
         | "CEO"
@@ -1076,6 +1332,7 @@ export const Constants = {
         "SDR",
         "ANALISTA_CONTEUDO",
       ],
+      billing_model: ["percentual_faixas", "fixo_percentual", "somente_fixo"],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],
       call_status: [
         "Agendada",
@@ -1084,6 +1341,7 @@ export const Constants = {
         "Remarcada",
         "Cancelada",
       ],
+      client_status: ["Ativo", "Pausado", "Cancelado", "Trial"],
       content_item_platform: ["instagram", "tiktok", "youtube", "other"],
       content_item_status: ["pendente", "feito", "agendado"],
       content_item_type: ["reels", "feed", "stories", "youtube", "other"],
@@ -1111,6 +1369,7 @@ export const Constants = {
         "Perdido",
         "Ganho",
       ],
+      payment_status: ["Pago", "Pendente", "Atrasado"],
       user_area: ["Comercial", "CS", "Financeiro", "Marketing", "Diretoria"],
       user_role: [
         "CEO",
