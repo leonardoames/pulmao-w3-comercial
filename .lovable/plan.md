@@ -1,95 +1,97 @@
 
+# Versão Responsiva para Mobile — Pulmão W3
 
-# Melhorias na Dashboard Comercial
+## Diagnóstico
 
-7 mudanças na Dashboard sem alterar lógica de cálculo nem estrutura de dados.
+O app usa um layout fixo com sidebar lateral de 256px (`w-64`) e um `main` com `pl-64` hardcoded. Em telas menores que esse tamanho, todo o conteúdo fica escondido atrás da sidebar ou cortado. Além disso, `PageHeader` empilha título e ações de forma que em mobile os filtros de data ficam apertados ou somem para fora da tela.
 
 ---
 
-## 1. Unificar Meta OTE + Meta Mensal
+## Estratégia geral
 
-**Arquivo:** `src/pages/Dashboard.tsx`
+A abordagem mais limpa é transformar a sidebar em um **menu hamburger deslizante** no mobile, mantendo o comportamento de sidebar fixa no desktop. Isso é feito em 3 camadas:
 
-- Remover o `OteDashboardCard` separado (linhas 215-223) e o bloco Meta Mensal (linhas 226-297)
-- Criar inline um único card "Metas do Mês" com:
-  - Header: título + select de closers (reutilizar o existente do OteDashboardCard)
-  - Linha 1: "Meta OTE do Time" — valor/meta + barra 6px com markers 50/70/100/120% + % à direita
-  - Linha 2: "Meta Mensal" — volume vendas / meta mensal + barra + % à direita
-  - % colorido semanticamente: verde se >= esperado proporcional, amarelo 60-99%, vermelho <60%
-  - Micro label "do esperado" (11px, opacity 50%) abaixo do %
-  - Rodapé: botão "Ver detalhes" com `border: 1px solid #333, color: #F5F5F5, hover bg #2a2a2a`
-- Os hooks `useOteRealized`, `useOteTeamStats`, `useTvMetaMensal` já estão disponíveis; chamar diretamente na Dashboard
+1. **`AppSidebar`** — esconder em mobile, mostrar como overlay quando aberto
+2. **`AppLayout`** — remover o `pl-64` fixo em mobile, adicionar topbar mobile com botão hamburger
+3. **`PageHeader`** — empilhar título e ações verticalmente em mobile
 
-## 2. Origem dos Leads — barras de proporção
+---
 
-**Arquivo:** `src/components/dashboard/OrigemLeadCard.tsx`
+## Mudanças detalhadas
 
-- Calcular `maxQuantidade = Math.max(...byOrigem.map(o => o.quantidade))`
-- Entre o nome e os valores, adicionar barra horizontal:
-  - Track: 4px height, border-radius pill, bg `rgba(255,255,255,0.06)`
-  - Fill: largura proporcional `(quantidade / maxQuantidade) * 100%`, cor = bullet color
-- "Sem origem definida": exibir com bullet cinza + tooltip via `HoverCard` ("Vendas sem canal de origem registrado. Edite as vendas para corrigir")
+### 1. `src/components/layout/AppSidebar.tsx`
 
-## 3. Performance Comercial — cores semânticas nos ícones
+- Receber uma prop `isOpen` e `onClose` para controle externo no mobile
+- No mobile (`md` breakpoint): sidebar usa `translate-x` para deslizar por cima do conteúdo como overlay
+- No desktop: comportamento atual mantido (`fixed left-0`)
+- Adicionar overlay escuro clicável para fechar no mobile
 
-**Arquivo:** `src/pages/Dashboard.tsx` (linhas 300-330)
-
-Passar `variant` customizado para cada StatCard de performance:
-- Taxa de Conversão: `variant="success"` (ícone verde #22C55E)
-- Vendas Realizadas: `variant="primary"` (ícone laranja #F97316) — já é default
-- Calls Realizadas: ícone azul — passar cor inline via wrapper ou adicionar `variant="info"` ao StatCard
-- % No-Show Total: `variant="destructive"` (ícone vermelho #EF4444) — já está
-
-**Arquivo:** `src/components/ui/stat-card.tsx` — adicionar variante `info` com cor `#0EA5E9`
-
-## 4. % das Metas — cor semântica
-
-Incluído no item 1 acima. Helper function:
-```ts
-function getMetaColor(actual: number, expected: number) {
-  const ratio = expected > 0 ? actual / expected : 1;
-  if (ratio >= 1) return '#22C55E';
-  if (ratio >= 0.6) return '#FBBF24';
-  return '#EF4444';
-}
+```text
+Mobile:  [hamburger topbar] → [sidebar overlay desliza da esquerda]
+Desktop: [sidebar fixa 256px à esquerda] → sem alteração
 ```
 
-## 5. Ranking de Closers — corrigir espaço vazio
+### 2. `src/components/layout/AppLayout.tsx`
 
-**Arquivo:** `src/pages/Dashboard.tsx` (linhas 337-520)
+- Gerenciar estado `sidebarOpen` (useState)
+- No mobile: mostrar **topbar** no topo com logo + botão hamburger (Menu icon)
+- No desktop: topbar não aparece, sidebar fixa como antes
+- `main`: trocar `pl-64` por `md:pl-64` para que em mobile ocupe tela cheia
+- `p-8` do conteúdo vira `p-4 md:p-8` para respeitar margens menores
 
-- Quando `noShowByCloser` estiver vazio ou closer individual selecionado, o grid de 2 colunas deixa espaço vazio
-- Solução: renderizar Ranking em `col-span-2` quando não há coluna 2, ou usar layout condicional `lg:grid-cols-${hasSecondColumn ? 2 : 1}`
+### 3. `src/components/ui/page-header.tsx`
 
-## 6. Filtros do Header — reorganizar
+- Trocar `flex items-center justify-between` por `flex flex-col gap-4 md:flex-row md:items-center md:justify-between`
+- Isso faz título e ações empilharem verticalmente em mobile
 
-**Arquivo:** `src/pages/Dashboard.tsx` (linhas 110-180)
+### 4. `src/pages/Dashboard.tsx`
 
-- O `ShareDashboardDialog` já está no children do PageHeader (linha 179), que renderiza em row
-- Verificar que o botão Compartilhar é o último item na linha e não aparece abaixo
-- O PageHeader já usa `flex-row` em `sm:`, confirmar que todos os elementos ficam em linha única
+- A barra de filtros de data (botões Hoje/Ontem/7dias…) já tem `flex-wrap`, mas o `PageHeader` precisa ser responsivo primeiro
+- Adicionar `overflow-x-auto` na div dos filtros para que em mobile role horizontalmente
 
-## 7. Timestamp de Atualização
+### 5. `src/pages/Vendas.tsx`
 
-**Arquivo:** `src/pages/Dashboard.tsx`
+- A tabela usa colunas fixas: adicionar `overflow-x-auto` no wrapper do `Card` que contém a `Table`
+- Cards de KPI já usam `grid-cols-1 md:grid-cols-3` — OK
 
-- Adicionar estado `lastUpdatedAt` que registra `new Date()` quando queries completam (`dataUpdatedAt` do react-query)
-- Renderizar abaixo do PageHeader: `● Atualizado às HH:MM`
-- Ponto pulsante: cor baseada em `minutesSinceUpdate`:
-  - <5min: verde + `animate-pulse`
-  - 5-15min: amarelo
-  - >15min: cinza
-- onClick: `queryClient.invalidateQueries()` para refetch manual
+### 6. `src/pages/MeuFechamento.tsx`
+
+- Já corrigido com `grid-cols-1 sm:grid-cols-3` — OK
+
+### 7. `src/pages/MarketingDashboard.tsx`
+
+- Os filtros no `PageHeader` precisam do fix do PageHeader
+- A seção de investimento (`flex items-end gap-4 flex-wrap`) já funciona razoavelmente
+
+### 8. `src/pages/SocialSelling.tsx` / `ConteudoDashboard.tsx`
+
+- Beneficiam automaticamente do fix do `PageHeader` e `AppLayout`
 
 ---
 
 ## Arquivos a modificar
 
-| Arquivo | Mudanças |
+| Arquivo | Mudança principal |
 |---|---|
-| `src/pages/Dashboard.tsx` | Items 1, 3, 5, 6, 7 |
-| `src/components/ui/stat-card.tsx` | Item 3 (variante info) |
-| `src/components/dashboard/OrigemLeadCard.tsx` | Item 2 |
+| `src/components/layout/AppLayout.tsx` | Adicionar topbar mobile + gerenciar estado sidebar + ajustar padding |
+| `src/components/layout/AppSidebar.tsx` | Suportar prop `isOpen`/`onClose` + comportamento overlay mobile |
+| `src/components/ui/page-header.tsx` | Layout empilhado em mobile |
+| `src/pages/Vendas.tsx` | Scroll horizontal na tabela |
+| `src/pages/Dashboard.tsx` | Scroll horizontal nos filtros |
+| `src/pages/MarketingDashboard.tsx` | Scroll horizontal nos filtros |
+| `src/pages/ConteudoDashboard.tsx` | Scroll horizontal nos filtros |
+| `src/pages/SocialSelling.tsx` | Scroll horizontal nos filtros |
 
-O `OteDashboardCard.tsx` não será mais importado na Dashboard (mas permanece disponível para outras páginas).
+---
 
+## Resultado esperado
+
+- Em telas ≥ 768px (md): comportamento atual preservado, sem alteração visual
+- Em telas < 768px: topbar com hamburger no topo, sidebar abre como gaveta sobreposta, conteúdo ocupa 100% da largura, filtros roláveis horizontalmente
+- Formulários (MeuFechamento, Vendas) já empilham corretamente em mobile
+
+---
+
+## Ponto de atenção
+
+As tabelas grandes (Vendas, histórico de fechamento) não podem ser comprimidas — serão envoltas em `overflow-x-auto` para rolar horizontalmente, que é o padrão esperado em mobile.
