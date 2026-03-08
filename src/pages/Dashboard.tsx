@@ -194,30 +194,52 @@ export default function DashboardPage() {
       )}
 
       {/* Meta Mensal (TV) */}
-      {canViewSection('section:dashboard:ote') && metaMensal !== undefined && (
-        <div className="mb-10 p-5 rounded-xl bg-card border">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Meta Mensal</p>
-              <p className="text-xl font-bold">
-                {formatCurrency(stats?.volumeVendas ?? 0)} / {formatCurrency(metaMensal)}
+      {canViewSection('section:dashboard:ote') && metaMensal !== undefined && (() => {
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const currentDay = now.getDate();
+        const expectedPercent = (currentDay / daysInMonth) * 100;
+        const actualPercent = metaMensal > 0 ? ((stats?.volumeVendas ?? 0) / metaMensal * 100) : 0;
+
+        return (
+          <div className="mb-10 p-5 rounded-xl bg-card border">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Meta Mensal</p>
+                <p className="text-xl font-bold">
+                  {formatCurrency(stats?.volumeVendas ?? 0)} / {formatCurrency(metaMensal)}
+                </p>
+              </div>
+              <p className="text-3xl font-bold text-primary">
+                {actualPercent.toFixed(0)}%
               </p>
             </div>
-            <p className="text-3xl font-bold text-primary">
-              {metaMensal > 0 ? ((stats?.volumeVendas ?? 0) / metaMensal * 100).toFixed(0) : 0}%
-            </p>
+            <div className="relative">
+              <div className="h-3 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all duration-1000',
+                    actualPercent >= 100 ? 'bg-success' : 'bg-primary'
+                  )}
+                  style={{ width: `${Math.min(actualPercent, 100)}%` }}
+                />
+              </div>
+              {/* Ghost ruler - expected progress marker */}
+              <div
+                className="absolute top-0 h-3 w-0.5 bg-foreground/40"
+                style={{ left: `${Math.min(expectedPercent, 100)}%` }}
+                title={`Meta esperada: ${expectedPercent.toFixed(0)}% (dia ${currentDay}/${daysInMonth})`}
+              />
+              <div
+                className="absolute top-4 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap"
+                style={{ left: `${Math.min(expectedPercent, 100)}%` }}
+              >
+                Esperado: {expectedPercent.toFixed(0)}%
+              </div>
+            </div>
           </div>
-          <div className="h-3 bg-muted rounded-full overflow-hidden">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all duration-1000',
-                metaMensal > 0 && (stats?.volumeVendas ?? 0) >= metaMensal ? 'bg-success' : 'bg-primary'
-              )}
-              style={{ width: `${Math.min(metaMensal > 0 ? ((stats?.volumeVendas ?? 0) / metaMensal * 100) : 0, 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* BLOCO 2 — Performance Comercial */}
       {canViewSection('section:dashboard:performance') && (
