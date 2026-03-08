@@ -383,9 +383,9 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
                   OTE Realizado
                 </p>
                 <p style={{ fontSize: "28px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>
-                  {isEmpty ? "—" : formatCurrency(oteRealized)}
+                  {formatCurrency(oteRealized)}
                 </p>
-                {goalValue > 0 && !isEmpty && (
+                {goalValue > 0 && (
                   <>
                     <div className="mt-3"><GradientBar percent={otePercent} height={6} /></div>
                     <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", marginTop: "6px" }}>
