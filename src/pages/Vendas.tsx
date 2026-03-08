@@ -799,8 +799,9 @@ export default function VendasPage() {
               ) : (
                 filteredVendas?.map(venda => {
                   const valorBoletoTotal = venda.valor_boleto_parcela * venda.quantidade_parcelas_boleto;
+                  const isRefunded = venda.status === 'Reembolsado';
                   return (
-                    <TableRow key={venda.id}>
+                    <TableRow key={venda.id} style={isRefunded ? { background: 'rgba(234,179,8,0.04)' } : undefined}>
                       <TableCell className="font-medium">
                         {(() => {
                           const [year, month, day] = venda.data_fechamento.split('-').map(Number);
@@ -814,8 +815,17 @@ export default function VendasPage() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{venda.duracao_contrato_meses} meses</TableCell>
-                      <TableCell className="font-bold text-primary">
-                        {formatCurrency(venda.valor_total)}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className={isRefunded ? 'line-through font-bold' : 'font-bold text-primary'} style={isRefunded ? { color: 'rgba(255,255,255,0.3)' } : undefined}>
+                            {formatCurrency(venda.valor_total)}
+                          </span>
+                          {isRefunded && (
+                            <span style={{ fontSize: '10px', background: 'rgba(234,179,8,0.15)', color: '#EAB308', borderRadius: '999px', padding: '2px 8px', letterSpacing: '0.05em', fontWeight: 600 }}>
+                              REEMBOLSADO
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="text-xs space-y-1">
@@ -865,6 +875,56 @@ export default function VendasPage() {
                           </div>
                         </TooltipProvider>
                       </TableCell>
+                      {isMaster && (
+                        <TableCell>
+                          <TooltipProvider>
+                            <div className="flex gap-1">
+                              {isRefunded ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span
+                                      className="inline-flex items-center justify-center"
+                                      style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)' }}
+                                    >
+                                      <RotateCcw className="h-4 w-4" style={{ color: '#EAB308' }} />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Já reembolsado</TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => setRefundTarget(venda)}
+                                      className="inline-flex items-center justify-center transition-colors"
+                                      style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(234,179,8,0.12)'; e.currentTarget.style.borderColor = 'rgba(234,179,8,0.3)'; (e.currentTarget.querySelector('svg') as any).style.color = '#EAB308'; }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget.querySelector('svg') as any).style.color = 'rgba(255,255,255,0.3)'; }}
+                                    >
+                                      <RotateCcw className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Marcar como reembolsado</TooltipContent>
+                                </Tooltip>
+                              )}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => setDeleteTarget(venda)}
+                                    className="inline-flex items-center justify-center transition-colors"
+                                    style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; (e.currentTarget.querySelector('svg') as any).style.color = '#EF4444'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget.querySelector('svg') as any).style.color = 'rgba(255,255,255,0.3)'; }}
+                                  >
+                                    <Trash2 className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Excluir venda</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TooltipProvider>
+                        </TableCell>
+                      )}
                       {canEdit && (
                         <TableCell>
                           <Button 
@@ -885,6 +945,98 @@ export default function VendasPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent style={{ background: '#1a1a1a', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 16, padding: 32, maxWidth: 420 }}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(239,68,68,0.1)' }}>
+              <AlertTriangle style={{ width: 40, height: 40, color: '#EF4444' }} />
+            </div>
+            <AlertDialogHeader className="text-center">
+              <AlertDialogTitle style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF', textAlign: 'center' }}>Excluir venda?</AlertDialogTitle>
+              <AlertDialogDescription style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', textAlign: 'center' }}>
+                Esta ação não pode ser desfeita. A venda de <strong style={{ color: '#fff' }}>{deleteTarget?.nome_lead}</strong> no valor de <strong style={{ color: '#fff' }}>{deleteTarget ? formatCurrency(deleteTarget.valor_total) : ''}</strong> será permanentemente removida.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row gap-3 w-full sm:justify-center">
+              <AlertDialogCancel
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', borderRadius: 8, padding: '10px 24px' }}
+              >
+                Cancelar
+              </AlertDialogCancel>
+              <Button
+                onClick={async () => {
+                  if (!deleteTarget) return;
+                  try {
+                    await deleteVenda.mutateAsync(deleteTarget.id);
+                    setDeleteTarget(null);
+                  } catch {}
+                }}
+                disabled={deleteVenda.isPending}
+                style={{ background: '#EF4444', color: '#FFFFFF', fontWeight: 600, borderRadius: 8, padding: '10px 24px' }}
+                className="hover:!bg-[#DC2626]"
+              >
+                Sim, excluir
+              </Button>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Refund Confirmation Modal */}
+      <AlertDialog open={!!refundTarget} onOpenChange={(open) => { if (!open) { setRefundTarget(null); setRefundReason(''); } }}>
+        <AlertDialogContent style={{ background: '#1a1a1a', border: '1px solid rgba(234,179,8,0.2)', borderRadius: 16, padding: 32, maxWidth: 420 }}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(234,179,8,0.1)' }}>
+              <RotateCcw style={{ width: 40, height: 40, color: '#EAB308' }} />
+            </div>
+            <AlertDialogHeader className="text-center">
+              <AlertDialogTitle style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF', textAlign: 'center' }}>Marcar como reembolsado?</AlertDialogTitle>
+              <AlertDialogDescription style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', textAlign: 'center' }}>
+                A venda de <strong style={{ color: '#fff' }}>{refundTarget?.nome_lead}</strong> no valor de <strong style={{ color: '#fff' }}>{refundTarget ? formatCurrency(refundTarget.valor_total) : ''}</strong> será marcada como reembolsada. Isso afetará os cálculos de faturamento e OTE do closer <strong style={{ color: '#fff' }}>{(refundTarget?.closer as any)?.nome || '—'}</strong>.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="w-full">
+              <Label htmlFor="refund_reason" style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 6, display: 'block' }}>Motivo do reembolso (opcional)</Label>
+              <Textarea
+                id="refund_reason"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="Descreva o motivo..."
+                rows={3}
+                style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: 10 }}
+              />
+            </div>
+            <AlertDialogFooter className="flex-row gap-3 w-full sm:justify-center">
+              <AlertDialogCancel
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', borderRadius: 8, padding: '10px 24px' }}
+              >
+                Cancelar
+              </AlertDialogCancel>
+              <Button
+                onClick={async () => {
+                  if (!refundTarget || !profile) return;
+                  try {
+                    await refundVenda.mutateAsync({
+                      id: refundTarget.id,
+                      motivo_reembolso: refundReason || undefined,
+                      reembolsado_por: profile.id,
+                    });
+                    setRefundTarget(null);
+                    setRefundReason('');
+                  } catch {}
+                }}
+                disabled={refundVenda.isPending}
+                style={{ background: '#EAB308', color: '#000000', fontWeight: 600, borderRadius: 8, padding: '10px 24px' }}
+                className="hover:!bg-[#CA8A04]"
+              >
+                Confirmar reembolso
+              </Button>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
