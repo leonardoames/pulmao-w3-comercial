@@ -143,53 +143,52 @@ function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number
   const pctPix = totalPayments > 0 ? ((stats?.valorPix || 0) / totalPayments) * 100 : 0;
   const pctCartao = totalPayments > 0 ? ((stats?.valorCartao || 0) / totalPayments) * 100 : 0;
   const pctBoleto = totalPayments > 0 ? ((stats?.valorBoleto || 0) / totalPayments) * 100 : 0;
-
   const monthLabel = format(new Date(), "MMMM yyyy", { locale: ptBR }).toUpperCase();
 
   return (
-    <div className="flex flex-col h-full" style={{ gap: "10px" }}>
-      {/* Title */}
+    <div className="flex flex-col h-full" style={{ gap: "12px" }}>
+      {/* Title – compact */}
       <ScreenTitle>Resultado Comercial — {monthLabel}</ScreenTitle>
 
-      {/* 4 metrics in a single row */}
-      <div className="grid grid-cols-4 gap-3" style={{ flexShrink: 0 }}>
+      {/* Section 1 – 4 metric cards */}
+      <div className="grid grid-cols-4 gap-3" style={{ height: "calc(30vh - 24px)", flexShrink: 0 }}>
         {[
           { label: "Receita Total", value: formatCurrency(revenue), color: "#F97316" },
           { label: "Ticket Médio", value: formatCurrency(stats?.ticketMedio || 0), color: "#FFFFFF" },
           { label: "Fat. por Call", value: formatCurrency(stats?.faturamentoPorCall || 0), color: "#FFFFFF" },
           { label: "Total de Vendas", value: formatInteger(stats?.totalVendas || 0), color: "#FFFFFF" },
         ].map((m) => (
-          <TVCard key={m.label} style={{ padding: "16px 20px", height: "120px" }} className="flex flex-col justify-center">
-            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "6px" }}>{m.label}</p>
-            <p style={{ fontSize: "32px", fontWeight: 700, color: m.color, lineHeight: 1.1 }} className="truncate">{m.value}</p>
+          <TVCard key={m.label} style={{ padding: "16px 20px" }} className="flex flex-col justify-center h-full">
+            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "8px" }}>{m.label}</p>
+            <p style={{ fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 700, color: m.color, lineHeight: 1.1, whiteSpace: "nowrap" }}>{m.value}</p>
           </TVCard>
         ))}
       </div>
 
-      {/* Meta Mensal */}
-      <TVCard style={{ padding: "14px 24px", height: "80px", flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-baseline gap-2">
+      {/* Section 2 – Meta Mensal */}
+      <TVCard style={{ padding: "14px 24px", height: "calc(15vh - 24px)", flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: "12px" }}>
+          <div className="flex items-baseline gap-2 flex-wrap-none" style={{ whiteSpace: "nowrap" }}>
             <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)" }}>Meta Mensal</span>
-            <span style={{ fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }}>{formatCurrency(revenue)}</span>
+            <span style={{ fontSize: "clamp(16px, 1.8vw, 22px)", fontWeight: 700, color: "#FFFFFF" }}>{formatCurrency(revenue)}</span>
             <span style={{ fontSize: "13px", fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/ {formatCurrency(metaMensal)}</span>
           </div>
-          <p style={{ fontSize: "28px", fontWeight: 700, color: "#F97316", lineHeight: 1 }}>{progressPercent.toFixed(0)}%</p>
+          <p style={{ fontSize: "clamp(24px, 2.5vw, 32px)", fontWeight: 700, color: "#F97316", lineHeight: 1 }}>{progressPercent.toFixed(0)}%</p>
         </div>
-        <GradientBar percent={progressPercent} />
+        <GradientBar percent={progressPercent} height={8} />
       </TVCard>
 
-      {/* Pix / Cartão / Boleto */}
-      <div className="grid grid-cols-3 gap-3" style={{ flexShrink: 0 }}>
+      {/* Section 3 – Pix / Cartão / Boleto */}
+      <div className="grid grid-cols-3 gap-3" style={{ height: "calc(30vh - 24px)", flexShrink: 0 }}>
         {[
           { label: "Pix", value: stats?.valorPix || 0, pct: pctPix },
           { label: "Cartão", value: stats?.valorCartao || 0, pct: pctCartao },
           { label: "Boleto", value: stats?.valorBoleto || 0, pct: pctBoleto },
         ].map((m) => (
-          <TVCard key={m.label} style={{ padding: "14px 20px", height: "100px" }} className="flex flex-col justify-center">
-            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "4px" }}>{m.label}</p>
-            <p style={{ fontSize: "28px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1 }} className="truncate">{formatCurrency(m.value)}</p>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>{m.pct.toFixed(1)}%</p>
+          <TVCard key={m.label} style={{ padding: "16px 20px" }} className="flex flex-col justify-center h-full">
+            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "6px" }}>{m.label}</p>
+            <p style={{ fontSize: "clamp(24px, 2.5vw, 36px)", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>{formatCurrency(m.value)}</p>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>{m.pct.toFixed(1)}%</p>
           </TVCard>
         ))}
       </div>
@@ -206,7 +205,7 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
   return (
     <div className="flex flex-col h-full">
       <ScreenTitle>Performance Individual dos Closers</ScreenTitle>
-      <div className={cn("grid gap-4 flex-1 content-start", gridCols)}>
+      <div className={cn("grid gap-4 flex-1 items-stretch", gridCols)} style={{ height: "calc(55vh - 80px)" }}>
         {closers.slice(0, 8).map((closer: any, index: number) => {
           const goal = oteGoals?.find((g) => g.closer_user_id === closer.id);
           const goalValue = goal?.ote_target_value || 0;
@@ -216,9 +215,9 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
           const isEmpty = closer.volume === 0 && closer.vendas === 0;
 
           return (
-            <TVCard key={closer.id} highlight={isTop} style={{ padding: "20px 24px" }} className="flex flex-col justify-between">
+            <TVCard key={closer.id} highlight={isTop} style={{ padding: "24px 28px" }} className="flex flex-col justify-between h-full">
               {/* Header */}
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-4">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
                   style={{ background: isTop ? "#F97316" : "rgba(255,255,255,0.1)", color: isTop ? "#000" : "rgba(255,255,255,0.6)" }}
@@ -226,7 +225,7 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
                   {index + 1}
                 </div>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <p style={{ fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }} className="truncate">{closer.nome}</p>
+                  <p style={{ fontSize: "clamp(16px, 1.6vw, 22px)", fontWeight: 700, color: "#FFFFFF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{closer.nome}</p>
                   {isTop && (
                     <span className="shrink-0 px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: "#F97316", color: "#000", fontSize: "11px", fontWeight: 700 }}>
                       <Trophy className="h-3 w-3" /> Líder
@@ -235,69 +234,53 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
                 </div>
               </div>
 
-              {/* Three-column: Vendas | OTE | No-show */}
+              {/* Two-column: Vendas | OTE */}
               <div className="flex flex-1 min-h-0">
-                {/* Left: Vendas (45%) */}
-                <div className="flex flex-col justify-center" style={{ width: "45%" }}>
-                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "4px" }}>
+                {/* Left: Vendas (55%) */}
+                <div className="flex flex-col justify-center" style={{ width: "55%" }}>
+                  <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "8px" }}>
                     {isEmpty ? "Vendas" : `${closer.vendas} vendas`}
                   </p>
                   {isEmpty ? (
                     <>
-                      <p style={{ fontSize: "28px", fontWeight: 700, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
-                      <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.2)", marginTop: "2px" }}>Aguardando vendas</p>
+                      <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
+                      <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.2)", marginTop: "4px" }}>Aguardando vendas</p>
                     </>
                   ) : (
-                    <p style={{ fontSize: "28px", fontWeight: 700, color: isTop ? "#F97316" : "#FFFFFF", lineHeight: 1.1 }} className="truncate">
+                    <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: isTop ? "#F97316" : "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>
                       {formatCurrency(closer.volume)}
                     </p>
                   )}
                 </div>
 
                 {/* Divider */}
-                <div style={{ width: "1px", background: "rgba(255,255,255,0.08)", margin: "0 12px", alignSelf: "stretch" }} />
+                <div style={{ width: "1px", background: "rgba(255,255,255,0.08)", margin: "0 16px", alignSelf: "stretch" }} />
 
-                {/* Center: OTE (35%) */}
-                <div className="flex flex-col justify-center" style={{ width: "30%" }}>
-                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "4px" }}>Meta OTE</p>
+                {/* Right: OTE (45%) */}
+                <div className="flex flex-col justify-center flex-1 min-w-0">
+                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>Meta OTE</p>
                   {isEmpty ? (
-                    <p style={{ fontSize: "20px", fontWeight: 700, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
+                    <p style={{ fontSize: "clamp(18px, 1.8vw, 26px)", fontWeight: 600, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
                   ) : (
                     <>
-                      <p style={{ fontSize: "18px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1 }} className="truncate">
+                      <p style={{ fontSize: "clamp(18px, 1.8vw, 26px)", fontWeight: 600, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>
                         {goalValue > 0 ? formatCurrency(goalValue) : "—"}
                       </p>
                       {goalValue > 0 && (
-                        <p style={{ fontSize: "12px", fontWeight: 600, color: "#F97316", marginTop: "2px" }}>
+                        <p style={{ fontSize: "12px", fontWeight: 600, color: "#F97316", marginTop: "4px" }}>
                           {otePercent.toFixed(0)}% da meta
                         </p>
                       )}
                     </>
                   )}
                 </div>
-
-                {/* Divider */}
-                <div style={{ width: "1px", background: "rgba(255,255,255,0.08)", margin: "0 12px", alignSelf: "stretch" }} />
-
-                {/* Right: No-show */}
-                <div className="flex flex-col justify-center flex-1 min-w-0">
-                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "4px" }}>No-show</p>
-                  <p style={{ fontSize: "20px", fontWeight: 700, color: closer.noShow > 0 ? "#FFFFFF" : "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>
-                    {closer.noShow || 0}
-                  </p>
-                  {closer.percentNoShow != null && closer.percentNoShow > 0 && (
-                    <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>
-                      {closer.percentNoShow.toFixed(0)}%
-                    </p>
-                  )}
-                </div>
               </div>
 
-              {/* Progress bar */}
+              {/* Progress bar at bottom */}
               {goalValue > 0 && !isEmpty && (
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-4 flex items-center gap-2">
                   <div className="flex-1"><GradientBar percent={otePercent} height={5} /></div>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#F97316", flexShrink: 0 }}>{otePercent.toFixed(0)}%</span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#F97316", flexShrink: 0 }}>{otePercent.toFixed(0)}%</span>
                 </div>
               )}
             </TVCard>
@@ -307,7 +290,6 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
     </div>
   );
 }
-
 // ─── Screen 3: Social Selling ───
 function ScreenSocialSelling({ ssEntries }: { ssEntries: any[] }) {
   const totals = useMemo(() => {
