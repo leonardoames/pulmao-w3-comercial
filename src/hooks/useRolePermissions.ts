@@ -67,12 +67,18 @@ export interface RolePermission {
 
 // All configurable resources with labels
 export const RESOURCE_DEFINITIONS: { key: string; label: string; group: string }[] = [
-  // Routes - Comercial
-  { key: 'route:dashboard', label: 'Dashboard Comercial', group: 'Rotas - Comercial' },
-  { key: 'route:vendas', label: 'Vendas', group: 'Rotas - Comercial' },
-  { key: 'route:meu-fechamento', label: 'Meu Fechamento', group: 'Rotas - Comercial' },
-  { key: 'route:meta-ote', label: 'Meta OTE', group: 'Rotas - Comercial' },
-  { key: 'route:social-selling', label: 'Social Selling', group: 'Rotas - Comercial' },
+  // Routes - W3 Educação
+  { key: 'route:dashboard', label: 'Dashboard Comercial', group: 'Rotas - W3 Educação' },
+  { key: 'route:vendas', label: 'Vendas', group: 'Rotas - W3 Educação' },
+  { key: 'route:meu-fechamento', label: 'Meu Fechamento', group: 'Rotas - W3 Educação' },
+  { key: 'route:meta-ote', label: 'Meta OTE', group: 'Rotas - W3 Educação' },
+  { key: 'route:social-selling', label: 'Social Selling', group: 'Rotas - W3 Educação' },
+  // Routes - W3 Tráfego Pago
+  { key: 'route:trafego-pago-dashboard', label: 'Dashboard Tráfego Pago', group: 'Rotas - W3 Tráfego Pago' },
+  { key: 'route:trafego-pago-clientes', label: 'Clientes Tráfego Pago', group: 'Rotas - W3 Tráfego Pago' },
+  // Routes - W3 Marketplaces
+  { key: 'route:marketplaces-dashboard', label: 'Dashboard Marketplaces', group: 'Rotas - W3 Marketplaces' },
+  { key: 'route:marketplaces-clientes', label: 'Clientes Marketplaces', group: 'Rotas - W3 Marketplaces' },
   // Routes - Conteúdo
   { key: 'route:conteudo-dashboard', label: 'Dashboard de Conteúdo', group: 'Rotas - Conteúdo' },
   { key: 'route:conteudo-acompanhamento', label: 'Acompanhamento Diário', group: 'Rotas - Conteúdo' },
