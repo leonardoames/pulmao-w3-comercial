@@ -393,9 +393,50 @@ export default function TrafegoPagoClientes() {
                     onError: (err: any) => toast.error(err.message || 'Erro'),
                   });
                 };
+                const hasSite = !!(c.site && c.site.trim());
+                const siteUrl = hasSite ? (c.site!.startsWith('http') ? c.site! : `https://${c.site}`) : '';
+                const faviconUrl = hasSite ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(siteUrl)}&sz=32` : '';
+                const initial = c.nome_ecommerce.charAt(0).toUpperCase();
+
                 return (
-                  <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30" onClick={() => openEdit(c)}>
-                    <TableCell className="font-medium">{c.nome_ecommerce}</TableCell>
+                  <TableRow key={c.id} className="group cursor-pointer hover:bg-muted/30" onClick={() => openEdit(c)}>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        {hasSite ? (
+                          <img
+                            src={faviconUrl}
+                            alt=""
+                            className="shrink-0 rounded"
+                            style={{ width: 24, height: 24, objectFit: 'contain' }}
+                            onError={e => {
+                              const el = e.currentTarget;
+                              el.style.display = 'none';
+                              el.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <span
+                          className={`shrink-0 flex items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-semibold ${hasSite ? 'hidden' : ''}`}
+                          style={{ width: 24, height: 24 }}
+                        >
+                          {initial}
+                        </span>
+                        {hasSite ? (
+                          <a
+                            href={siteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium hover:underline flex items-center gap-1"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {c.nome_ecommerce}
+                            <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-40 transition-opacity shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="font-medium cursor-default">{c.nome_ecommerce}</span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
                       <InlineEditCell value={c.nicho || ''} onSave={v => handleInlineUpdate('nicho', v)} />
                     </TableCell>
