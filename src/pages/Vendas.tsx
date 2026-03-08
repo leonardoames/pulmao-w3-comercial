@@ -779,6 +779,7 @@ export default function VendasPage() {
                 <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Closer</TableHead>
                 <TableHead className="w-28 hidden md:table-cell">Flags</TableHead>
+                {isMaster && <TableHead className="w-20">Ações</TableHead>}
                 {canEdit && <TableHead className="w-10"></TableHead>}
               </TableRow>
             </TableHeader>
