@@ -102,6 +102,25 @@ export function WebhooksPanel() {
     setDeleteTarget(null);
   };
 
+  const handleTest = async (webhook: WebhookType) => {
+    setTestingId(webhook.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-webhook', {
+        body: { webhook_url: webhook.url },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Teste enviado com sucesso! Venda usada: ${data.venda_usada?.nome_lead} (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.venda_usada?.valor_total)})`);
+      } else {
+        toast.error(`Webhook retornou status ${data?.status}: ${data?.response?.substring(0, 100) || 'sem resposta'}`);
+      }
+    } catch (err: any) {
+      toast.error('Erro ao enviar teste: ' + (err.message || 'erro desconhecido'));
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-8 text-muted-foreground">Carregando webhooks...</div>;
   }
