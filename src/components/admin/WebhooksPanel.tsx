@@ -28,9 +28,11 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, Pencil, Webhook, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Pencil, Webhook, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { useWebhooks, useCreateWebhook, useUpdateWebhook, useDeleteWebhook, Webhook as WebhookType } from '@/hooks/useWebhooks';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function WebhooksPanel() {
   const { profile } = useAuth();
