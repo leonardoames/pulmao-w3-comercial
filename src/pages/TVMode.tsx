@@ -5,6 +5,7 @@ import { useContentDailyLogs } from "@/hooks/useContentTracking";
 import { useOteGoals } from "@/hooks/useOteGoals";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Pause, Play, X, MessageSquare, Send, FileText, CalendarCheck, Trophy } from "lucide-react";
+import { getDaysInMonth, getDate, isWeekend, eachDayOfInterval, startOfMonth as startOfMonthFn, endOfMonth as endOfMonthFn } from "date-fns";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, startOfMonth } from "date-fns";
