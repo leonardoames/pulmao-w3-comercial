@@ -83,11 +83,12 @@ export default function VendasPage() {
   const createVenda = useCreateVenda();
   const updateVenda = useUpdateVenda();
 
-  const hasActiveFilters = !!dateFrom || !!dateTo || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS;
+  const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo;
 
   const clearFilters = () => {
-    setDateFrom(undefined);
-    setDateTo(undefined);
+    setQuickFilter('month');
+    setCustomDateFrom(undefined);
+    setCustomDateTo(undefined);
     setDuracaoFilter('all');
     setValorFilter('all');
     setFlagPago(false);
