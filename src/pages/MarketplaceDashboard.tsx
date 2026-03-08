@@ -123,7 +123,7 @@ export default function MarketplaceDashboard() {
   return (
     <AppLayout>
       <PageHeader title="Dashboard — Marketplaces" description="Métricas de gestão de marketplaces">
-        <Input type="month" value={mesAno} onChange={e => setMesAno(e.target.value)} className="w-[180px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }} />
+        <MonthYearSelector value={mesAno} onChange={setMesAno} />
       </PageHeader>
 
       <SectionLabel title="Receita Recorrente" />
