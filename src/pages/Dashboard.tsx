@@ -9,14 +9,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange, getDateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
-import { Phone, TrendingUp, Target, Trophy, CalendarIcon, AlertCircle, ShoppingCart, Ban } from 'lucide-react';
+import { Phone, TrendingUp, Target, Trophy, AlertCircle, ShoppingCart, Ban, User, Tv, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { ShareDashboardDialog } from '@/components/dashboard/ShareDashboardDialog';
 import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
@@ -31,7 +30,7 @@ const filterOptions: { value: DateFilter; label: string }[] = [
   { value: '7days', label: '7 dias' },
   { value: 'month', label: 'Este mês' },
   { value: '30days', label: '30 dias' },
-  { value: 'custom', label: 'Personalizado' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 function useTvMetaMensal() {
@@ -178,16 +177,28 @@ export default function DashboardPage() {
   // No-show column visibility
   const showNoShowColumn = selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0;
 
+  // Get selected closer name for badge
+  const selectedCloserName = selectedCloser !== 'all' ? closers?.find(c => c.id === selectedCloser)?.nome : null;
+
   return (
     <AppLayout>
       <PageHeader
         title="Dashboard Comercial"
         description="Visão geral do desempenho de vendas"
       >
-        {/* Single row: closer + filters + actions */}
+        {/* Closer select with User icon */}
         <Select value={selectedCloser} onValueChange={setSelectedCloser}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filtrar por closer" />
+          <SelectTrigger
+            className="w-[200px]"
+            style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 shrink-0" style={{ opacity: 0.5 }} />
+              <SelectValue placeholder="Todos os Closers" />
+            </div>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os Closers</SelectItem>
@@ -199,9 +210,52 @@ export default function DashboardPage() {
           </SelectContent>
         </Select>
 
+        {/* Date filter pills */}
         <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
           {filterOptions.map((option) => {
             const isActive = filter === option.value;
+            if (option.value === 'custom') {
+              return (
+                <Popover key="custom" open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={isActive ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => handleFilterChange('custom')}
+                      className="min-w-[70px]"
+                      style={
+                        isActive
+                          ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                          : {
+                              background: 'transparent',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              color: 'rgba(255,255,255,0.6)',
+                            }
+                      }
+                    >
+                      {displayRange || 'Custom'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-4" align="end">
+                    <Calendar
+                      mode="range"
+                      selected={{ from: tempRange.from, to: tempRange.to }}
+                      onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
+                      locale={ptBR}
+                      numberOfMonths={2}
+                      className="pointer-events-auto"
+                    />
+                    <div className="flex justify-end mt-4">
+                      <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
+                        Aplicar
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
+            }
             return (
               <Button
                 key={option.value}
@@ -221,50 +275,56 @@ export default function DashboardPage() {
                       }
                 }
               >
-                {option.value === 'custom' && displayRange ? displayRange : option.label}
+                {option.label}
               </Button>
             );
           })}
         </div>
-        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0">
-              <CalendarIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-4" align="end">
-            <Calendar
-              mode="range"
-              selected={{ from: tempRange.from, to: tempRange.to }}
-              onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
-              locale={ptBR}
-              numberOfMonths={2}
+
+        {/* TV Mode button */}
+        <Link to="/tv">
+          <Button variant="ghost" size="sm" className="gap-2" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
+            <Tv className="h-4 w-4" />
+            Modo TV
+          </Button>
+        </Link>
+
+        {/* Timestamp */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '14px' }}>|</span>
+          <button
+            onClick={handleManualRefresh}
+            className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+            style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}
+            title="Clique para atualizar"
+          >
+            <span
+              className={cn('inline-block w-2 h-2 rounded-full', timestampPulse && 'animate-pulse')}
+              style={{ background: timestampColor }}
             />
-            <div className="flex justify-end mt-4">
-              <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
-                Aplicar
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-        {canShare && <ShareDashboardDialog />}
+            Atualizado às {format(lastUpdatedAt, 'HH:mm')}
+          </button>
+        </div>
       </PageHeader>
 
-      {/* Timestamp */}
-      <div className="flex justify-end mb-4 -mt-4">
-        <button
-          onClick={handleManualRefresh}
-          className="flex items-center gap-2 text-xs cursor-pointer hover:opacity-80 transition-opacity"
-          style={{ color: 'rgba(255,255,255,0.5)' }}
-          title="Clique para atualizar"
-        >
+      {/* Closer filter badge */}
+      {selectedCloserName && (
+        <div className="flex items-center gap-2 -mt-3 mb-4">
           <span
-            className={cn('inline-block w-2 h-2 rounded-full', timestampPulse && 'animate-pulse')}
-            style={{ background: timestampColor }}
-          />
-          Atualizado às {format(lastUpdatedAt, 'HH:mm')}
-        </button>
-      </div>
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+            style={{
+              fontSize: '12px',
+              background: 'rgba(249,115,22,0.1)',
+              border: '1px solid rgba(249,115,22,0.25)',
+              color: 'rgba(255,255,255,0.7)',
+            }}
+            onClick={() => setSelectedCloser('all')}
+          >
+            Filtrado: {selectedCloserName}
+            <X className="h-3 w-3" style={{ opacity: 0.5 }} />
+          </span>
+        </div>
+      )}
 
       {/* BLOCO 1 — Receita */}
       {canViewSection('section:dashboard:receita') && (
