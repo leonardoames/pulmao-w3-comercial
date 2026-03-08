@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Shield, Users, Lock, KeyRound } from 'lucide-react';
+import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
@@ -40,6 +40,7 @@ import { AREA_LABELS, UserArea } from '@/types/crm';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RolePermissionsPanel } from '@/components/admin/RolePermissionsPanel';
+import { WebhooksPanel } from '@/components/admin/WebhooksPanel';
 
 const AREAS: UserArea[] = ['Comercial', 'CS', 'Financeiro', 'Marketing', 'Diretoria'];
 
@@ -187,6 +188,12 @@ export default function UserManagement() {
               <TabsTrigger value="permissions" className="gap-2">
                 <Lock className="h-4 w-4" />
                 Permissões
+              </TabsTrigger>
+            )}
+            {canManageUsers && (
+              <TabsTrigger value="webhooks" className="gap-2">
+                <Webhook className="h-4 w-4" />
+                Webhooks
               </TabsTrigger>
             )}
           </TabsList>
@@ -362,6 +369,12 @@ export default function UserManagement() {
           {canManageUsers && (
             <TabsContent value="permissions" className="mt-6">
               <RolePermissionsPanel />
+            </TabsContent>
+          )}
+
+          {canManageUsers && (
+            <TabsContent value="webhooks" className="mt-6">
+              <WebhooksPanel />
             </TabsContent>
           )}
         </Tabs>
