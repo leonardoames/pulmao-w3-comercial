@@ -269,7 +269,7 @@ export default function TrafegoPagoClientes() {
                     </TableCell>
                     <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{c.nicho || '—'}</TableCell>
                     <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      {format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy')}
+                      {c.data_entrada ? format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}
                     </TableCell>
                     <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{gestorMap[c.gestor_user_id || ''] || '—'}</TableCell>
                     <TableCell>
