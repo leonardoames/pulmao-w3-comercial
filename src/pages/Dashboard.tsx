@@ -219,6 +219,7 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {canViewSection('section:dashboard:ote') && (
         <div className="mb-6">
           <OteDashboardCard
             monthRef={format(new Date(), 'yyyy-MM')}
