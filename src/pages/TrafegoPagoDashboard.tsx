@@ -4,14 +4,13 @@ import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useTrafegoPagoClientes, useTrafegoPagoAllRegistros, TrafegoPagoCliente, TrafegoPagoRegistro } from '@/hooks/useTrafegoPago';
 import { useClosers } from '@/hooks/useProfiles';
+import { MonthYearSelector } from '@/components/MonthYearSelector';
 import { DollarSign, TrendingUp, TrendingDown, Users, BarChart3, AlertTriangle, Trophy, Zap } from 'lucide-react';
 import { format, subMonths } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
