@@ -137,7 +137,7 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light" storageKey="pulmao-w3-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="pulmao-w3-theme">
       <TooltipProvider>
         <Toaster />
         <Sonner />
