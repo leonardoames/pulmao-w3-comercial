@@ -192,3 +192,27 @@ export function useUpsertTrafegoPagoRegistro() {
     },
   });
 }
+
+export function useBatchInsertTrafegoPagoRegistros() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (registros: Array<{ cliente_id: string; mes_ano: string; investimento_gerenciado: number; valor_pago: number; status_pagamento: string; roas_entregue?: number | null; observacao?: string }>) => {
+      const payload = registros.map(r => ({
+        ...r,
+        criado_por: user?.id,
+      }));
+      const { data, error } = await supabase
+        .from('trafego_pago_registros')
+        .insert(payload as any)
+        .select();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trafego-pago-registros'] });
+      queryClient.invalidateQueries({ queryKey: ['trafego-pago-all-registros'] });
+    },
+  });
+}

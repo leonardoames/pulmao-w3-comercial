@@ -1,55 +1,97 @@
 
+# Versão Responsiva para Mobile — Pulmão W3
 
 ## Diagnóstico
 
-O problema principal: a dashboard calcula MRR a partir da tabela `trafego_pago_registros` (registros mensais), **não** do campo `valor_mrr` do cliente. Se não existem registros para o mês selecionado, o MRR aparece como R$ 0,00 — mesmo com clientes ativos.
+O app usa um layout fixo com sidebar lateral de 256px (`w-64`) e um `main` com `pl-64` hardcoded. Em telas menores que esse tamanho, todo o conteúdo fica escondido atrás da sidebar ou cortado. Além disso, `PageHeader` empilha título e ações de forma que em mobile os filtros de data ficam apertados ou somem para fora da tela.
 
-O fluxo atual para cadastrar registros é pouco intuitivo: o usuário precisa clicar no cliente → abrir drawer → ir na aba "Histórico Mensal" → preencher formulário. Não há indicação visual de quais clientes estão sem registro no mês.
+---
 
-## Plano de implementação
+## Estratégia geral
 
-### 1. Indicador visual na tabela de clientes — coluna "Registro Mês Atual"
+A abordagem mais limpa é transformar a sidebar em um **menu hamburger deslizante** no mobile, mantendo o comportamento de sidebar fixa no desktop. Isso é feito em 3 camadas:
 
-Adicionar uma coluna na tabela principal mostrando o status do registro do mês atual para cada cliente:
-- **Verde** com valor: quando existe registro com `status_pagamento = 'Pago'`
-- **Amarelo** "Pendente": quando existe registro com status Pendente
-- **Vermelho** "Atrasado": quando existe registro com status Atrasado  
-- **Cinza** "Sem registro": quando não existe registro para o mês — com botão "+ Registrar" inline
+1. **`AppSidebar`** — esconder em mobile, mostrar como overlay quando aberto
+2. **`AppLayout`** — remover o `pl-64` fixo em mobile, adicionar topbar mobile com botão hamburger
+3. **`PageHeader`** — empilhar título e ações verticalmente em mobile
 
-Clicar em "+ Registrar" abre um modal compacto para cadastrar o registro daquele cliente naquele mês, sem precisar entrar no drawer completo.
+---
 
-### 2. Modal rápido de registro mensal
+## Mudanças detalhadas
 
-Modal simples com os campos:
-- Cliente (pré-preenchido, readonly)
-- Mês/Ano (pré-preenchido com mês atual)
-- Investimento Gerenciado (R$)
-- Valor Pago (R$) — pré-preenchido com `valor_mrr` do cliente como sugestão
-- Status Pagamento (Pago/Pendente/Atrasado)
-- ROAS (opcional)
-- Observação (opcional)
+### 1. `src/components/layout/AppSidebar.tsx`
 
-Botão "Salvar" → toast de sucesso → atualiza tabela automaticamente.
+- Receber uma prop `isOpen` e `onClose` para controle externo no mobile
+- No mobile (`md` breakpoint): sidebar usa `translate-x` para deslizar por cima do conteúdo como overlay
+- No desktop: comportamento atual mantido (`fixed left-0`)
+- Adicionar overlay escuro clicável para fechar no mobile
 
-### 3. Banner de alerta no topo da página de clientes
+```text
+Mobile:  [hamburger topbar] → [sidebar overlay desliza da esquerda]
+Desktop: [sidebar fixa 256px à esquerda] → sem alteração
+```
 
-Quando existirem clientes ativos sem registro no mês atual, exibir um banner:
-> "X clientes ativos sem registro em [mês atual]. Registre os dados para que a dashboard reflita corretamente."
+### 2. `src/components/layout/AppLayout.tsx`
 
-Com botão "Registrar em lote" que abre uma view onde todos os clientes sem registro aparecem em uma tabela editável para preenchimento rápido (investimento, valor pago, status) — salvando tudo de uma vez.
+- Gerenciar estado `sidebarOpen` (useState)
+- No mobile: mostrar **topbar** no topo com logo + botão hamburger (Menu icon)
+- No desktop: topbar não aparece, sidebar fixa como antes
+- `main`: trocar `pl-64` por `md:pl-64` para que em mobile ocupe tela cheia
+- `p-8` do conteúdo vira `p-4 md:p-8` para respeitar margens menores
 
-### 4. View de registro em lote
+### 3. `src/components/ui/page-header.tsx`
 
-Tabela com todos os clientes ativos sem registro no mês:
-- Colunas: Nome | MRR Esperado | Investimento | Valor Pago | Status Pgto
-- Valor Pago pré-preenchido com `valor_mrr` do cliente
-- Status padrão: "Pago"
-- Botão "Salvar Todos" no final — insere todos os registros de uma vez
+- Trocar `flex items-center justify-between` por `flex flex-col gap-4 md:flex-row md:items-center md:justify-between`
+- Isso faz título e ações empilharem verticalmente em mobile
 
-### Arquivos a modificar/criar
+### 4. `src/pages/Dashboard.tsx`
 
-- `src/pages/TrafegoPagoClientes.tsx` — adicionar coluna, banner, modal rápido, view em lote
-- `src/hooks/useTrafegoPago.ts` — adicionar mutation para inserção em lote de registros
+- A barra de filtros de data (botões Hoje/Ontem/7dias…) já tem `flex-wrap`, mas o `PageHeader` precisa ser responsivo primeiro
+- Adicionar `overflow-x-auto` na div dos filtros para que em mobile role horizontalmente
 
-Nenhuma alteração no banco, nas dashboards, nem em outras páginas.
+### 5. `src/pages/Vendas.tsx`
 
+- A tabela usa colunas fixas: adicionar `overflow-x-auto` no wrapper do `Card` que contém a `Table`
+- Cards de KPI já usam `grid-cols-1 md:grid-cols-3` — OK
+
+### 6. `src/pages/MeuFechamento.tsx`
+
+- Já corrigido com `grid-cols-1 sm:grid-cols-3` — OK
+
+### 7. `src/pages/MarketingDashboard.tsx`
+
+- Os filtros no `PageHeader` precisam do fix do PageHeader
+- A seção de investimento (`flex items-end gap-4 flex-wrap`) já funciona razoavelmente
+
+### 8. `src/pages/SocialSelling.tsx` / `ConteudoDashboard.tsx`
+
+- Beneficiam automaticamente do fix do `PageHeader` e `AppLayout`
+
+---
+
+## Arquivos a modificar
+
+| Arquivo | Mudança principal |
+|---|---|
+| `src/components/layout/AppLayout.tsx` | Adicionar topbar mobile + gerenciar estado sidebar + ajustar padding |
+| `src/components/layout/AppSidebar.tsx` | Suportar prop `isOpen`/`onClose` + comportamento overlay mobile |
+| `src/components/ui/page-header.tsx` | Layout empilhado em mobile |
+| `src/pages/Vendas.tsx` | Scroll horizontal na tabela |
+| `src/pages/Dashboard.tsx` | Scroll horizontal nos filtros |
+| `src/pages/MarketingDashboard.tsx` | Scroll horizontal nos filtros |
+| `src/pages/ConteudoDashboard.tsx` | Scroll horizontal nos filtros |
+| `src/pages/SocialSelling.tsx` | Scroll horizontal nos filtros |
+
+---
+
+## Resultado esperado
+
+- Em telas ≥ 768px (md): comportamento atual preservado, sem alteração visual
+- Em telas < 768px: topbar com hamburger no topo, sidebar abre como gaveta sobreposta, conteúdo ocupa 100% da largura, filtros roláveis horizontalmente
+- Formulários (MeuFechamento, Vendas) já empilham corretamente em mobile
+
+---
+
+## Ponto de atenção
+
+As tabelas grandes (Vendas, histórico de fechamento) não podem ser comprimidas — serão envoltas em `overflow-x-auto` para rolar horizontalmente, que é o padrão esperado em mobile.

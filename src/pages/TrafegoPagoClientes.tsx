@@ -11,9 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Search, CalendarIcon, Edit, AlertTriangle, Upload } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle } from 'lucide-react';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
 import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
@@ -25,6 +24,7 @@ import {
   useTrafegoPagoRegistros,
   useUpsertTrafegoPagoCliente,
   useUpsertTrafegoPagoRegistro,
+  useBatchInsertTrafegoPagoRegistros,
   TrafegoPagoCliente,
   TrafegoPagoRegistro,
   useTrafegoPagoAllRegistros,
@@ -51,6 +51,21 @@ export default function TrafegoPagoClientes() {
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<TrafegoPagoCliente | null>(null);
   const [activeTab, setActiveTab] = useState('dados');
+
+  // Quick register modal
+  const [quickRegOpen, setQuickRegOpen] = useState(false);
+  const [quickRegCliente, setQuickRegCliente] = useState<TrafegoPagoCliente | null>(null);
+  const [quickRegForm, setQuickRegForm] = useState({
+    investimento_gerenciado: '',
+    valor_pago: '',
+    status_pagamento: 'Pago' as 'Pago' | 'Pendente' | 'Atrasado',
+    roas_entregue: '',
+    observacao: '',
+  });
+
+  // Batch view
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchData, setBatchData] = useState<Record<string, { investimento: string; valor_pago: string; status: string }>>({});
 
   // Form state
   const [form, setForm] = useState({
@@ -82,9 +97,11 @@ export default function TrafegoPagoClientes() {
   const { data: registros } = useTrafegoPagoRegistros(editingCliente?.id);
   const { data: closers } = useClosers();
   const mesAtual = format(new Date(), 'yyyy-MM');
+  const mesAtualLabel = format(new Date(), 'MMMM yyyy', { locale: ptBR });
   const { data: allRegsAtual } = useTrafegoPagoAllRegistros(mesAtual);
   const upsertCliente = useUpsertTrafegoPagoCliente();
   const upsertRegistro = useUpsertTrafegoPagoRegistro();
+  const batchInsert = useBatchInsertTrafegoPagoRegistros();
 
   const gestorMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -92,15 +109,20 @@ export default function TrafegoPagoClientes() {
     return map;
   }, [closers]);
 
-  const pagamentoAlertMap = useMemo(() => {
-    const map: Record<string, string> = {};
+  // Map: cliente_id -> registro for current month
+  const regsAtualMap = useMemo(() => {
+    const map: Record<string, { status_pagamento: string; valor_pago: number }> = {};
     allRegsAtual?.forEach(r => {
-      if (r.status_pagamento === 'Pendente' || r.status_pagamento === 'Atrasado') {
-        map[r.cliente_id] = r.status_pagamento;
-      }
+      map[r.cliente_id] = { status_pagamento: r.status_pagamento, valor_pago: Number(r.valor_pago) };
     });
     return map;
   }, [allRegsAtual]);
+
+  // Missing clients (active without record this month)
+  const missingClients = useMemo(() => {
+    if (!clientes) return [];
+    return clientes.filter(c => c.status === 'Ativo' && !regsAtualMap[c.id]);
+  }, [clientes, regsAtualMap]);
 
   const openNew = () => {
     setEditingCliente(null);
@@ -132,6 +154,64 @@ export default function TrafegoPagoClientes() {
     });
     setActiveTab('dados');
     setDrawerOpen(true);
+  };
+
+  const openQuickReg = (c: TrafegoPagoCliente) => {
+    setQuickRegCliente(c);
+    setQuickRegForm({
+      investimento_gerenciado: '',
+      valor_pago: String(c.valor_mrr || ''),
+      status_pagamento: 'Pago',
+      roas_entregue: '',
+      observacao: '',
+    });
+    setQuickRegOpen(true);
+  };
+
+  const handleQuickRegSave = () => {
+    if (!quickRegCliente) return;
+    upsertRegistro.mutate({
+      cliente_id: quickRegCliente.id,
+      mes_ano: mesAtual,
+      investimento_gerenciado: parseFloat(quickRegForm.investimento_gerenciado.replace(/\./g, '').replace(',', '.')) || 0,
+      valor_pago: parseFloat(quickRegForm.valor_pago.replace(/\./g, '').replace(',', '.')) || 0,
+      status_pagamento: quickRegForm.status_pagamento as any,
+      roas_entregue: quickRegForm.roas_entregue ? parseFloat(quickRegForm.roas_entregue.replace(',', '.')) : null,
+      observacao: quickRegForm.observacao,
+    }, {
+      onSuccess: () => {
+        toast.success(`Registro de ${quickRegCliente.nome_ecommerce} salvo!`);
+        setQuickRegOpen(false);
+      },
+      onError: (err: any) => toast.error(err.message || 'Erro ao salvar'),
+    });
+  };
+
+  const openBatch = () => {
+    const initial: Record<string, { investimento: string; valor_pago: string; status: string }> = {};
+    missingClients.forEach(c => {
+      initial[c.id] = { investimento: '', valor_pago: String(c.valor_mrr || ''), status: 'Pago' };
+    });
+    setBatchData(initial);
+    setBatchOpen(true);
+  };
+
+  const handleBatchSave = () => {
+    const rows = Object.entries(batchData).map(([cliente_id, vals]) => ({
+      cliente_id,
+      mes_ano: mesAtual,
+      investimento_gerenciado: parseFloat(vals.investimento.replace(/\./g, '').replace(',', '.')) || 0,
+      valor_pago: parseFloat(vals.valor_pago.replace(/\./g, '').replace(',', '.')) || 0,
+      status_pagamento: vals.status,
+    }));
+    if (rows.length === 0) return;
+    batchInsert.mutate(rows, {
+      onSuccess: () => {
+        toast.success(`${rows.length} registros salvos com sucesso!`);
+        setBatchOpen(false);
+      },
+      onError: (err: any) => toast.error(err.message || 'Erro ao salvar em lote'),
+    });
   };
 
   const handleSaveCliente = () => {
@@ -199,6 +279,34 @@ export default function TrafegoPagoClientes() {
     return { investido, recebido, avgRoas };
   }, [registros]);
 
+  const getRegStatusCell = (c: TrafegoPagoCliente) => {
+    const reg = regsAtualMap[c.id];
+    if (!reg) {
+      return (
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 rounded-full bg-muted-foreground/40" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs text-primary hover:text-primary"
+            onClick={e => { e.stopPropagation(); openQuickReg(c); }}
+          >
+            + Registrar
+          </Button>
+        </div>
+      );
+    }
+    const color = reg.status_pagamento === 'Pago' ? '#22C55E' : reg.status_pagamento === 'Atrasado' ? '#EF4444' : '#FBBF24';
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
+        <span style={{ color, fontSize: '13px' }}>
+          {reg.status_pagamento === 'Pago' ? formatCurrency(reg.valor_pago) : reg.status_pagamento}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <AppLayout>
       <PageHeader title="Clientes — Tráfego Pago" description="Gestão de clientes de tráfego pago">
@@ -241,6 +349,23 @@ export default function TrafegoPagoClientes() {
         </Button>
       </PageHeader>
 
+      {/* Banner: missing records */}
+      {missingClients.length > 0 && (
+        <Card className="mb-4 border-orange-500/30 bg-orange-500/5">
+          <CardContent className="py-3 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <AlertCircle className="h-4 w-4 text-orange-400" />
+              <span className="text-orange-300">
+                <strong>{missingClients.length}</strong> cliente{missingClients.length > 1 ? 's' : ''} ativo{missingClients.length > 1 ? 's' : ''} sem registro em <strong className="capitalize">{mesAtualLabel}</strong>. Registre os dados para que a dashboard reflita corretamente.
+              </span>
+            </div>
+            <Button size="sm" variant="outline" onClick={openBatch} className="border-orange-500/40 text-orange-300 hover:bg-orange-500/10">
+              Registrar em lote
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -252,12 +377,12 @@ export default function TrafegoPagoClientes() {
                 <TableHead>Gestor</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Valor MRR</TableHead>
+                <TableHead>Reg. {format(new Date(), 'MMM/yy', { locale: ptBR })}</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clientes?.map(c => {
-                const alert = pagamentoAlertMap[c.id];
                 const handleInlineUpdate = (field: string, val: string) => {
                   let payload: any = { id: c.id, nome_ecommerce: c.nome_ecommerce, [field]: val };
                   if (field === 'valor_mrr' || field === 'faturamento_ao_entrar') {
@@ -270,14 +395,7 @@ export default function TrafegoPagoClientes() {
                 };
                 return (
                   <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30" onClick={() => openEdit(c)}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {c.nome_ecommerce}
-                        {alert && (
-                          <AlertTriangle className="h-4 w-4" style={{ color: alert === 'Atrasado' ? '#EF4444' : '#FBBF24' }} />
-                        )}
-                      </div>
-                    </TableCell>
+                    <TableCell className="font-medium">{c.nome_ecommerce}</TableCell>
                     <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
                       <InlineEditCell value={c.nicho || ''} onSave={v => handleInlineUpdate('nicho', v)} />
                     </TableCell>
@@ -303,6 +421,7 @@ export default function TrafegoPagoClientes() {
                         displayValue={formatCurrency(Number(c.valor_mrr))}
                       />
                     </TableCell>
+                    <TableCell>{getRegStatusCell(c)}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); openEdit(c); }}>
                         <Edit className="h-4 w-4" />
@@ -313,7 +432,7 @@ export default function TrafegoPagoClientes() {
               })}
               {(!clientes || clientes.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                     Nenhum cliente encontrado
                   </TableCell>
                 </TableRow>
@@ -322,6 +441,121 @@ export default function TrafegoPagoClientes() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Quick Register Modal */}
+      <Dialog open={quickRegOpen} onOpenChange={setQuickRegOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Registrar Mês — {quickRegCliente?.nome_ecommerce}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Mês: <strong className="text-foreground capitalize">{mesAtualLabel}</strong></span>
+              {quickRegCliente && quickRegCliente.valor_mrr > 0 && (
+                <span className="ml-auto">MRR esperado: <strong className="text-primary">{formatCurrency(Number(quickRegCliente.valor_mrr))}</strong></span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Investimento Gerenciado (R$)</Label>
+                <Input value={quickRegForm.investimento_gerenciado} onChange={e => setQuickRegForm(p => ({ ...p, investimento_gerenciado: e.target.value }))} placeholder="0,00" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Valor Pago (R$)</Label>
+                <Input value={quickRegForm.valor_pago} onChange={e => setQuickRegForm(p => ({ ...p, valor_pago: e.target.value }))} placeholder="0,00" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Status Pagamento</Label>
+                <Select value={quickRegForm.status_pagamento} onValueChange={v => setQuickRegForm(p => ({ ...p, status_pagamento: v as any }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pago">Pago</SelectItem>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                    <SelectItem value="Atrasado">Atrasado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">ROAS (opcional)</Label>
+                <Input value={quickRegForm.roas_entregue} onChange={e => setQuickRegForm(p => ({ ...p, roas_entregue: e.target.value }))} placeholder="Ex: 3.5" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Observação (opcional)</Label>
+              <Input value={quickRegForm.observacao} onChange={e => setQuickRegForm(p => ({ ...p, observacao: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickRegOpen(false)}>Cancelar</Button>
+            <Button onClick={handleQuickRegSave} disabled={upsertRegistro.isPending}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Registration Modal */}
+      <Dialog open={batchOpen} onOpenChange={setBatchOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Registro em Lote — <span className="capitalize">{mesAtualLabel}</span></DialogTitle>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>MRR Esperado</TableHead>
+                <TableHead>Investimento (R$)</TableHead>
+                <TableHead>Valor Pago (R$)</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {missingClients.map(c => {
+                const row = batchData[c.id] || { investimento: '', valor_pago: String(c.valor_mrr || ''), status: 'Pago' };
+                return (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium text-sm">{c.nome_ecommerce}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatCurrency(Number(c.valor_mrr))}</TableCell>
+                    <TableCell>
+                      <Input
+                        className="h-8 text-sm"
+                        value={row.investimento}
+                        onChange={e => setBatchData(p => ({ ...p, [c.id]: { ...row, investimento: e.target.value } }))}
+                        placeholder="0,00"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        className="h-8 text-sm"
+                        value={row.valor_pago}
+                        onChange={e => setBatchData(p => ({ ...p, [c.id]: { ...row, valor_pago: e.target.value } }))}
+                        placeholder="0,00"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select value={row.status} onValueChange={v => setBatchData(p => ({ ...p, [c.id]: { ...row, status: v } }))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pago">Pago</SelectItem>
+                          <SelectItem value="Pendente">Pendente</SelectItem>
+                          <SelectItem value="Atrasado">Atrasado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchOpen(false)}>Cancelar</Button>
+            <Button onClick={handleBatchSave} disabled={batchInsert.isPending}>
+              Salvar Todos ({missingClients.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Drawer */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
