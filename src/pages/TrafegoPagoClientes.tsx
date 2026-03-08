@@ -491,6 +491,8 @@ export default function TrafegoPagoClientes() {
           </Tabs>
         </SheetContent>
       </Sheet>
+
+      <CSVImportModal open={csvImportOpen} onOpenChange={setCsvImportOpen} />
     </AppLayout>
   );
 }
