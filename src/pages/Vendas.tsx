@@ -153,8 +153,9 @@ export default function VendasPage() {
     return matchesCloser && matchesSearch;
   });
 
-  const totalFaturamento = filteredVendas?.reduce((sum, v) => sum + Number(v.valor_total), 0) || 0;
-  const totalVendas = filteredVendas?.length || 0;
+  const activeVendas = filteredVendas?.filter(v => v.status !== 'Reembolsado') || [];
+  const totalFaturamento = activeVendas.reduce((sum, v) => sum + Number(v.valor_total), 0);
+  const totalVendas = activeVendas.length;
   const ticketMedio = totalVendas > 0 ? totalFaturamento / totalVendas : 0;
 
   const formatCurrency = (value: number) => {
