@@ -1,6 +1,6 @@
 export type UserRole = 'CEO' | 'Founder' | 'GestorComercial' | 'Closer' | 'SDR' | 'CS' | 'Mentor' | 'Financeiro' | 'Marketing';
 export type UserArea = 'Comercial' | 'CS' | 'Financeiro' | 'Marketing' | 'Diretoria';
-export type VendaStatus = 'Ativo' | 'Congelado' | 'Cancelado' | 'Finalizado';
+export type VendaStatus = 'Ativo' | 'Congelado' | 'Cancelado' | 'Finalizado' | 'Reembolsado';
 
 export interface Profile {
   id: string;
