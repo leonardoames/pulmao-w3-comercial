@@ -689,8 +689,10 @@ export default function VendasPage() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-          <Table>
+          <div className="relative overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {/* Scroll fade hint */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10 lg:hidden" style={{ background: 'linear-gradient(to right, transparent, hsl(var(--card)))' }} />
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
