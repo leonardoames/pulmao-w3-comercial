@@ -16,6 +16,8 @@ export const ROLE_LABELS_NEW: Record<AppRole, string> = {
   CLOSER: 'Closer',
   SOCIAL_SELLING: 'Social Seller',
   ANALISTA_CONTEUDO: 'Analista de Conteúdo',
+  GESTOR_TRAFEGO: 'Gestor de Tráfego',
+  GESTOR_MARKETPLACE: 'Gestor de Marketplace',
 };
 
 export const ALL_ROLES: AppRole[] = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR', 'CLOSER', 'SOCIAL_SELLING', 'ANALISTA_CONTEUDO'];
