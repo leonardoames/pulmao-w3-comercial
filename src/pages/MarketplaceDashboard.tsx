@@ -1,36 +1,47 @@
 import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
-import { StatCard } from '@/components/ui/stat-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { SectionLabel } from '@/components/dashboard/SectionLabel';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useMarketplaceClientes, useMarketplaceRegistrosByMonths } from '@/hooks/useMarketplaces';
+import { MonthYearSelector } from '@/components/MonthYearSelector';
+import { HeroMRRCard } from '@/components/w3-dashboard/HeroMRRCard';
+import { KPIRow } from '@/components/w3-dashboard/KPIRow';
+import { RevenueChart } from '@/components/w3-dashboard/RevenueChart';
+import { HealthCard } from '@/components/w3-dashboard/HealthCard';
+import { GestorPerfCard, GestorRow } from '@/components/w3-dashboard/GestorPerfCard';
+import { TopClientesCard, TopCliente } from '@/components/w3-dashboard/TopClientesCard';
+import { AlertasCard, AlertaItem } from '@/components/w3-dashboard/AlertasCard';
+import { useMarketplaceClientes, useMarketplaceAllRegistros, MarketplaceCliente } from '@/hooks/useMarketplaces';
 import { useClosers } from '@/hooks/useProfiles';
-import { DateFilterBar, DateFilter, DateRange, getDateRange, getMonthsInRange } from '@/components/DateFilterBar';
-import { DollarSign, TrendingUp, TrendingDown, Users, BarChart3, AlertTriangle, Trophy, Percent } from 'lucide-react';
-import { format } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { format, subMonths, parse, getDaysInMonth, getDate, differenceInMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-const STATUS_COLORS: Record<string, string> = { Ativo: '#22C55E', Pausado: '#FBBF24', Cancelado: '#888888', Trial: '#0EA5E9' };
+const formatCurrency = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+const META_KEY = 'w3_marketplace_mrr_meta';
 
 export default function MarketplaceDashboard() {
-  const [filter, setFilter] = useState<DateFilter>('month');
-  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const [compareEnabled, setCompareEnabled] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date>(new Date());
+  const [mrrMeta, setMrrMeta] = useState(() => {
+    const saved = localStorage.getItem(META_KEY);
+    return saved ? parseFloat(saved) : 0;
+  });
 
-  const dateRange = useMemo(() => getDateRange(filter, customRange), [filter, customRange]);
-  const months = useMemo(() => getMonthsInRange(dateRange), [dateRange]);
+  const prevMonth = useMemo(() => format(subMonths(parse(selectedMonth + '-01', 'yyyy-MM-dd', new Date()), 1), 'yyyy-MM'), [selectedMonth]);
 
   const { data: clientes } = useMarketplaceClientes();
-  const { data: regsAtual, dataUpdatedAt } = useMarketplaceRegistrosByMonths(months);
+  const { data: allRegs, dataUpdatedAt } = useMarketplaceAllRegistros();
   const { data: closers } = useClosers();
 
-  useEffect(() => {
-    if (dataUpdatedAt) setLastUpdatedAt(new Date(dataUpdatedAt));
-  }, [dataUpdatedAt]);
+  useEffect(() => { if (dataUpdatedAt) setLastUpdatedAt(new Date(dataUpdatedAt)); }, [dataUpdatedAt]);
+
+  const handleMetaChange = (v: number) => {
+    setMrrMeta(v);
+    localStorage.setItem(META_KEY, String(v));
+  };
 
   const gestorMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -39,74 +50,136 @@ export default function MarketplaceDashboard() {
   }, [closers]);
 
   const clienteMap = useMemo(() => {
-    const m: Record<string, any> = {};
+    const m: Record<string, MarketplaceCliente> = {};
     clientes?.forEach(c => { m[c.id] = c; });
     return m;
   }, [clientes]);
 
-  const primaryMonth = months[months.length - 1] || format(new Date(), 'yyyy-MM');
+  const regsAtual = useMemo(() => allRegs?.filter(r => r.mes_ano === selectedMonth) || [], [allRegs, selectedMonth]);
+  const regsPrev = useMemo(() => allRegs?.filter(r => r.mes_ano === prevMonth) || [], [allRegs, prevMonth]);
 
+  // KPIs
   const clientesAtivos = clientes?.filter(c => c.status === 'Ativo') || [];
-  const mrrTotal = regsAtual?.reduce((s, r) => {
+  const mrrTotal = regsAtual.reduce((s, r) => {
     const c = clienteMap[r.cliente_id];
     return c?.status === 'Ativo' ? s + Number(r.total_a_receber) : s;
-  }, 0) ?? 0;
+  }, 0);
 
-  const clientesNovos = clientes?.filter(c => c.data_entrada?.startsWith(primaryMonth)) || [];
-  const mrrNovo = clientesNovos.reduce((s, c) => {
-    const reg = regsAtual?.find(r => r.cliente_id === c.id);
+  const mrrPrev = regsPrev.reduce((s, r) => s + Number(r.total_a_receber), 0);
+
+  const clientesNovosMes = clientes?.filter(c => c.data_entrada?.startsWith(selectedMonth)) || [];
+  const mrrNovo = clientesNovosMes.reduce((s, c) => {
+    const reg = regsAtual.find(r => r.cliente_id === c.id);
     return s + (reg ? Number(reg.total_a_receber) : 0);
   }, 0);
 
   const clientesCancelados = clientes?.filter(c =>
-    (c.status === 'Cancelado' || c.status === 'Pausado') && c.atualizado_em?.startsWith(primaryMonth)
+    (c.status === 'Cancelado' || c.status === 'Pausado') && c.atualizado_em?.startsWith(selectedMonth)
   ) || [];
   const churn = clientesCancelados.reduce((s, c) => {
-    const reg = regsAtual?.find(r => r.cliente_id === c.id);
+    const reg = regsAtual.find(r => r.cliente_id === c.id);
     return s + (reg ? Number(reg.total_a_receber) : 0);
   }, 0);
+  const mrrLiquido = mrrNovo - churn;
 
-  const totalFat = regsAtual?.reduce((s, r) => s + Number(r.faturamento_informado), 0) ?? 0;
-  const ticketMedio = clientesAtivos.length > 0 ? mrrTotal / clientesAtivos.length : 0;
+  const totalFat = regsAtual.reduce((s, r) => s + Number(r.faturamento_informado), 0);
   const taxaComissao = totalFat > 0 ? (mrrTotal / totalFat) * 100 : 0;
-  const alertasCount = regsAtual?.filter(r => r.status_pagamento === 'Pendente' || r.status_pagamento === 'Atrasado').length ?? 0;
+  const churnRate = mrrPrev > 0 ? (churn / mrrPrev) * 100 : 0;
 
-  // Distribution by marketplace
-  const mkpDist = useMemo(() => {
-    const map: Record<string, { clientes: number; faturamento: number }> = {};
+  // NRR
+  const nrr = useMemo(() => {
+    if (mrrPrev === 0) return null;
+    const prevClientIds = new Set(regsPrev.map(r => r.cliente_id));
+    const currentFromExisting = regsAtual
+      .filter(r => prevClientIds.has(r.cliente_id))
+      .reduce((s, r) => s + Number(r.total_a_receber), 0);
+    return (currentFromExisting / mrrPrev) * 100;
+  }, [regsAtual, regsPrev, mrrPrev]);
+
+  const variacao = mrrPrev > 0 ? ((mrrTotal - mrrPrev) / mrrPrev) * 100 : null;
+
+  // Variação Novo
+  const prevNovo = useMemo(() => {
+    const prevNovoClientes = clientes?.filter(c => c.data_entrada?.startsWith(prevMonth)) || [];
+    return prevNovoClientes.reduce((s, c) => {
+      const reg = regsPrev.find(r => r.cliente_id === c.id);
+      return s + (reg ? Number(reg.total_a_receber) : 0);
+    }, 0);
+  }, [clientes, prevMonth, regsPrev]);
+  const varNovo = prevNovo > 0 ? ((mrrNovo - prevNovo) / prevNovo) * 100 : null;
+
+  // LTV
+  const ltv = useMemo(() => {
+    if (!clientesAtivos.length) return null;
+    const ticketMedio = mrrTotal / clientesAtivos.length;
+    const now = new Date();
+    const meses = clientesAtivos
+      .filter(c => c.data_entrada)
+      .map(c => differenceInMonths(now, new Date(c.data_entrada)));
+    const avgMeses = meses.length > 0 ? meses.reduce((a, b) => a + b, 0) / meses.length : 12;
+    return ticketMedio * Math.max(avgMeses, 1);
+  }, [clientesAtivos, mrrTotal]);
+
+  // Monthly data for chart
+  const monthlyData = useMemo(() => {
+    const map: Record<string, number> = {};
+    allRegs?.forEach(r => {
+      map[r.mes_ano] = (map[r.mes_ano] || 0) + Number(r.total_a_receber);
+    });
+    return map;
+  }, [allRegs]);
+
+  // Day info
+  const baseDate = parse(selectedMonth + '-01', 'yyyy-MM-dd', new Date());
+  const diasNoMes = getDaysInMonth(baseDate);
+  const diaDoMes = selectedMonth === format(new Date(), 'yyyy-MM') ? getDate(new Date()) : diasNoMes;
+
+  // Status groups
+  const statusGroups = useMemo(() => {
+    const groups: Record<string, { count: number; mrr: number }> = {
+      Ativo: { count: 0, mrr: 0 }, Pausado: { count: 0, mrr: 0 },
+      Atrasado: { count: 0, mrr: 0 }, Cancelado: { count: 0, mrr: 0 }, Trial: { count: 0, mrr: 0 },
+    };
     clientes?.forEach(c => {
-      if (c.status !== 'Ativo') return;
-      c.marketplaces?.forEach(m => {
-        if (!map[m]) map[m] = { clientes: 0, faturamento: 0 };
-        map[m].clientes++;
-      });
+      if (groups[c.status]) {
+        groups[c.status].count++;
+        groups[c.status].mrr += Number(c.valor_fixo || 0);
+      }
     });
-    regsAtual?.forEach(r => {
-      const c = clienteMap[r.cliente_id];
-      c?.marketplaces?.forEach((m: string) => {
-        if (map[m]) map[m].faturamento += Number(r.faturamento_informado) / (c.marketplaces?.length || 1);
-      });
-    });
-    return Object.entries(map).sort((a, b) => b[1].faturamento - a[1].faturamento);
+    const atrasados = new Set(regsAtual.filter(r => r.status_pagamento === 'Atrasado').map(r => r.cliente_id));
+    groups['Atrasado'] = {
+      count: atrasados.size,
+      mrr: Array.from(atrasados).reduce((s, id) => s + Number(clienteMap[id]?.valor_fixo || 0), 0),
+    };
+    return [
+      { label: 'Ativo', ...groups['Ativo'], color: '#22C55E' },
+      { label: 'Trial', ...groups['Trial'], color: '#0EA5E9' },
+      { label: 'Pausado', ...groups['Pausado'], color: '#FBBF24' },
+      { label: 'Atrasado', ...groups['Atrasado'], color: '#EF4444' },
+      { label: 'Cancelado', ...groups['Cancelado'], color: '#888888' },
+    ].filter(g => g.count > 0);
   }, [clientes, regsAtual, clienteMap]);
 
-  const maxFat = mkpDist.length > 0 ? Math.max(...mkpDist.map(([, d]) => d.faturamento)) : 1;
-
   // Top clientes
-  const topClientes = useMemo(() => {
-    if (!regsAtual) return [];
+  const topClientes: TopCliente[] = useMemo(() => {
     return [...regsAtual]
       .sort((a, b) => Number(b.total_a_receber) - Number(a.total_a_receber))
       .slice(0, 5)
-      .map(r => ({ ...r, cliente: clienteMap[r.cliente_id] }));
-  }, [regsAtual, clienteMap]);
+      .map(r => ({
+        id: r.id,
+        nome: clienteMap[r.cliente_id]?.nome_ecommerce || '—',
+        valor: Number(r.total_a_receber),
+        status: clienteMap[r.cliente_id]?.status || 'Ativo',
+        gestor: gestorMap[clienteMap[r.cliente_id]?.gestor_user_id || ''] || '—',
+      }));
+  }, [regsAtual, clienteMap, gestorMap]);
 
-  // Gestor perf
-  const gestorPerf = useMemo(() => {
+  // Gestor performance
+  const gestorPerf: GestorRow[] = useMemo(() => {
     const map: Record<string, { clientes: Set<string>; faturamento: number; receita: number }> = {};
-    regsAtual?.forEach(r => {
+    regsAtual.forEach(r => {
       const c = clienteMap[r.cliente_id];
-      const gId = c?.gestor_user_id || 'sem';
+      const gId = c?.gestor_user_id || 'sem-gestor';
       if (!map[gId]) map[gId] = { clientes: new Set(), faturamento: 0, receita: 0 };
       map[gId].clientes.add(r.cliente_id);
       map[gId].faturamento += Number(r.faturamento_informado);
@@ -118,19 +191,26 @@ export default function MarketplaceDashboard() {
   }, [regsAtual, clienteMap, gestorMap]);
 
   // Alertas
-  const alertas = useMemo(() => {
-    if (!regsAtual) return [];
-    return regsAtual
-      .filter(r => r.status_pagamento === 'Pendente' || r.status_pagamento === 'Atrasado')
-      .map(r => ({ ...r, cliente: clienteMap[r.cliente_id] }));
-  }, [regsAtual, clienteMap]);
-
-  // Clientes sem registro no mês
-  const clientesSemRegistro = useMemo(() => {
-    if (!clientes || !regsAtual) return [];
+  const alertas: AlertaItem[] = useMemo(() => {
+    const items: AlertaItem[] = [];
+    regsAtual.forEach(r => {
+      if (r.status_pagamento === 'Atrasado' || r.status_pagamento === 'Pendente') {
+        items.push({
+          id: r.id,
+          nome: clienteMap[r.cliente_id]?.nome_ecommerce || '—',
+          descricao: `${formatCurrency(Number(r.total_a_receber))} — ${r.status_pagamento}`,
+          tipo: r.status_pagamento === 'Atrasado' ? 'atrasado' : 'pendente',
+        });
+      }
+    });
     const comRegistro = new Set(regsAtual.map(r => r.cliente_id));
-    return clientesAtivos.filter(c => !comRegistro.has(c.id));
-  }, [clientes, regsAtual, clientesAtivos]);
+    clientesAtivos.forEach(c => {
+      if (!comRegistro.has(c.id)) {
+        items.push({ id: `sem-${c.id}`, nome: c.nome_ecommerce, descricao: 'Sem faturamento registrado no mês', tipo: 'sem-registro' });
+      }
+    });
+    return items;
+  }, [regsAtual, clienteMap, clientesAtivos]);
 
   // Timestamp
   const minutesSinceUpdate = Math.floor((Date.now() - lastUpdatedAt.getTime()) / 60000);
@@ -139,157 +219,60 @@ export default function MarketplaceDashboard() {
 
   return (
     <AppLayout>
-      <PageHeader title="Dashboard — Marketplaces" description="Métricas de gestão de marketplaces">
-        <DateFilterBar
-          filter={filter}
-          onFilterChange={setFilter}
-          customRange={customRange}
-          onCustomRangeChange={setCustomRange}
-        />
-        <div className="flex items-center gap-2 shrink-0">
-          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '14px' }}>|</span>
-          <div
-            className="flex items-center gap-1.5"
-            style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}
-          >
-            <span
-              className={cn('inline-block w-2 h-2 rounded-full', timestampPulse && 'animate-pulse')}
-              style={{ background: timestampColor }}
-            />
-            Atualizado às {format(lastUpdatedAt, 'HH:mm')}
-          </div>
+      <PageHeader title="Visão Geral — Marketplaces">
+        <MonthYearSelector value={selectedMonth} onChange={setSelectedMonth} />
+        <div className="flex items-center gap-2">
+          <Switch id="compare-mk" checked={compareEnabled} onCheckedChange={setCompareEnabled} />
+          <Label htmlFor="compare-mk" className="text-xs whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.5)' }}>Comparar</Label>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
+          <span className={cn('inline-block w-2 h-2 rounded-full', timestampPulse && 'animate-pulse')} style={{ background: timestampColor }} />
+          Atualizado às {format(lastUpdatedAt, 'HH:mm')}
         </div>
       </PageHeader>
 
-      <SectionLabel title="Receita Recorrente" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard title="MRR Total" value={formatCurrency(mrrTotal)} icon={<DollarSign className="h-5 w-5" />} variant="primary" />
-        <StatCard title="MRR Novo" value={formatCurrency(mrrNovo)} subtitle={`${clientesNovos.length} novos`} icon={<TrendingUp className="h-5 w-5" />} variant="success" />
-        <StatCard title="Churn do Mês" value={formatCurrency(churn)} icon={<TrendingDown className="h-5 w-5" />} variant="destructive" />
-        <StatCard title="Clientes Ativos" value={clientesAtivos.length} icon={<Users className="h-5 w-5" />} />
+      {/* NÍVEL 1 — Hero */}
+      <HeroMRRCard
+        mrrTotal={mrrTotal}
+        mrrMeta={mrrMeta}
+        onMetaChange={handleMetaChange}
+        variacao={compareEnabled ? variacao : null}
+        mrrLiquido={mrrLiquido}
+        nrr={nrr}
+        diaDoMes={diaDoMes}
+        diasNoMes={diasNoMes}
+      />
+
+      {/* NÍVEL 2 — KPIs */}
+      <KPIRow items={[
+        { label: 'Receita Nova no Mês', value: formatCurrency(mrrNovo), tooltip: 'Valor trazido por clientes que entraram este mês', variacao: compareEnabled ? varNovo : null, color: '#22C55E' },
+        { label: 'Receita Perdida', value: formatCurrency(churn), tooltip: 'Valor de clientes que cancelaram ou pausaram este mês', color: churn > 0 ? '#EF4444' : undefined },
+        { label: 'Taxa de Cancelamento', value: `${churnRate.toFixed(1)}%`, tooltip: 'Percentual da receita perdida em relação ao total do mês anterior', color: churnRate > 5 ? '#EF4444' : churnRate > 2 ? '#FBBF24' : '#22C55E' },
+        { label: 'Clientes Ativos', value: String(clientesAtivos.length), tooltip: 'Número de clientes com status Ativo' },
+      ]} />
+
+      {/* Marketplace exclusive KPIs */}
+      <KPIRow items={[
+        { label: 'Total Faturamento Gerenciado', value: formatCurrency(totalFat), tooltip: 'Faturamento total dos clientes nos marketplaces' },
+        { label: 'Taxa Média de Comissão', value: `${taxaComissao.toFixed(1)}%`, tooltip: 'Percentual médio de comissão sobre o faturamento gerenciado', color: '#F97316' },
+        { label: 'Valor Médio por Cliente', value: formatCurrency(clientesAtivos.length > 0 ? mrrTotal / clientesAtivos.length : 0), tooltip: 'Quanto cada cliente paga em média por mês' },
+        { label: 'Retenção de Receita', value: nrr !== null ? `${nrr.toFixed(1)}%` : '—', tooltip: 'Se seus clientes estão pagando mais, igual ou menos que no mês passado. Acima de 100% significa crescimento', color: nrr === null ? undefined : nrr > 100 ? '#22C55E' : nrr >= 90 ? '#FBBF24' : '#EF4444' },
+      ]} />
+
+      {/* NÍVEL 3 — Chart */}
+      <RevenueChart monthlyData={monthlyData} meta={mrrMeta} currentMonth={selectedMonth} />
+
+      {/* NÍVEL 4 — Detail cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="space-y-4">
+          <HealthCard groups={statusGroups} ltv={ltv} />
+          <GestorPerfCard rows={gestorPerf} type="marketplace" />
+        </div>
+        <div className="space-y-4">
+          <TopClientesCard clientes={topClientes} />
+          <AlertasCard alertas={alertas} />
+        </div>
       </div>
-
-      <SectionLabel title="Volume e Performance" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard title="Total Faturamento" value={formatCurrency(totalFat)} icon={<BarChart3 className="h-5 w-5" />} />
-        <StatCard title="Ticket Médio" value={formatCurrency(ticketMedio)} icon={<TrendingUp className="h-5 w-5" />} />
-        <StatCard title="Taxa Média Comissão" value={`${taxaComissao.toFixed(1)}%`} icon={<Percent className="h-5 w-5" />} />
-        <StatCard title="Alertas Inadimplência" value={alertasCount} icon={<AlertTriangle className="h-5 w-5" />} variant={alertasCount > 0 ? 'destructive' : 'default'} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        {/* Distribuição por Marketplace */}
-        <Card>
-          <CardHeader><CardTitle className="text-sm flex items-center gap-2"><BarChart3 className="h-4 w-4" style={{ color: '#F97316' }} /> Distribuição por Marketplace</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            {mkpDist.map(([name, data]) => (
-              <div key={name} className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{name}</span>
-                  <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{data.clientes} clientes • {formatCurrency(data.faturamento)}</span>
-                </div>
-                <div className="h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <div className="h-2 rounded-full" style={{ width: `${(data.faturamento / maxFat) * 100}%`, background: '#F97316' }} />
-                </div>
-              </div>
-            ))}
-            {mkpDist.length === 0 && <p className="text-center text-muted-foreground py-4">Sem dados</p>}
-          </CardContent>
-        </Card>
-
-        {/* Top Clientes */}
-        <Card>
-          <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Trophy className="h-4 w-4" style={{ color: '#F97316' }} /> Top Clientes por Receita</CardTitle></CardHeader>
-          <CardContent>
-            {topClientes.length > 0 ? (
-              <div className="space-y-3">
-                {topClientes.map((t, i) => (
-                  <div key={t.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-primary text-primary-foreground">{i + 1}</div>
-                      <div>
-                        <p className="font-medium text-sm">{t.cliente?.nome_ecommerce || '—'}</p>
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>
-                          {formatCurrency(Number(t.faturamento_informado))} fat. • {gestorMap[t.cliente?.gestor_user_id || ''] || '—'}
-                        </p>
-                      </div>
-                    </div>
-                    <p className="font-bold" style={{ color: '#F97316' }}>{formatCurrency(Number(t.total_a_receber))}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">Nenhum registro</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance por Gestor */}
-      <Card className="mb-8">
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Users className="h-4 w-4" style={{ color: '#8B5CF6' }} /> Performance por Gestor</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Gestor</TableHead>
-                <TableHead className="text-right">Clientes</TableHead>
-                <TableHead className="text-right">Faturamento</TableHead>
-                <TableHead className="text-right">Receita</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {gestorPerf.map(g => (
-                <TableRow key={g.id}>
-                  <TableCell className="font-medium">{g.nome}</TableCell>
-                  <TableCell className="text-right">{g.clientes}</TableCell>
-                  <TableCell className="text-right" style={{ color: 'rgba(255,255,255,0.5)' }}>{formatCurrency(g.faturamento)}</TableCell>
-                  <TableCell className="text-right font-semibold" style={{ color: '#F97316' }}>{formatCurrency(g.receita)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Alertas */}
-      {(alertas.length > 0 || clientesSemRegistro.length > 0) && (
-        <>
-          <SectionLabel title="Alertas" />
-          <Card className="mb-8">
-            <CardContent className="p-0">
-              {alertas.map(a => (
-                <div key={a.id} className="flex items-center justify-between p-4" style={{
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  background: a.status_pagamento === 'Atrasado' ? 'rgba(239,68,68,0.05)' : 'rgba(251,191,36,0.05)',
-                }}>
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-4 w-4" style={{ color: a.status_pagamento === 'Atrasado' ? '#EF4444' : '#FBBF24' }} />
-                    <div>
-                      <p className="font-medium text-sm">{a.cliente?.nome_ecommerce || '—'}</p>
-                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{formatCurrency(Number(a.total_a_receber))} — {a.status_pagamento}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {clientesSemRegistro.map(c => (
-                <div key={c.id} className="flex items-center justify-between p-4" style={{
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  background: 'rgba(251,191,36,0.03)',
-                }}>
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-4 w-4" style={{ color: '#FBBF24' }} />
-                    <div>
-                      <p className="font-medium text-sm">{c.nome_ecommerce}</p>
-                      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>Sem faturamento registrado no mês</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </>
-      )}
     </AppLayout>
   );
 }
