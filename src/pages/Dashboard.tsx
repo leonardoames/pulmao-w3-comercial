@@ -64,6 +64,24 @@ export default function DashboardPage() {
   const { data: noShowByCloser } = useNoShowByCloser(filter, customRange);
   const { data: metaMensal } = useTvMetaMensal();
 
+  // Vendas for OrigemLeadCard
+  const dateRange = useMemo(() => getDateRange(filter, customRange), [filter, customRange]);
+  const { data: vendasOrigem } = useQuery({
+    queryKey: ['vendas-origem', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString(), selectedCloser],
+    queryFn: async () => {
+      let q = supabase
+        .from('vendas')
+        .select('id, valor_total, origem_lead, status')
+        .gte('data_fechamento', dateRange.start.toISOString().split('T')[0])
+        .lte('data_fechamento', dateRange.end.toISOString().split('T')[0])
+        .neq('status', 'Reembolsado');
+      if (selectedCloser && selectedCloser !== 'all') q = q.eq('closer_user_id', selectedCloser);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as unknown as Venda[];
+    },
+  });
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
