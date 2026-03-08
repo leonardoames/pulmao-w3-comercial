@@ -467,24 +467,23 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
                 {/* ROW 2 */}
                 <div className="flex items-center justify-between mt-2" style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
                   <div className="flex items-center gap-4">
-                    <span>{isEmpty ? "Sem vendas no período" : `${closer.vendas} vendas`}</span>
-                    {!isEmpty && (
-                      <span style={{ whiteSpace: "nowrap" }}>
-                        OTE: {formatCurrency(oteRealized)}
-                        {goalValue > 0 && <span style={{ color: "#F97316", marginLeft: "4px" }}>({otePercent.toFixed(0)}%)</span>}
-                      </span>
+                    <span>{closer.vendas > 0 ? `${closer.vendas} vendas` : "0 vendas"}</span>
+                    <span style={{ whiteSpace: "nowrap" }}>
+                      OTE: {formatCurrency(oteRealized)}
+                      {goalValue > 0 && <span style={{ color: "#F97316", marginLeft: "4px" }}>({otePercent.toFixed(0)}%)</span>}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span>Calls: {formatInteger(agendadas)}</span>
+                    <span>No-show: <span style={{ color: noShowColor(closer.percentNoShow) }}>{closer.percentNoShow.toFixed(1)}%</span></span>
+                    {agendadas > 0 && (
+                      <span>Conv: <span style={{ color: convColor(closer.taxaConversao) }}>{closer.taxaConversao.toFixed(1)}%</span></span>
                     )}
                   </div>
-                  {!isEmpty && (
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span>Calls: {formatInteger(agendadas)}</span>
-                      <span>No-show: <span style={{ color: noShowColor(closer.percentNoShow) }}>{closer.percentNoShow.toFixed(1)}%</span></span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Progress bar */}
-                {goalValue > 0 && !isEmpty && (
+                {goalValue > 0 && (
                   <div className="mt-2"><GradientBar percent={otePercent} height={4} /></div>
                 )}
               </div>
