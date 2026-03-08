@@ -13,7 +13,8 @@ export function OteProgressBar({
   percentAchieved, 
   showMarkers = true, 
   height = 'md',
-  className 
+  className,
+  expectedPercent,
 }: OteProgressBarProps) {
   const heightClass = {
     sm: 'h-2',
