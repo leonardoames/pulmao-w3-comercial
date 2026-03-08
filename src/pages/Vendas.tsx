@@ -545,8 +545,8 @@ export default function VendasPage() {
       </div>
 
       {/* Search + Filter Toggle */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-4">
+        <div className="relative w-full md:flex-1 md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Pesquisar lead, empresa ou closer..."
@@ -556,7 +556,7 @@ export default function VendasPage() {
           />
         </div>
         <Select value={closerFilter} onValueChange={setCloserFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px]">
             <SelectValue placeholder="Closer" />
           </SelectTrigger>
           <SelectContent>
@@ -569,7 +569,7 @@ export default function VendasPage() {
         <Button
           variant={showFilters ? "secondary" : "outline"}
           onClick={() => setShowFilters(!showFilters)}
-          className="gap-2"
+          className="gap-2 w-full md:w-auto"
         >
           <Filter className="h-4 w-4" />
           Filtros
