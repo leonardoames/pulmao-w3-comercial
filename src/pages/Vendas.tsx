@@ -18,7 +18,7 @@ import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento, useIsMaster } from '@/hooks/useUserRoles';
 import { Venda, ORIGEM_LEAD_OPTIONS, OrigemLead } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -850,9 +850,23 @@ export default function VendasPage() {
                         })()}
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <p className="font-medium">{venda.nome_lead}</p>
-                          <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-medium">{venda.nome_lead}</p>
+                            <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
+                          </div>
+                          {venda.observacoes && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <StickyNote className="h-4 w-4 shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-default" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
+                                  {venda.observacoes}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{venda.duracao_contrato_meses} meses</TableCell>
