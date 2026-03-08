@@ -22,6 +22,8 @@ import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
+import { OrigemLeadCard } from '@/components/dashboard/OrigemLeadCard';
+import { Venda } from '@/types/crm';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
