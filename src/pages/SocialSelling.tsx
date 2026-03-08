@@ -11,17 +11,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { StatCard } from '@/components/ui/stat-card';
 import { useSocialSellingEntry, useSocialSellingEntries, useUpsertSocialSelling, SOCIAL_SELLING_GOALS } from '@/hooks/useSocialSelling';
 import { useSocialSellers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useCanEditAnyFechamento, useIsSocialSelling } from '@/hooks/useUserRoles';
 import { DateFilter, getDateRange, DateRange } from '@/hooks/useDashboard';
-import { CalendarIcon, Save, MessageCircle, Link2, CalendarCheck, ArrowRightLeft, TrendingUp, Plus, FileText } from 'lucide-react';
-import { format } from 'date-fns';
+import { CalendarIcon, Save, MessageCircle, Link2, CalendarCheck, Plus, FileText } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { SocialSellingKPIs } from '@/components/social-selling/SocialSellingKPIs';
+import { SocialSellingFunnel } from '@/components/social-selling/SocialSellingFunnel';
 
 const DATE_FILTERS: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -32,7 +32,14 @@ const DATE_FILTERS: { value: DateFilter; label: string }[] = [
   { value: 'custom', label: 'Personalizado' },
 ];
 
-const FUNNEL_COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+function getPreviousRange(range: { start: Date; end: Date }): { start: Date; end: Date } {
+  const days = differenceInDays(range.end, range.start) + 1;
+  const prevEnd = new Date(range.start);
+  prevEnd.setDate(prevEnd.getDate() - 1);
+  const prevStart = new Date(prevEnd);
+  prevStart.setDate(prevStart.getDate() - days + 1);
+  return { start: prevStart, end: prevEnd };
+}
 
 export default function SocialSellingPage() {
   const { profile } = useAuth();
@@ -45,7 +52,6 @@ export default function SocialSellingPage() {
   const [selectedSellerId, setSelectedSellerId] = useState<string>('__all__');
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Filters
   const [dateFilter, setDateFilter] = useState<DateFilter>('month');
   const [customRange, setCustomRange] = useState<DateRange>();
   const [customStartOpen, setCustomStartOpen] = useState(false);
@@ -63,11 +69,18 @@ export default function SocialSellingPage() {
   const { data: entry, isLoading } = useSocialSellingEntry(activeSellerId, dateStr);
 
   const filterRange = useMemo(() => getDateRange(dateFilter, customRange), [dateFilter, customRange]);
+  const prevRange = useMemo(() => getPreviousRange(filterRange), [filterRange]);
 
   const { data: entries } = useSocialSellingEntries({
     closer_id: isAllSelected ? undefined : selectedSellerId,
     startDate: filterRange.start,
     endDate: filterRange.end,
+  });
+
+  const { data: prevEntries } = useSocialSellingEntries({
+    closer_id: isAllSelected ? undefined : selectedSellerId,
+    startDate: prevRange.start,
+    endDate: prevRange.end,
   });
 
   const upsertMutation = useUpsertSocialSelling();
@@ -114,15 +127,11 @@ export default function SocialSellingPage() {
   const totalConvites = entries?.reduce((s, e) => s + e.convites_enviados, 0) || 0;
   const totalFormularios = entries?.reduce((s, e) => s + e.formularios_preenchidos, 0) || 0;
   const totalAgendamentos = entries?.reduce((s, e) => s + e.agendamentos, 0) || 0;
-  const convFormAgend = totalFormularios > 0 ? ((totalAgendamentos / totalFormularios) * 100).toFixed(1) + '%' : '—';
-  const convConversasAgend = totalConversas > 0 ? ((totalAgendamentos / totalConversas) * 100).toFixed(1) + '%' : '—';
 
-  const funnelData = [
-    { name: 'Conversas', value: totalConversas },
-    { name: 'Convites', value: totalConvites },
-    { name: 'Formulários', value: totalFormularios },
-    { name: 'Agendamentos', value: totalAgendamentos },
-  ];
+  const prevTotalConversas = prevEntries?.reduce((s, e) => s + e.conversas_iniciadas, 0) || 0;
+  const prevTotalConvites = prevEntries?.reduce((s, e) => s + e.convites_enviados, 0) || 0;
+  const prevTotalFormularios = prevEntries?.reduce((s, e) => s + e.formularios_preenchidos, 0) || 0;
+  const prevTotalAgendamentos = prevEntries?.reduce((s, e) => s + e.agendamentos, 0) || 0;
 
   const showSellerFilter = canManage && socialSellers && socialSellers.length > 0;
 
@@ -209,72 +218,66 @@ export default function SocialSellingPage() {
 
       {/* Date Filters */}
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-      <div className="flex flex-wrap items-center gap-2 mb-6 min-w-max md:min-w-0">
-        {DATE_FILTERS.map(f => (
-          <Button
-            key={f.value}
-            variant={dateFilter === f.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setDateFilter(f.value)}
-          >
-            {f.label}
-          </Button>
-        ))}
-        {dateFilter === 'custom' && (
-          <div className="flex items-center gap-2">
-            <Popover open={customStartOpen} onOpenChange={setCustomStartOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <CalendarIcon className="h-3 w-3" />
-                  {customRange?.start ? format(customRange.start, 'dd/MM/yy') : 'Início'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customRange?.start} onSelect={d => { if (d) { setCustomRange(prev => ({ start: d, end: prev?.end || d })); setCustomStartOpen(false); } }} locale={ptBR} /></PopoverContent>
-            </Popover>
-            <span className="text-muted-foreground">—</span>
-            <Popover open={customEndOpen} onOpenChange={setCustomEndOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <CalendarIcon className="h-3 w-3" />
-                  {customRange?.end ? format(customRange.end, 'dd/MM/yy') : 'Fim'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customRange?.end} onSelect={d => { if (d) { setCustomRange(prev => ({ start: prev?.start || d, end: d })); setCustomEndOpen(false); } }} locale={ptBR} /></PopoverContent>
-            </Popover>
-          </div>
-        )}
-      </div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-        <StatCard title="Conversas Iniciadas" value={totalConversas.toLocaleString('pt-BR')} icon={<MessageCircle className="h-5 w-5" />} />
-        <StatCard title="Convites Enviados" value={totalConvites.toLocaleString('pt-BR')} icon={<Link2 className="h-5 w-5" />} />
-        <StatCard title="Formulários" value={totalFormularios.toLocaleString('pt-BR')} icon={<FileText className="h-5 w-5" />} />
-        <StatCard title="Agendamentos" value={totalAgendamentos.toLocaleString('pt-BR')} icon={<CalendarCheck className="h-5 w-5" />} />
-        <StatCard title="Form → Agend." value={convFormAgend} icon={<ArrowRightLeft className="h-5 w-5" />} />
-        <StatCard title="Conversas → Agend." value={convConversasAgend} icon={<TrendingUp className="h-5 w-5" />} />
+        <div className="flex flex-wrap items-center gap-2 mb-6 min-w-max md:min-w-0">
+          {DATE_FILTERS.map(f => (
+            <Button
+              key={f.value}
+              variant={dateFilter === f.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateFilter(f.value)}
+            >
+              {f.label}
+            </Button>
+          ))}
+          {dateFilter === 'custom' && (
+            <div className="flex items-center gap-2">
+              <Popover open={customStartOpen} onOpenChange={setCustomStartOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <CalendarIcon className="h-3 w-3" />
+                    {customRange?.start ? format(customRange.start, 'dd/MM/yy') : 'Início'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customRange?.start} onSelect={d => { if (d) { setCustomRange(prev => ({ start: d, end: prev?.end || d })); setCustomStartOpen(false); } }} locale={ptBR} /></PopoverContent>
+              </Popover>
+              <span className="text-muted-foreground">—</span>
+              <Popover open={customEndOpen} onOpenChange={setCustomEndOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <CalendarIcon className="h-3 w-3" />
+                    {customRange?.end ? format(customRange.end, 'dd/MM/yy') : 'Fim'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customRange?.end} onSelect={d => { if (d) { setCustomRange(prev => ({ start: prev?.start || d, end: d })); setCustomEndOpen(false); } }} locale={ptBR} /></PopoverContent>
+              </Popover>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Funnel Chart */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Funil de Conversão</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={funnelData} layout="vertical" margin={{ left: 20, right: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" />
-              <YAxis type="category" dataKey="name" width={100} />
-              <Tooltip formatter={(v: number) => v.toLocaleString('pt-BR')} />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                {funnelData.map((_, i) => (
-                  <Cell key={i} fill={FUNNEL_COLORS[i]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* KPIs */}
+      <SocialSellingKPIs data={{
+        conversas: totalConversas,
+        convites: totalConvites,
+        formularios: totalFormularios,
+        agendamentos: totalAgendamentos,
+        prevConversas: prevTotalConversas,
+        prevConvites: prevTotalConvites,
+        prevFormularios: prevTotalFormularios,
+        prevAgendamentos: prevTotalAgendamentos,
+      }} />
+
+      {/* Funnel */}
+      <SocialSellingFunnel data={{
+        conversas: totalConversas,
+        convites: totalConvites,
+        formularios: totalFormularios,
+        agendamentos: totalAgendamentos,
+        prevConversas: prevTotalConversas,
+        prevConvites: prevTotalConvites,
+        prevFormularios: prevTotalFormularios,
+        prevAgendamentos: prevTotalAgendamentos,
+      }} />
 
       {/* Histórico */}
       <Card>
@@ -283,40 +286,40 @@ export default function SocialSellingPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead className="text-center">Conversas</TableHead>
-                <TableHead className="text-center">Convites</TableHead>
-                <TableHead className="text-center">Formulários</TableHead>
-                <TableHead className="text-center">Agendamentos</TableHead>
-                <TableHead>Observações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {!entries?.length ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registro encontrado</TableCell>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-center">Conversas Iniciadas</TableHead>
+                  <TableHead className="text-center">Convites Enviados</TableHead>
+                  <TableHead className="text-center">Formulários Enviados</TableHead>
+                  <TableHead className="text-center">Agendamentos Gerados</TableHead>
+                  <TableHead>Observações</TableHead>
                 </TableRow>
-              ) : (
-                entries.map(e => (
-                  <TableRow
-                    key={e.id}
-                    className={cn('cursor-pointer hover:bg-muted/50', e.data === dateStr && 'bg-primary/10')}
-                    onClick={() => { setSelectedDate(new Date(e.data + 'T12:00:00')); setDialogOpen(true); }}
-                  >
-                    <TableCell className="font-medium">{format(new Date(e.data + 'T12:00:00'), 'dd/MM')}</TableCell>
-                    <TableCell className="text-center">{e.conversas_iniciadas}</TableCell>
-                    <TableCell className="text-center">{e.convites_enviados}</TableCell>
-                    <TableCell className="text-center">{e.formularios_preenchidos}</TableCell>
-                    <TableCell className="text-center">{e.agendamentos}</TableCell>
-                    <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">{e.observacoes || '—'}</TableCell>
+              </TableHeader>
+              <TableBody>
+                {!entries?.length ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registro encontrado</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  entries.map(e => (
+                    <TableRow
+                      key={e.id}
+                      className={cn('cursor-pointer hover:bg-muted/50', e.data === dateStr && 'bg-primary/10')}
+                      onClick={() => { setSelectedDate(new Date(e.data + 'T12:00:00')); setDialogOpen(true); }}
+                    >
+                      <TableCell className="font-medium">{format(new Date(e.data + 'T12:00:00'), 'dd/MM')}</TableCell>
+                      <TableCell className="text-center">{e.conversas_iniciadas}</TableCell>
+                      <TableCell className="text-center">{e.convites_enviados}</TableCell>
+                      <TableCell className="text-center">{e.formularios_preenchidos}</TableCell>
+                      <TableCell className="text-center">{e.agendamentos}</TableCell>
+                      <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">{e.observacoes || '—'}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
