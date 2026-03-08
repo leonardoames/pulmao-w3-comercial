@@ -181,10 +181,10 @@ export default function VendasPage() {
 
   const handleOpenEdit = (venda: Venda) => {
     setEditingVenda(venda);
-    // Parse date as YYYY-MM-DD string directly to avoid timezone issues
     const [year, month, day] = venda.data_fechamento.split('-').map(Number);
     setDataVenda(new Date(year, month - 1, day));
     setSelectedCloserId(venda.closer_user_id);
+    setOrigemLead(venda.origem_lead ?? '');
     setDialogOpen(true);
   };
 
