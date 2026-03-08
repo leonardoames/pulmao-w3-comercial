@@ -1,22 +1,20 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useDashboardStats, useCloserRankings, DateFilter, DateRange, getDateRange } from "@/hooks/useDashboard";
-import { useSocialSellingEntries, SOCIAL_SELLING_GOALS } from "@/hooks/useSocialSelling";
+import { useSocialSellingEntries } from "@/hooks/useSocialSelling";
 import { useContentDailyLogs } from "@/hooks/useContentTracking";
+import { useClosers } from "@/hooks/useProfiles";
+import { useOteGoals } from "@/hooks/useOteGoals";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Trophy, Target, Phone, Settings, Moon, Sun, Save, MessageCircle, FileText, Film } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/components/theme-provider";
-import { TVDateFilter } from "@/components/tv/TVDateFilter";
-import { OteTVPanel } from "@/components/ote/OteTVPanel";
-import { useClosers } from "@/hooks/useProfiles";
-import { format, startOfMonth, subDays } from "date-fns";
+import { format, startOfMonth } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { SectionLabel } from "@/components/dashboard/SectionLabel";
+import { useQuery } from "@tanstack/react-query";
+
+const SCREEN_COUNT = 4;
+const ROTATION_INTERVAL = 15000; // 15 seconds
+const FADE_DURATION = 600;
 
 function useTvMetaMensal() {
   return useQuery({
@@ -33,77 +31,175 @@ function useTvMetaMensal() {
   });
 }
 
-function useSaveTvMetaMensal() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (value: number) => {
-      const { error } = await supabase
-        .from("tv_settings")
-        .update({ value: String(value), updated_at: new Date().toISOString() })
-        .eq("key", "meta_mensal");
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tv-settings", "meta_mensal"] });
-      toast.success("Meta mensal salva com sucesso!");
-    },
-    onError: (err: any) => {
-      toast.error("Erro ao salvar meta: " + err.message);
-    },
-  });
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+
+const formatCurrencyCompact = (value: number) => {
+  if (value >= 1_000_000) return `R$ ${(value / 1_000_000).toFixed(1).replace(".", ",")}M`;
+  if (value >= 1_000) return `R$ ${(value / 1_000).toFixed(0)}K`;
+  return formatCurrency(value);
+};
+
+// ─── TV Card ───
+function TVCard({ children, className, highlight }: { children: React.ReactNode; className?: string; highlight?: boolean }) {
+  return (
+    <div
+      className={cn("rounded-[20px] p-8", className)}
+      style={{
+        background: "#1a1a1a",
+        border: highlight ? "1px solid rgba(249,115,22,0.3)" : "1px solid rgba(255,165,0,0.1)",
+        boxShadow: highlight ? "0 0 40px rgba(249,115,22,0.08)" : undefined,
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
-export default function TVModePage() {
-  const [filter, setFilter] = useState<DateFilter>("month");
-  const [customRange, setCustomRange] = useState<DateRange | undefined>();
-  const [selectedCloser, setSelectedCloser] = useState<string>("all");
+function ScreenTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2
+      className="mb-8"
+      style={{
+        fontSize: "32px", fontWeight: 300, color: "rgba(255,255,255,0.5)",
+        textTransform: "uppercase", letterSpacing: "0.15em",
+      }}
+    >
+      {children}
+    </h2>
+  );
+}
 
-  const { data: metaMensalDb } = useTvMetaMensal();
-  const saveMeta = useSaveTvMetaMensal();
-  const [metaMensal, setMetaMensal] = useState<number>(100000);
-  const [metaDirty, setMetaDirty] = useState(false);
+function MetricLabel({ children }: { children: React.ReactNode }) {
+  return <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.4)" }}>{children}</p>;
+}
 
-  useEffect(() => {
-    if (metaMensalDb !== undefined && !metaDirty) {
-      setMetaMensal(metaMensalDb);
-    }
-  }, [metaMensalDb, metaDirty]);
+function MetricValue({ children, color }: { children: React.ReactNode; color?: string }) {
+  return <p style={{ fontSize: "56px", fontWeight: 700, color: color || "#FFFFFF", lineHeight: 1.1 }} className="truncate">{children}</p>;
+}
 
-  const handleMetaChange = (value: number) => {
-    setMetaMensal(value);
-    setMetaDirty(true);
-  };
+// ─── Screen 1: Resultado Comercial ───
+function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number }) {
+  const progressPercent = metaMensal > 0 ? Math.min(((stats?.volumeVendas || 0) / metaMensal) * 100, 100) : 0;
 
-  const handleSaveMeta = () => {
-    saveMeta.mutate(metaMensal, { onSuccess: () => setMetaDirty(false) });
-  };
+  return (
+    <div>
+      <ScreenTitle>
+        Resultado Comercial — {format(new Date(), "MMMM yyyy").replace(/^\w/, (c) => c.toUpperCase())}
+      </ScreenTitle>
 
-  const [showSettings, setShowSettings] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const { theme, setTheme } = useTheme();
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <TVCard>
+          <MetricLabel>Receita Total</MetricLabel>
+          <MetricValue color="#F97316">{formatCurrencyCompact(stats?.volumeVendas || 0)}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Ticket Médio</MetricLabel>
+          <MetricValue>{formatCurrencyCompact(stats?.ticketMedio || 0)}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Fat. por Call</MetricLabel>
+          <MetricValue>{formatCurrencyCompact(stats?.faturamentoPorCall || 0)}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Total de Vendas</MetricLabel>
+          <MetricValue>{stats?.totalVendas || 0}</MetricValue>
+        </TVCard>
+      </div>
 
-  const { data: closers } = useClosers();
+      {/* Meta Progress */}
+      <TVCard className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <MetricLabel>Meta Mensal</MetricLabel>
+            <p style={{ fontSize: "28px", fontWeight: 700, color: "#FFFFFF" }}>
+              {formatCurrency(stats?.volumeVendas || 0)}{" "}
+              <span style={{ fontSize: "16px", fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/ {formatCurrency(metaMensal)}</span>
+            </p>
+          </div>
+          <p style={{ fontSize: "56px", fontWeight: 700, color: "#F97316" }}>{progressPercent.toFixed(0)}%</p>
+        </div>
+        <div style={{ height: "12px", borderRadius: "999px", background: "rgba(255,255,255,0.08)" }} className="w-full overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progressPercent}%`, background: "linear-gradient(90deg, #F97316, #FBBF24)" }} />
+        </div>
+      </TVCard>
 
-  const getMonthRefFromFilter = (): string => {
-    if (filter === "custom" && customRange) {
-      return format(customRange.start, "yyyy-MM");
-    }
-    return format(startOfMonth(new Date()), "yyyy-MM");
-  };
+      {/* Payment Breakdown */}
+      <div className="grid grid-cols-3 gap-6">
+        <TVCard>
+          <MetricLabel>Pix</MetricLabel>
+          <MetricValue color="#F97316">{formatCurrencyCompact(stats?.valorPix || 0)}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Cartão</MetricLabel>
+          <MetricValue color="#FBBF24">{formatCurrencyCompact(stats?.valorCartao || 0)}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Boleto</MetricLabel>
+          <MetricValue color="rgba(249,115,22,0.6)">{formatCurrencyCompact(stats?.valorBoleto || 0)}</MetricValue>
+        </TVCard>
+      </div>
+    </div>
+  );
+}
 
-  const monthRef = getMonthRefFromFilter();
+// ─── Screen 2: Ranking dos Closers ───
+function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] }) {
+  const closers = rankings?.rankingGeral || [];
 
-  const { data: stats, refetch: refetchStats } = useDashboardStats(filter, customRange, selectedCloser);
-  const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter, customRange, selectedCloser);
+  return (
+    <div>
+      <ScreenTitle>Performance Individual dos Closers</ScreenTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {closers.slice(0, 8).map((closer: any, index: number) => {
+          const goal = oteGoals?.find((g) => g.closer_user_id === closer.id);
+          const goalValue = goal?.ote_target_value || 0;
+          const progressPercent = goalValue > 0 ? Math.min((closer.volume / goalValue) * 100, 100) : 0;
+          const isTop = index === 0;
 
-  // Social Selling data
-  const filterRange = useMemo(() => getDateRange(filter, customRange), [filter, customRange]);
-  const { data: ssEntries, refetch: refetchSS } = useSocialSellingEntries({
-    startDate: filterRange.start,
-    endDate: filterRange.end,
-  });
+          return (
+            <TVCard key={closer.id} highlight={isTop}>
+              <div className="flex items-center gap-4 mb-4">
+                <div
+                  className={cn("w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl", {
+                    "bg-primary text-primary-foreground": index === 0,
+                    "medal-silver": index === 1,
+                    "medal-bronze": index === 2,
+                    "bg-muted text-muted-foreground": index > 2,
+                  })}
+                >
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontSize: "22px", fontWeight: 700, color: "#FFFFFF" }} className="truncate">{closer.nome}</p>
+                  <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.4)" }}>
+                    {closer.vendas} vendas • {closer.taxaConversao.toFixed(0)}% conversão
+                  </p>
+                </div>
+                <p style={{ fontSize: "32px", fontWeight: 700, color: "#F97316" }}>{formatCurrencyCompact(closer.volume)}</p>
+              </div>
+              {goalValue > 0 && (
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>Meta individual</span>
+                    <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>{progressPercent.toFixed(0)}%</span>
+                  </div>
+                  <div style={{ height: "6px", borderRadius: "999px", background: "rgba(255,255,255,0.08)" }} className="w-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${progressPercent}%`, background: "linear-gradient(90deg, #F97316, #FBBF24)" }} />
+                  </div>
+                </div>
+              )}
+            </TVCard>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-  const ssTotals = useMemo(() => {
+// ─── Screen 3: Social Selling ───
+function ScreenSocialSelling({ ssEntries }: { ssEntries: any[] }) {
+  const totals = useMemo(() => {
     if (!ssEntries) return { conversas: 0, convites: 0, formularios: 0, agendamentos: 0 };
     return {
       conversas: ssEntries.reduce((s, e) => s + e.conversas_iniciadas, 0),
@@ -113,343 +209,244 @@ export default function TVModePage() {
     };
   }, [ssEntries]);
 
-  // Content data
-  const contentStartDate = format(filterRange.start, 'yyyy-MM-dd');
-  const contentEndDate = format(filterRange.end, 'yyyy-MM-dd');
+  const convRate = totals.formularios > 0 ? ((totals.agendamentos / totals.formularios) * 100).toFixed(0) : "0";
+
+  return (
+    <div>
+      <ScreenTitle>Social Selling</ScreenTitle>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <TVCard>
+          <MetricLabel>Conversas Iniciadas</MetricLabel>
+          <MetricValue>{totals.conversas}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Convites Enviados</MetricLabel>
+          <MetricValue>{totals.convites}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Formulários</MetricLabel>
+          <MetricValue>{totals.formularios}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Agendamentos</MetricLabel>
+          <MetricValue color="#22C55E">{totals.agendamentos}</MetricValue>
+        </TVCard>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TVCard>
+          <MetricLabel>Conv. Formulário → Agendamento</MetricLabel>
+          <MetricValue color="#FBBF24">{convRate}%</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Conv. Conversa → Formulário</MetricLabel>
+          <MetricValue color="#38BDF8">
+            {totals.conversas > 0 ? ((totals.formularios / totals.conversas) * 100).toFixed(0) : "0"}%
+          </MetricValue>
+        </TVCard>
+      </div>
+    </div>
+  );
+}
+
+// ─── Screen 4: Conteúdo ───
+function ScreenConteudo({ contentLogs }: { contentLogs: any[] }) {
+  const totals = useMemo(() => ({
+    posts: contentLogs.reduce((s, l) => s + l.posts_published_count, 0),
+    stories: contentLogs.reduce((s, l) => s + l.stories_done_count, 0),
+    scheduled: contentLogs.reduce((s, l) => s + l.posts_scheduled_count, 0),
+    youtube: contentLogs.reduce((s, l) => s + (l.youtube_videos_published_count || 0), 0),
+    followersW3: contentLogs.length > 0 ? contentLogs[0].followers_w3 || 0 : 0,
+    followersLeo: contentLogs.length > 0 ? contentLogs[0].followers_leo || 0 : 0,
+  }), [contentLogs]);
+
+  return (
+    <div>
+      <ScreenTitle>Dashboard de Conteúdo</ScreenTitle>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <TVCard>
+          <MetricLabel>Posts Publicados</MetricLabel>
+          <MetricValue color="#F97316">{totals.posts}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Stories</MetricLabel>
+          <MetricValue color="#FBBF24">{totals.stories}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Agendados</MetricLabel>
+          <MetricValue color="#22C55E">{totals.scheduled}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Vídeos YouTube</MetricLabel>
+          <MetricValue>{totals.youtube}</MetricValue>
+        </TVCard>
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <TVCard>
+          <MetricLabel>Seguidores W3</MetricLabel>
+          <MetricValue>{totals.followersW3.toLocaleString("pt-BR")}</MetricValue>
+        </TVCard>
+        <TVCard>
+          <MetricLabel>Seguidores Léo</MetricLabel>
+          <MetricValue>{totals.followersLeo.toLocaleString("pt-BR")}</MetricValue>
+        </TVCard>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main TV Mode Page ───
+export default function TVModePage() {
+  const [currentScreen, setCurrentScreen] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [opacity, setOpacity] = useState(1);
+
+  const filter: DateFilter = "month";
+  const filterRange = useMemo(() => getDateRange(filter), []);
+  const monthRef = format(startOfMonth(new Date()), "yyyy-MM");
+
+  const { data: stats, refetch: refetchStats } = useDashboardStats(filter, undefined, "all");
+  const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter, undefined, "all");
+  const { data: metaMensalDb } = useTvMetaMensal();
+  const metaMensal = metaMensalDb ?? 100000;
+
+  const { data: ssEntries = [], refetch: refetchSS } = useSocialSellingEntries({
+    startDate: filterRange.start,
+    endDate: filterRange.end,
+  });
+
+  const contentStartDate = format(filterRange.start, "yyyy-MM-dd");
+  const contentEndDate = format(filterRange.end, "yyyy-MM-dd");
   const { data: contentLogs = [], refetch: refetchContent } = useContentDailyLogs(contentStartDate, contentEndDate);
 
-  const contentTotals = useMemo(() => {
-    return {
-      posts: contentLogs.reduce((s, l) => s + l.posts_published_count, 0),
-      stories: contentLogs.reduce((s, l) => s + l.stories_done_count, 0),
-      scheduled: contentLogs.reduce((s, l) => s + l.posts_scheduled_count, 0),
-    };
-  }, [contentLogs]);
+  const { data: oteGoals = [] } = useOteGoals(monthRef);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh data every 30s
   useEffect(() => {
     const interval = setInterval(() => {
       refetchStats();
       refetchRankings();
       refetchSS();
       refetchContent();
-      setLastUpdate(new Date());
     }, 30000);
-
     return () => clearInterval(interval);
   }, [refetchStats, refetchRankings, refetchSS, refetchContent]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  // Screen rotation with fade
+  const goToScreen = useCallback((next: number) => {
+    setOpacity(0);
+    setTimeout(() => {
+      setCurrentScreen(next % SCREEN_COUNT);
+      setProgress(0);
+      setOpacity(1);
+    }, FADE_DURATION / 2);
+  }, []);
 
-  const formatCurrencyCompact = (value: number) => {
-    if (value >= 1_000_000) {
-      return `R$ ${(value / 1_000_000).toFixed(1).replace('.', ',')}M`;
-    }
-    if (value >= 1_000) {
-      return `R$ ${(value / 1_000).toFixed(0)}K`;
-    }
-    return formatCurrency(value);
-  };
+  useEffect(() => {
+    if (!isPlaying) return;
+    const tick = 50;
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        const next = prev + (tick / ROTATION_INTERVAL) * 100;
+        if (next >= 100) {
+          goToScreen(currentScreen + 1);
+          return 0;
+        }
+        return next;
+      });
+    }, tick);
+    return () => clearInterval(interval);
+  }, [isPlaying, currentScreen, goToScreen]);
 
-  const progressoMeta = metaMensal > 0 ? ((stats?.volumeVendas || 0) / metaMensal) * 100 : 0;
+  const handlePrev = () => goToScreen((currentScreen - 1 + SCREEN_COUNT) % SCREEN_COUNT);
+  const handleNext = () => goToScreen(currentScreen + 1);
 
   return (
-    <div
-      className="min-h-screen p-8"
-      style={{
-        background: 'radial-gradient(ellipse at 15% 0%, rgba(249,115,22,0.05) 0%, transparent 55%), hsl(var(--background))',
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold">
-            <span className="text-primary">Pulmão</span> W3
-          </h1>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Dashboard ao Vivo</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Select value={selectedCloser} onValueChange={setSelectedCloser}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por closer" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Closers</SelectItem>
-              {closers?.map((closer) => (
-                <SelectItem key={closer.id} value={closer.id}>
-                  {closer.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <TVDateFilter
-            filter={filter}
-            onFilterChange={setFilter}
-            customRange={customRange}
-            onCustomRangeChange={setCustomRange}
-          />
-
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
-            Atualizado: {lastUpdate.toLocaleTimeString("pt-BR")}
-          </p>
-          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-            {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setShowSettings(!showSettings)}>
-            <Settings className="h-5 w-5" />
-          </Button>
-          <Link to="/">
-            <Button variant="outline" size="icon">
-              <X className="h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Settings */}
-      {showSettings && (
-        <div
-          className="mb-8 p-4 rounded-2xl"
-          style={{
-            background: 'hsl(var(--card))',
-            border: '1px solid rgba(255, 165, 0, 0.12)',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">Meta Mensal:</label>
-            <Input
-              type="number"
-              value={metaMensal}
-              onChange={(e) => handleMetaChange(Number(e.target.value) || 0)}
-              className="w-40"
-            />
-            <Button onClick={handleSaveMeta} disabled={saveMeta.isPending || !metaDirty} size="sm">
-              <Save className="h-4 w-4 mr-2" />
-              {saveMeta.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* ── COMERCIAL ── */}
-      <SectionLabel title="Comercial" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="stat-card">
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }} className="mb-2">Volume de Vendas</p>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }} className="truncate">{formatCurrencyCompact(stats?.volumeVendas || 0)}</p>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }} className="mt-2">{stats?.totalVendas || 0} vendas</p>
-        </div>
-
-        <div className="stat-card">
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }} className="mb-2">Calls Realizadas</p>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#22C55E' }}>{stats?.callsRealizadas || 0}</p>
-          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }} className="mt-2">{stats?.callsAgendadas || 0} agendadas</p>
-        </div>
-
-        <div className="stat-card">
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }} className="mb-2">Taxa de Conversão</p>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#FFFFFF' }}>{(stats?.taxaConversao || 0).toFixed(1)}%</p>
-        </div>
-
-        <div className="stat-card">
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }} className="mb-2">% No-Show</p>
-          <p style={{ fontSize: '36px', fontWeight: 700 }} className={cn((stats?.percentNoShow || 0) > 20 ? "text-destructive" : "text-success")}>
-            {(stats?.percentNoShow || 0).toFixed(1)}%
-          </p>
-        </div>
-      </div>
-
-      {/* Meta Progress */}
+    <div className="fixed inset-0 z-50 overflow-auto" style={{ background: "#0d0d0d" }}>
+      {/* Content */}
       <div
-        className="mb-6 rounded-2xl"
-        style={{
-          padding: '24px',
-          background: 'hsl(var(--card))',
-          border: '1px solid rgba(255, 165, 0, 0.12)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-        }}
+        className="min-h-screen p-8 lg:p-12 pb-24 transition-opacity"
+        style={{ opacity, transitionDuration: `${FADE_DURATION / 2}ms` }}
       >
-        <div className="flex items-center justify-between mb-4">
+        {/* Branding */}
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Progresso da Meta Mensal</p>
-            <p style={{ fontSize: '22px', fontWeight: 700, color: '#FFFFFF' }}>
-              {formatCurrency(stats?.volumeVendas || 0)} <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>/ {formatCurrency(metaMensal)}</span>
-            </p>
+            <h1 style={{ fontSize: "24px", fontWeight: 700 }}>
+              <span style={{ color: "#F97316" }}>Pulmão</span>{" "}
+              <span style={{ color: "#FFFFFF" }}>W3</span>
+            </h1>
           </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>{progressoMeta.toFixed(0)}%</p>
-        </div>
-        <div
-          className="w-full overflow-hidden"
-          style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
-        >
-          <div
-            className={cn('h-full transition-all duration-1000', progressoMeta >= 100 ? 'progress-fill-success' : 'progress-fill')}
-            style={{ width: `${Math.min(progressoMeta, 100)}%`, borderRadius: '999px' }}
-          />
-        </div>
-      </div>
-
-      {/* OTE Panel and Rankings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        <OteTVPanel monthRef={monthRef} selectedCloser={selectedCloser} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="stat-card" style={{ borderColor: 'rgba(249,115,22,0.3)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Trophy className="h-6 w-6" style={{ color: '#F97316' }} />
-              <p className="font-medium" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Top do Dia</p>
-            </div>
-            <p className="text-2xl font-bold text-foreground mb-1">{rankings?.topCloserDia?.nome || "-"}</p>
-            {rankings?.topCloserDia && (
-              <p className="font-medium" style={{ color: '#F97316' }}>{formatCurrency(rankings.topCloserDia.volume)}</p>
-            )}
-          </div>
-
-          <div className="stat-card" style={{ borderColor: 'rgba(249,115,22,0.3)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Trophy className="h-6 w-6" style={{ color: '#F97316' }} />
-              <p className="font-medium" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Top da Semana</p>
-            </div>
-            <p className="text-2xl font-bold text-foreground mb-1">{rankings?.topCloserSemana?.nome || "-"}</p>
-            {rankings?.topCloserSemana && (
-              <p className="font-medium" style={{ color: '#F97316' }}>{formatCurrency(rankings.topCloserSemana.volume)}</p>
-            )}
-          </div>
-
-          <div className="stat-card" style={{ borderColor: 'rgba(34,197,94,0.3)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Target className="h-6 w-6" style={{ color: '#22C55E' }} />
-              <p className="font-medium" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Top Conversão</p>
-            </div>
-            <p className="text-2xl font-bold text-foreground mb-1">{rankings?.topConversao?.nome || "-"}</p>
-            {rankings?.topConversao && (
-              <p className="font-medium" style={{ color: '#22C55E' }}>{rankings.topConversao.taxaConversao.toFixed(1)}%</p>
-            )}
-          </div>
-
-          <div className="stat-card" style={{ borderColor: 'rgba(56,189,248,0.3)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Phone className="h-6 w-6" style={{ color: '#38BDF8' }} />
-              <p className="font-medium" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Menor No-Show</p>
-            </div>
-            <p className="text-2xl font-bold text-foreground mb-1">{rankings?.menorNoShow?.nome || "-"}</p>
-            {rankings?.menorNoShow && (
-              <p className="font-medium" style={{ color: '#38BDF8' }}>{rankings.menorNoShow.percentNoShow.toFixed(1)}%</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── SOCIAL SELLING ── */}
-      <SectionLabel title="Social Selling" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="stat-card">
-          <div className="flex items-center gap-2 mb-2">
-            <MessageCircle className="h-4 w-4" style={{ color: '#F97316' }} />
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Conversas</p>
-          </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#FFFFFF' }}>{ssTotals.conversas}</p>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-2 mb-2">
-            <FileText className="h-4 w-4" style={{ color: '#F97316' }} />
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Formulários</p>
-          </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#FFFFFF' }}>{ssTotals.formularios}</p>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="h-4 w-4" style={{ color: '#22C55E' }} />
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Agendamentos</p>
-          </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#22C55E' }}>{ssTotals.agendamentos}</p>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="h-4 w-4" style={{ color: '#FBBF24' }} />
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Conv. Form→Agend</p>
-          </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#FBBF24' }}>
-            {ssTotals.formularios > 0 ? ((ssTotals.agendamentos / ssTotals.formularios) * 100).toFixed(0) : 0}%
+          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.3)" }}>
+            Atualizado: {new Date().toLocaleTimeString("pt-BR")}
           </p>
         </div>
+
+        {currentScreen === 0 && <ScreenComercial stats={stats} metaMensal={metaMensal} />}
+        {currentScreen === 1 && <ScreenRanking rankings={rankings} oteGoals={oteGoals} />}
+        {currentScreen === 2 && <ScreenSocialSelling ssEntries={ssEntries} />}
+        {currentScreen === 3 && <ScreenConteudo contentLogs={contentLogs} />}
       </div>
 
-      {/* ── CONTEÚDO ── */}
-      <SectionLabel title="Conteúdo" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="stat-card">
-          <div className="flex items-center gap-2 mb-2">
-            <FileText className="h-4 w-4" style={{ color: '#F97316' }} />
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Posts Publicados</p>
-          </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>{contentTotals.posts}</p>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-2 mb-2">
-            <Film className="h-4 w-4" style={{ color: '#FBBF24' }} />
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Stories</p>
-          </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#FBBF24' }}>{contentTotals.stories}</p>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="h-4 w-4" style={{ color: '#22C55E' }} />
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Agendados</p>
-          </div>
-          <p style={{ fontSize: '36px', fontWeight: 700, color: '#22C55E' }}>{contentTotals.scheduled}</p>
-        </div>
-      </div>
-
-      {/* Full Ranking */}
-      {rankings?.rankingGeral && rankings.rankingGeral.length > 0 && (
-        <>
-          <SectionLabel title="Ranking Geral" />
-          <div
-            className="rounded-2xl"
-            style={{
-              padding: '24px',
-              background: 'hsl(var(--card))',
-              border: '1px solid rgba(255, 165, 0, 0.12)',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-            }}
+      {/* Bottom-left: Exit */}
+      <div className="fixed bottom-6 left-8 z-50">
+        <Link to="/">
+          <button
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:bg-white/5"
+            style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {rankings.rankingGeral.slice(0, 6).map((closer, index) => (
-                <div key={closer.id} className="flex items-center gap-4 p-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                  <div
-                    className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl",
-                      index === 0 && "bg-primary text-primary-foreground",
-                      index === 1 && "medal-silver",
-                      index === 2 && "medal-bronze",
-                      index > 2 && "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xl font-bold text-foreground">{closer.nome}</p>
-                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
-                      {closer.vendas} vendas • {closer.taxaConversao.toFixed(0)}% conv.
-                    </p>
-                  </div>
-                  <p className="text-2xl font-bold" style={{ color: '#F97316' }}>{formatCurrency(closer.volume)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+            <X className="h-4 w-4" />
+            Sair do Modo TV
+          </button>
+        </Link>
+      </div>
+
+      {/* Bottom-right: Controls */}
+      <div className="fixed bottom-6 right-8 z-50 flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 text-white/40 hover:text-white/80">
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        {/* Dots */}
+        <div className="flex gap-2">
+          {Array.from({ length: SCREEN_COUNT }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToScreen(i)}
+              className="w-2.5 h-2.5 rounded-full transition-all"
+              style={{
+                background: i === currentScreen ? "#F97316" : "rgba(255,255,255,0.2)",
+                transform: i === currentScreen ? "scale(1.3)" : "scale(1)",
+              }}
+            />
+          ))}
+        </div>
+
+        <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8 text-white/40 hover:text-white/80">
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsPlaying(!isPlaying)}
+          className="h-8 w-8 text-white/40 hover:text-white/80"
+        >
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </Button>
+      </div>
+
+      {/* Progress bar at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-50" style={{ height: "3px", background: "rgba(255,255,255,0.06)" }}>
+        <div
+          className="h-full transition-all"
+          style={{
+            width: `${progress}%`,
+            background: "linear-gradient(90deg, #F97316, #FBBF24)",
+            transitionDuration: "50ms",
+            transitionTimingFunction: "linear",
+          }}
+        />
+      </div>
     </div>
   );
 }
