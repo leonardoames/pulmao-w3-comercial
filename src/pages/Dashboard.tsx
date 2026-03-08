@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -13,10 +13,9 @@ import { Phone, TrendingUp, Target, Trophy, CalendarIcon, AlertCircle, ShoppingC
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { OteDashboardCard } from '@/components/ote/OteDashboardCard';
 import { ShareDashboardDialog } from '@/components/dashboard/ShareDashboardDialog';
 import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
@@ -24,6 +23,9 @@ import { RevenueCard } from '@/components/dashboard/RevenueCard';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { OrigemLeadCard } from '@/components/dashboard/OrigemLeadCard';
 import { Venda } from '@/types/crm';
+import { useOteRealized, useOteTeamStats } from '@/hooks/useOteGoals';
+import { OteProgressBar } from '@/components/ote/OteProgressBar';
+import { OteBadge } from '@/components/ote/OteBadge';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -49,20 +51,42 @@ function useTvMetaMensal() {
   });
 }
 
+function getMetaColor(actual: number, expected: number): string {
+  const ratio = expected > 0 ? actual / expected : 1;
+  if (ratio >= 1) return '#22C55E';
+  if (ratio >= 0.6) return '#FBBF24';
+  return '#EF4444';
+}
+
 export default function DashboardPage() {
   const [filter, setFilter] = useState<DateFilter>('month');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tempRange, setTempRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedCloser, setSelectedCloser] = useState<string>('all');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date>(new Date());
 
+  const queryClient = useQueryClient();
   const canShare = useCanAccessAdminPanel();
   const { canView: canViewSection } = usePermissionChecks();
   const { data: closers } = useClosers();
-  const { data: stats, isLoading } = useDashboardStats(filter, customRange, selectedCloser);
+  const { data: stats, isLoading, dataUpdatedAt } = useDashboardStats(filter, customRange, selectedCloser);
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
   const { data: noShowByCloser } = useNoShowByCloser(filter, customRange);
   const { data: metaMensal } = useTvMetaMensal();
+
+  // OTE data
+  const monthRef = format(new Date(), 'yyyy-MM');
+  const closerId = selectedCloser === 'all' ? undefined : selectedCloser;
+  const { data: oteData } = useOteRealized(monthRef, closerId);
+  const { data: teamStats } = useOteTeamStats(monthRef);
+
+  // Update timestamp tracking
+  useEffect(() => {
+    if (dataUpdatedAt) {
+      setLastUpdatedAt(new Date(dataUpdatedAt));
+    }
+  }, [dataUpdatedAt]);
 
   // Vendas for OrigemLeadCard
   const dateRange = useMemo(() => getDateRange(filter, customRange), [filter, customRange]);
@@ -89,6 +113,15 @@ export default function DashboardPage() {
     }).format(value);
   };
 
+  const formatCurrencyShort = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
   const handleFilterChange = (newFilter: DateFilter) => {
     setFilter(newFilter);
     if (newFilter === 'custom') {
@@ -106,6 +139,46 @@ export default function DashboardPage() {
   const displayRange = filter === 'custom' && customRange 
     ? `${format(customRange.start, 'dd/MM')} - ${format(customRange.end, 'dd/MM')}`
     : null;
+
+  // Timestamp
+  const minutesSinceUpdate = Math.floor((Date.now() - lastUpdatedAt.getTime()) / 60000);
+  const timestampColor = minutesSinceUpdate < 5 ? '#22C55E' : minutesSinceUpdate <= 15 ? '#FBBF24' : '#888888';
+  const timestampPulse = minutesSinceUpdate < 5;
+
+  const handleManualRefresh = () => {
+    queryClient.invalidateQueries();
+    setLastUpdatedAt(new Date());
+  };
+
+  // OTE display data
+  const oteDisplayData = selectedCloser !== 'all' && oteData?.[0] ? {
+    target: oteData[0].oteTarget,
+    realized: oteData[0].oteRealized,
+    percentAchieved: oteData[0].percentAchieved,
+    badge: oteData[0].badge,
+    label: oteData[0].closerNome,
+  } : {
+    target: teamStats?.totalTarget || 0,
+    realized: teamStats?.totalRealized || 0,
+    percentAchieved: teamStats?.percentAchieved || 0,
+    badge: teamStats?.badge || null,
+    label: 'Time',
+  };
+
+  // Date proportional expected
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const currentDay = now.getDate();
+  const expectedProportion = currentDay / daysInMonth;
+  const expectedPercent = expectedProportion * 100;
+
+  // Meta Mensal calculations
+  const metaMensalValue = metaMensal ?? 100000;
+  const volumeVendas = stats?.volumeVendas ?? 0;
+  const metaMensalPercent = metaMensalValue > 0 ? (volumeVendas / metaMensalValue) * 100 : 0;
+
+  // No-show column visibility
+  const showNoShowColumn = selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0;
 
   return (
     <AppLayout>
@@ -179,6 +252,22 @@ export default function DashboardPage() {
         {canShare && <ShareDashboardDialog />}
       </PageHeader>
 
+      {/* Timestamp */}
+      <div className="flex justify-end mb-4 -mt-4">
+        <button
+          onClick={handleManualRefresh}
+          className="flex items-center gap-2 text-xs cursor-pointer hover:opacity-80 transition-opacity"
+          style={{ color: 'rgba(255,255,255,0.5)' }}
+          title="Clique para atualizar"
+        >
+          <span
+            className={cn('inline-block w-2 h-2 rounded-full', timestampPulse && 'animate-pulse')}
+            style={{ background: timestampColor }}
+          />
+          Atualizado às {format(lastUpdatedAt, 'HH:mm')}
+        </button>
+      </div>
+
       {/* BLOCO 1 — Receita */}
       {canViewSection('section:dashboard:receita') && (
         <>
@@ -212,89 +301,164 @@ export default function DashboardPage() {
         </>
       )}
 
+      {/* BLOCO — Metas do Mês (Unificado: OTE + Meta Mensal) */}
       {canViewSection('section:dashboard:ote') && (
         <div className="mb-6">
-          <OteDashboardCard
-            monthRef={format(new Date(), 'yyyy-MM')}
-            selectedCloser={selectedCloser}
-            onCloserChange={setSelectedCloser}
-          />
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Target className="h-4 w-4 text-primary" />
+                  Metas do Mês
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Linha 1: Meta OTE */}
+              {(() => {
+                const hasOteGoal = oteDisplayData.target > 0;
+                const oteExpected = oteDisplayData.target * expectedProportion;
+                const oteColor = getMetaColor(oteDisplayData.realized, oteExpected);
+                const oteExpectedPct = expectedPercent;
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
+                          Meta OTE {oteDisplayData.label !== 'Time' ? `— ${oteDisplayData.label}` : 'do Time'}
+                        </p>
+                        {hasOteGoal && (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-lg font-bold text-primary">
+                              {formatCurrencyShort(oteDisplayData.realized)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              / {formatCurrencyShort(oteDisplayData.target)}
+                            </span>
+                            <OteBadge badge={oteDisplayData.badge} />
+                          </div>
+                        )}
+                      </div>
+                      {hasOteGoal && (
+                        <div className="text-right">
+                          <p className="text-2xl font-bold" style={{ color: oteColor }}>
+                            {oteDisplayData.percentAchieved.toFixed(0)}%
+                          </p>
+                          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>do esperado</p>
+                        </div>
+                      )}
+                    </div>
+                    {hasOteGoal ? (
+                      <div className="pb-6">
+                        <OteProgressBar
+                          percentAchieved={oteDisplayData.percentAchieved}
+                          height="md"
+                          expectedPercent={oteExpectedPct}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nenhuma meta OTE cadastrada para este mês.</p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Divider */}
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+
+              {/* Linha 2: Meta Mensal */}
+              {metaMensal !== undefined && (() => {
+                const metaExpected = metaMensalValue * expectedProportion;
+                const metaColor = getMetaColor(volumeVendas, metaExpected);
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-lg font-bold text-foreground">
+                            {formatCurrencyShort(volumeVendas)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            / {formatCurrencyShort(metaMensalValue)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold" style={{ color: metaColor }}>
+                          {metaMensalPercent.toFixed(0)}%
+                        </p>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>do esperado</p>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <div
+                        className="w-full overflow-hidden"
+                        style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
+                      >
+                        <div
+                          className={cn(
+                            'h-full transition-all duration-1000',
+                            metaMensalPercent >= 100 ? 'progress-fill-success' : 'progress-fill'
+                          )}
+                          style={{ width: `${Math.min(metaMensalPercent, 100)}%`, borderRadius: '999px' }}
+                        />
+                      </div>
+                      {/* Ghost ruler */}
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2"
+                        style={{
+                          left: `${Math.min(expectedPercent, 100)}%`,
+                          width: '2px',
+                          height: '14px',
+                          background: '#FBBF24',
+                          opacity: 0.8,
+                        }}
+                        title={`Meta esperada: ${expectedPercent.toFixed(0)}% (dia ${currentDay}/${daysInMonth})`}
+                      />
+                      <div
+                        className="absolute -translate-x-1/2 whitespace-nowrap"
+                        style={{
+                          left: `${Math.min(expectedPercent, 100)}%`,
+                          top: '14px',
+                          fontSize: '10px',
+                          color: '#FBBF24',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Esperado: {expectedPercent.toFixed(0)}%
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Footer: Ver detalhes */}
+              <div className="pt-2">
+                <Link to="/meta-ote">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    style={{
+                      border: '1px solid #333',
+                      color: '#F5F5F5',
+                      background: 'transparent',
+                    }}
+                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = '#2a2a2a'; }}
+                    onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'transparent'; }}
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    Ver detalhes
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
-
-      {/* Meta Mensal (TV) */}
-      {canViewSection('section:dashboard:ote') && metaMensal !== undefined && (() => {
-        const now = new Date();
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const currentDay = now.getDate();
-        const expectedPercent = (currentDay / daysInMonth) * 100;
-        const actualPercent = metaMensal > 0 ? ((stats?.volumeVendas ?? 0) / metaMensal * 100) : 0;
-
-        return (
-          <div
-            className="mb-8 rounded-2xl"
-            style={{
-              padding: '24px',
-              background: 'hsl(var(--card))',
-              border: '1px solid rgba(255, 165, 0, 0.12)',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
-                <p style={{ fontSize: '22px', fontWeight: 700, color: '#FFFFFF' }}>
-                  {formatCurrency(stats?.volumeVendas ?? 0)}{' '}
-                  <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>
-                    / {formatCurrency(metaMensal)}
-                  </span>
-                </p>
-              </div>
-              <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>
-                {actualPercent.toFixed(0)}%
-              </p>
-            </div>
-            <div className="relative">
-              <div
-                className="w-full overflow-hidden"
-                style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
-              >
-                <div
-                  className={cn(
-                    'h-full transition-all duration-1000',
-                    actualPercent >= 100 ? 'progress-fill-success' : 'progress-fill'
-                  )}
-                  style={{ width: `${Math.min(actualPercent, 100)}%`, borderRadius: '999px' }}
-                />
-              </div>
-              {/* Ghost ruler */}
-              <div
-                className="absolute top-1/2 -translate-y-1/2"
-                style={{
-                  left: `${Math.min(expectedPercent, 100)}%`,
-                  width: '2px',
-                  height: '14px',
-                  background: '#FBBF24',
-                  opacity: 0.8,
-                }}
-                title={`Meta esperada: ${expectedPercent.toFixed(0)}% (dia ${currentDay}/${daysInMonth})`}
-              />
-              <div
-                className="absolute -translate-x-1/2 whitespace-nowrap"
-                style={{
-                  left: `${Math.min(expectedPercent, 100)}%`,
-                  top: '14px',
-                  fontSize: '10px',
-                  color: '#FBBF24',
-                  fontWeight: 500,
-                }}
-              >
-                Esperado: {expectedPercent.toFixed(0)}%
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* BLOCO 2 — Performance Comercial */}
       {canViewSection('section:dashboard:performance') && (
@@ -306,18 +470,20 @@ export default function DashboardPage() {
               value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
               subtitle="Vendas / Calls realizadas"
               icon={<Target className="h-5 w-5" />}
-              variant={(stats?.taxaConversao ?? 0) > 15 ? 'success' : undefined}
+              variant="success"
             />
             <StatCard
               title="Vendas Realizadas"
               value={stats?.totalVendas ?? 0}
               icon={<ShoppingCart className="h-5 w-5" />}
+              variant="primary"
             />
             <StatCard
               title="Calls Realizadas"
               value={stats?.callsRealizadas ?? 0}
               subtitle={`${stats?.callsAgendadas ?? 0} agendadas`}
               icon={<Phone className="h-5 w-5" />}
+              variant="info"
             />
             <StatCard
               title="% No-Show Total"
@@ -334,9 +500,12 @@ export default function DashboardPage() {
       {canViewSection('section:dashboard:destaques') && (
         <>
           <SectionLabel title="Destaques" />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className={cn(
+            'grid grid-cols-1 gap-4',
+            showNoShowColumn ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
+          )}>
             {/* Coluna 1: Ranking de Closers */}
-            <Card>
+            <Card className={cn(!showNoShowColumn && 'lg:col-span-1')}>
               <CardHeader>
                 <CardTitle>Ranking de Closers</CardTitle>
               </CardHeader>
@@ -461,7 +630,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
-              {selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0 && (
+              {showNoShowColumn && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -481,7 +650,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 gap-3">
-                      {noShowByCloser.map((closer) => (
+                      {noShowByCloser!.map((closer) => (
                         <div
                           key={closer.id}
                           className="flex items-center justify-between p-4 rounded-xl"
@@ -523,7 +692,7 @@ export default function DashboardPage() {
 
       {/* Origem dos Leads */}
       {canViewSection('section:dashboard:receita') && vendasOrigem && vendasOrigem.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 mt-6">
           <OrigemLeadCard vendas={vendasOrigem} />
         </div>
       )}

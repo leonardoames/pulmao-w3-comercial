@@ -13,7 +13,7 @@ interface StatCardProps {
   };
   trendLabel?: string;
   className?: string;
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'destructive';
+  variant?: 'default' | 'primary' | 'success' | 'warning' | 'destructive' | 'info';
 }
 
 export function StatCard({
@@ -27,6 +27,26 @@ export function StatCard({
   className,
   variant = 'default'
 }: StatCardProps) {
+  const iconBgColor = variant === 'destructive'
+    ? 'rgba(239, 68, 68, 0.12)'
+    : variant === 'success'
+    ? 'rgba(34, 197, 94, 0.12)'
+    : variant === 'warning'
+    ? 'rgba(251, 191, 36, 0.12)'
+    : variant === 'info'
+    ? 'rgba(14, 165, 233, 0.12)'
+    : 'rgba(249, 115, 22, 0.1)';
+
+  const iconColor = variant === 'destructive'
+    ? '#EF4444'
+    : variant === 'success'
+    ? '#22C55E'
+    : variant === 'warning'
+    ? '#FBBF24'
+    : variant === 'info'
+    ? '#0EA5E9'
+    : '#F97316';
+
   return (
     <div
       className={cn('stat-card animate-fade-in relative', className)}
@@ -42,20 +62,8 @@ export function StatCard({
             width: '32px',
             height: '32px',
             borderRadius: '6px',
-            background: variant === 'destructive'
-              ? 'rgba(239, 68, 68, 0.12)'
-              : variant === 'success'
-              ? 'rgba(34, 197, 94, 0.12)'
-              : variant === 'warning'
-              ? 'rgba(251, 191, 36, 0.12)'
-              : 'rgba(249, 115, 22, 0.1)',
-            color: variant === 'destructive'
-              ? '#EF4444'
-              : variant === 'success'
-              ? '#22C55E'
-              : variant === 'warning'
-              ? '#FBBF24'
-              : '#F97316',
+            background: iconBgColor,
+            color: iconColor,
           }}
         >
           <span className="[&>svg]:h-[20px] [&>svg]:w-[20px]">{icon}</span>
