@@ -38,9 +38,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check webhook URL
-    const webhookUrl = Deno.env.get("VENDA_WEBHOOK_URL");
-    if (!webhookUrl) {
+    // Use service role client for data access
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Fetch active webhooks for 'nova_venda' event from the webhooks table
+    const { data: webhooks, error: webhooksError } = await serviceClient
+      .from("webhooks")
+      .select("*")
+      .eq("evento", "nova_venda")
+      .eq("ativo", true);
+
+    // Fallback to env var if no webhooks in table
+    const envWebhookUrl = Deno.env.get("VENDA_WEBHOOK_URL");
+
+    const webhookUrls: string[] = [];
+    if (webhooks && webhooks.length > 0) {
+      for (const wh of webhooks) {
+        webhookUrls.push(wh.url);
+      }
+    } else if (envWebhookUrl) {
+      webhookUrls.push(envWebhookUrl);
+    }
+
+    if (webhookUrls.length === 0) {
       return new Response(JSON.stringify({ error: "webhook_not_configured" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -56,9 +76,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use service role to fetch full venda data with closer profile
-    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-
+    // Fetch full venda data with closer profile
     const { data: venda, error: vendaError } = await serviceClient
       .from("vendas")
       .select(`
@@ -101,26 +119,24 @@ Deno.serve(async (req) => {
       },
     };
 
-    // Send to webhook via GET with payload as query param
+    // Send to all active webhooks in parallel
     const encodedPayload = encodeURIComponent(JSON.stringify(payload));
-    const separator = webhookUrl.includes('?') ? '&' : '?';
-    const webhookRes = await fetch(`${webhookUrl}${separator}data=${encodedPayload}`, {
-      method: "GET",
-    });
-
-    if (!webhookRes.ok) {
-      const errText = await webhookRes.text();
-      console.error("Webhook error:", webhookRes.status, errText);
-      return new Response(
-        JSON.stringify({ error: "webhook_failed", status: webhookRes.status }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const results = await Promise.allSettled(
+      webhookUrls.map(async (url) => {
+        const separator = url.includes("?") ? "&" : "?";
+        const res = await fetch(`${url}${separator}data=${encodedPayload}`, {
+          method: "GET",
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`Webhook error for ${url}:`, res.status, errText);
+          return { url, status: res.status, error: errText };
         }
-      );
-    }
+        return { url, status: res.status, success: true };
+      })
+    );
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
