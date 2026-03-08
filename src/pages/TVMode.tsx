@@ -137,63 +137,61 @@ function GradientBar({ percent, height = 6 }: { percent: number; height?: number
 
 // ─── Screen 1: Resultado Comercial ───
 function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number }) {
-  const progressPercent = metaMensal > 0 ? Math.min(((stats?.volumeVendas || 0) / metaMensal) * 100, 100) : 0;
+  const revenue = stats?.volumeVendas || 0;
+  const progressPercent = metaMensal > 0 ? (revenue / metaMensal) * 100 : 0;
+  const totalPayments = (stats?.valorPix || 0) + (stats?.valorCartao || 0) + (stats?.valorBoleto || 0);
+  const pctPix = totalPayments > 0 ? ((stats?.valorPix || 0) / totalPayments) * 100 : 0;
+  const pctCartao = totalPayments > 0 ? ((stats?.valorCartao || 0) / totalPayments) * 100 : 0;
+  const pctBoleto = totalPayments > 0 ? ((stats?.valorBoleto || 0) / totalPayments) * 100 : 0;
+
+  const monthLabel = format(new Date(), "MMMM yyyy", { locale: ptBR }).toUpperCase();
 
   return (
-    <div className="flex flex-col h-full">
-      <ScreenTitle>
-        Resultado Comercial — {format(new Date(), "MMMM yyyy").replace(/^\w/, (c) => c.toUpperCase())}
-      </ScreenTitle>
+    <div className="flex flex-col h-full" style={{ gap: "10px" }}>
+      {/* Title */}
+      <ScreenTitle>Resultado Comercial — {monthLabel}</ScreenTitle>
 
-      {/* 2x2 Metric Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <TVCard style={{ minHeight: "180px" }} className="flex flex-col justify-center">
-          <MetricLabel>Receita Total</MetricLabel>
-          <MetricValue color="#F97316" size="48px">{formatCurrency(stats?.volumeVendas || 0)}</MetricValue>
-        </TVCard>
-        <TVCard style={{ minHeight: "180px" }} className="flex flex-col justify-center">
-          <MetricLabel>Ticket Médio</MetricLabel>
-          <MetricValue size="48px">{formatCurrency(stats?.ticketMedio || 0)}</MetricValue>
-        </TVCard>
-        <TVCard style={{ minHeight: "180px" }} className="flex flex-col justify-center">
-          <MetricLabel>Fat. por Call</MetricLabel>
-          <MetricValue size="48px">{formatCurrency(stats?.faturamentoPorCall || 0)}</MetricValue>
-        </TVCard>
-        <TVCard style={{ minHeight: "180px" }} className="flex flex-col justify-center">
-          <MetricLabel>Total de Vendas</MetricLabel>
-          <MetricValue size="48px">{formatInteger(stats?.totalVendas || 0)}</MetricValue>
-        </TVCard>
+      {/* 4 metrics in a single row */}
+      <div className="grid grid-cols-4 gap-3" style={{ flexShrink: 0 }}>
+        {[
+          { label: "Receita Total", value: formatCurrency(revenue), color: "#F97316" },
+          { label: "Ticket Médio", value: formatCurrency(stats?.ticketMedio || 0), color: "#FFFFFF" },
+          { label: "Fat. por Call", value: formatCurrency(stats?.faturamentoPorCall || 0), color: "#FFFFFF" },
+          { label: "Total de Vendas", value: formatInteger(stats?.totalVendas || 0), color: "#FFFFFF" },
+        ].map((m) => (
+          <TVCard key={m.label} style={{ padding: "16px 20px", height: "120px" }} className="flex flex-col justify-center">
+            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "6px" }}>{m.label}</p>
+            <p style={{ fontSize: "32px", fontWeight: 700, color: m.color, lineHeight: 1.1 }} className="truncate">{m.value}</p>
+          </TVCard>
+        ))}
       </div>
 
       {/* Meta Mensal */}
-      <TVCard className="mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <MetricLabel>Meta Mensal</MetricLabel>
-            <p style={{ fontSize: "24px", fontWeight: 700, color: "#FFFFFF" }}>
-              {formatCurrency(stats?.volumeVendas || 0)}{" "}
-              <span style={{ fontSize: "14px", fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/ {formatCurrency(metaMensal)}</span>
-            </p>
+      <TVCard style={{ padding: "14px 24px", height: "80px", flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-baseline gap-2">
+            <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)" }}>Meta Mensal</span>
+            <span style={{ fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }}>{formatCurrency(revenue)}</span>
+            <span style={{ fontSize: "13px", fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/ {formatCurrency(metaMensal)}</span>
           </div>
-          <p style={{ fontSize: "48px", fontWeight: 700, color: "#F97316" }}>{progressPercent.toFixed(0)}%</p>
+          <p style={{ fontSize: "28px", fontWeight: 700, color: "#F97316", lineHeight: 1 }}>{progressPercent.toFixed(0)}%</p>
         </div>
-        <GradientBar percent={progressPercent} height={8} />
+        <GradientBar percent={progressPercent} />
       </TVCard>
 
-      {/* Payment Breakdown */}
-      <div className="grid grid-cols-3 gap-4">
-        <TVCard className="flex flex-col justify-center">
-          <MetricLabel>Pix</MetricLabel>
-          <MetricValue color="#F97316" size="40px">{formatCurrency(stats?.valorPix || 0)}</MetricValue>
-        </TVCard>
-        <TVCard className="flex flex-col justify-center">
-          <MetricLabel>Cartão</MetricLabel>
-          <MetricValue size="40px">{formatCurrency(stats?.valorCartao || 0)}</MetricValue>
-        </TVCard>
-        <TVCard className="flex flex-col justify-center">
-          <MetricLabel>Boleto</MetricLabel>
-          <MetricValue size="40px">{formatCurrency(stats?.valorBoleto || 0)}</MetricValue>
-        </TVCard>
+      {/* Pix / Cartão / Boleto */}
+      <div className="grid grid-cols-3 gap-3" style={{ flexShrink: 0 }}>
+        {[
+          { label: "Pix", value: stats?.valorPix || 0, pct: pctPix },
+          { label: "Cartão", value: stats?.valorCartao || 0, pct: pctCartao },
+          { label: "Boleto", value: stats?.valorBoleto || 0, pct: pctBoleto },
+        ].map((m) => (
+          <TVCard key={m.label} style={{ padding: "14px 20px", height: "100px" }} className="flex flex-col justify-center">
+            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "4px" }}>{m.label}</p>
+            <p style={{ fontSize: "28px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1 }} className="truncate">{formatCurrency(m.value)}</p>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>{m.pct.toFixed(1)}%</p>
+          </TVCard>
+        ))}
       </div>
     </div>
   );
