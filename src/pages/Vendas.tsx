@@ -94,7 +94,7 @@ export default function VendasPage() {
   const [refundTarget, setRefundTarget] = useState<Venda | null>(null);
   const [refundReason, setRefundReason] = useState('');
 
-  const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo;
+  const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo || filtroOrigem !== 'Todas';
 
   const clearFilters = () => {
     setQuickFilter('month');
