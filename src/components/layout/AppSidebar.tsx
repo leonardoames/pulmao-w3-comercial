@@ -16,6 +16,8 @@ import {
   CalendarCheck,
   Tv,
   X,
+  Megaphone,
+  ShoppingBag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
