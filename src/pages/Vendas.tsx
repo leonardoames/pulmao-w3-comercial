@@ -322,7 +322,7 @@ export default function VendasPage() {
     <h1>Relatório de Vendas</h1>
     <p class="sub">${totalVendas} vendas • Faturamento: ${formatCurrency(totalFaturamento)} • Ticket Médio: ${formatCurrency(ticketMedio)}</p>
     <table><thead><tr>
-      <th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Duração</th>
+      <th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Origem</th><th>Duração</th>
       <th class="r">Pix</th><th class="r">Cartão</th><th class="r">Boleto</th><th class="r">Valor Total</th>
       <th class="c">Pago</th><th class="c">Contrato</th><th class="c">Financeiro</th><th class="c">CS</th>
     </tr></thead>
