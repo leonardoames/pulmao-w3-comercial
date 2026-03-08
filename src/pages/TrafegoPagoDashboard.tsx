@@ -125,7 +125,6 @@ export default function TrafegoPagoDashboard() {
       <PageHeader title="Dashboard — Tráfego Pago" description="Métricas de gestão de tráfego pago">
         <MonthYearSelector value={mesAno} onChange={setMesAno} />
       </PageHeader>
-      </PageHeader>
 
       <SectionLabel title="Receita Recorrente" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
