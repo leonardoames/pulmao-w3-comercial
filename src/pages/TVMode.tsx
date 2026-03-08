@@ -307,165 +307,194 @@ function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number
 // ─── Screen 2: Ranking dos Closers ───
 function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] }) {
   const closers = rankings?.rankingGeral || [];
-  const count = closers.length;
-  const gridCols = count === 3 ? "grid-cols-3" : count <= 2 ? `grid-cols-${count || 1}` : "grid-cols-2";
+  const leader = closers[0] || null;
+  const rest = closers.slice(1);
+
+  const noShowColor = (pct: number) => pct <= 20 ? "#22C55E" : pct <= 35 ? "#F97316" : "#EF4444";
+  const convColor = (pct: number) => pct >= 30 ? "#22C55E" : pct >= 15 ? "#F97316" : "#EF4444";
+
+  const getOte = (closer: any) => {
+    const goal = oteGoals?.find((g) => g.closer_user_id === closer.id);
+    const goalValue = goal?.ote_target_value || 0;
+    const oteRealized = closer.oteRealizado || 0;
+    const otePercent = goalValue > 0 ? (oteRealized / goalValue) * 100 : 0;
+    return { goalValue, oteRealized, otePercent };
+  };
+
+  const getCallsAgendadas = (c: any) => c.callsRealizadas + c.reagendado + c.noShow;
 
   return (
     <div className="flex flex-col h-full">
       <ScreenTitle>Performance Individual dos Closers</ScreenTitle>
-      <div className={cn("grid gap-4 flex-1 items-stretch", gridCols)} style={{ height: "calc(55vh - 80px)" }}>
-        {closers.slice(0, 8).map((closer: any, index: number) => {
-          const goal = oteGoals?.find((g) => g.closer_user_id === closer.id);
-          const goalValue = goal?.ote_target_value || 0;
-          const oteRealized = closer.volume || 0;
-          const otePercent = goalValue > 0 ? (oteRealized / goalValue) * 100 : 0;
-          const isTop = index === 0;
-          const isEmpty = closer.volume === 0 && closer.vendas === 0;
+
+      <div className="flex flex-1 min-h-0" style={{ gap: "16px" }}>
+        {/* LEFT — HERO CARD (#1) */}
+        {leader && (() => {
+          const { goalValue, oteRealized, otePercent } = getOte(leader);
+          const isEmpty = leader.volume === 0 && leader.vendas === 0;
+          const agendadas = getCallsAgendadas(leader);
 
           return (
-            <TVCard key={closer.id} highlight={isTop} style={{ padding: "24px 28px" }} className="flex flex-col justify-between h-full">
+            <div
+              className="rounded-[16px] flex flex-col shrink-0"
+              style={{
+                flex: "0 0 42%",
+                background: "#1e1a14",
+                border: "1px solid rgba(249,115,22,0.3)",
+                padding: "28px 32px",
+              }}
+            >
               {/* Header */}
               <div className="flex items-center gap-3 mb-4">
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
-                  style={{ background: isTop ? "#F97316" : "rgba(255,255,255,0.1)", color: isTop ? "#000" : "rgba(255,255,255,0.6)" }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
+                  style={{ background: "#F97316", color: "#000" }}
                 >
-                  {index + 1}
+                  1
                 </div>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <p style={{ fontSize: "clamp(16px, 1.6vw, 22px)", fontWeight: 700, color: "#FFFFFF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{closer.nome}</p>
-                  {isTop && (
-                    <span className="shrink-0 px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: "#F97316", color: "#000", fontSize: "11px", fontWeight: 700 }}>
-                      <Trophy className="h-3 w-3" /> Líder
-                    </span>
-                  )}
-                </div>
+                <p style={{ fontSize: "22px", fontWeight: 700, color: "#FFFFFF" }}>{leader.nome}</p>
+                <span className="shrink-0 px-2.5 py-1 rounded-full flex items-center gap-1" style={{ background: "#F97316", color: "#000", fontSize: "11px", fontWeight: 700 }}>
+                  <Trophy className="h-3 w-3" /> Líder
+                </span>
               </div>
 
-              {/* Two-column: Vendas | OTE */}
-              <div className="flex flex-1 min-h-0">
-                {/* Left: Vendas (55%) */}
-                <div className="flex flex-col justify-center" style={{ width: "55%" }}>
-                  <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "8px" }}>
-                    {isEmpty ? "Vendas" : `${closer.vendas} vendas`}
-                  </p>
-                  {isEmpty ? (
-                    <>
-                      <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
-                      <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.2)", marginTop: "4px" }}>Aguardando vendas</p>
-                    </>
-                  ) : (
-                    <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: isTop ? "#F97316" : "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>
-                      {formatCurrency(closer.volume)}
+              {/* Divider */}
+              <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "4px 0 20px" }} />
+
+              {/* PRIMARY — Receita Realizada */}
+              <div className="mb-5">
+                <p style={{ fontSize: "11px", letterSpacing: "0.12em", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: "8px" }}>
+                  Receita Realizada
+                </p>
+                <p style={{ fontSize: "clamp(36px, 4vw, 52px)", fontWeight: 800, color: "#F97316", lineHeight: 1.1, whiteSpace: "nowrap" }}>
+                  {isEmpty ? "—" : formatCurrency(leader.volume)}
+                </p>
+                <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "6px" }}>
+                  {isEmpty ? "Sem vendas no período" : `${leader.vendas} vendas fechadas`}
+                </p>
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "0 0 16px" }} />
+
+              {/* OTE REALIZADO */}
+              <div className="mb-5">
+                <p style={{ fontSize: "11px", letterSpacing: "0.12em", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: "8px" }}>
+                  OTE Realizado
+                </p>
+                <p style={{ fontSize: "28px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>
+                  {isEmpty ? "—" : formatCurrency(oteRealized)}
+                </p>
+                {goalValue > 0 && !isEmpty && (
+                  <>
+                    <div className="mt-3"><GradientBar percent={otePercent} height={6} /></div>
+                    <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", marginTop: "6px" }}>
+                      {otePercent.toFixed(0)}% da meta OTE ({formatCurrency(goalValue)})
                     </p>
-                  )}
+                  </>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: "1px", background: "rgba(255,255,255,0.08)", margin: "0 0 16px" }} />
+
+              {/* SECONDARY — 2 columns */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Calls Agendadas</p>
+                  <p style={{ fontSize: "20px", fontWeight: 700, color: "#FFFFFF" }}>{formatInteger(agendadas)}</p>
                 </div>
-
-                {/* Divider */}
-                <div style={{ width: "1px", background: "rgba(255,255,255,0.08)", margin: "0 16px", alignSelf: "stretch" }} />
-
-                {/* Right: OTE (45%) */}
-                <div className="flex flex-col justify-center flex-1 min-w-0">
-                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>Meta OTE</p>
-                  {isEmpty ? (
-                    <p style={{ fontSize: "clamp(18px, 1.8vw, 26px)", fontWeight: 600, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
-                  ) : (
-                    <>
-                      <p style={{ fontSize: "clamp(18px, 1.8vw, 26px)", fontWeight: 600, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>
-                        {goalValue > 0 ? formatCurrency(goalValue) : "—"}
-                      </p>
-                      {goalValue > 0 && (
-                        <p style={{ fontSize: "12px", fontWeight: 600, color: "#F97316", marginTop: "4px" }}>
-                          {otePercent.toFixed(0)}% da meta
-                        </p>
-                      )}
-                    </>
-                  )}
+                <div>
+                  <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>No-show</p>
+                  <p style={{ fontSize: "20px", fontWeight: 700, color: noShowColor(leader.percentNoShow) }}>
+                    {leader.percentNoShow.toFixed(1)}%
+                  </p>
                 </div>
               </div>
 
-              {/* Progress bar at bottom */}
-              {goalValue > 0 && !isEmpty && (
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="flex-1"><GradientBar percent={otePercent} height={5} /></div>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#F97316", flexShrink: 0 }}>{otePercent.toFixed(0)}%</span>
-                </div>
-              )}
-            </TVCard>
+              {/* Conversão */}
+              <div className="mt-auto">
+                <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Conversão</p>
+                <p style={{ fontSize: "clamp(24px, 2.5vw, 36px)", fontWeight: 700, color: convColor(leader.taxaConversao), lineHeight: 1.1 }}>
+                  {leader.taxaConversao.toFixed(1)}%
+                </p>
+              </div>
+            </div>
           );
-        })}
+        })()}
+
+        {/* RIGHT — COMPACT LIST */}
+        <div className="flex flex-col flex-1 min-w-0" style={{ gap: "12px" }}>
+          {rest.length === 0 && (
+            <div className="flex-1 flex items-center justify-center rounded-[12px]" style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.3)" }}>Nenhum outro closer no período</p>
+            </div>
+          )}
+          {rest.map((closer: any, index: number) => {
+            const { goalValue, oteRealized, otePercent } = getOte(closer);
+            const isEmpty = closer.volume === 0 && closer.vendas === 0;
+            const agendadas = getCallsAgendadas(closer);
+            const rank = index + 2;
+
+            return (
+              <div
+                key={closer.id}
+                className="rounded-[12px] flex flex-col justify-between"
+                style={{
+                  flex: 1,
+                  background: "#1a1a1a",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  padding: "16px 24px",
+                  minHeight: 0,
+                }}
+              >
+                {/* ROW 1 */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+                    style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}
+                  >
+                    {rank}
+                  </div>
+                  <p className="flex-1 min-w-0" style={{ fontSize: "16px", fontWeight: 600, color: "#FFFFFF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {closer.nome}
+                  </p>
+                  <p className="shrink-0" style={{ fontSize: "20px", fontWeight: 700, color: isEmpty ? "rgba(255,255,255,0.25)" : "#FFFFFF", whiteSpace: "nowrap" }}>
+                    {isEmpty ? "—" : formatCurrency(closer.volume)}
+                  </p>
+                </div>
+
+                {/* ROW 2 */}
+                <div className="flex items-center justify-between mt-2" style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
+                  <div className="flex items-center gap-4">
+                    <span>{isEmpty ? "Sem vendas no período" : `${closer.vendas} vendas`}</span>
+                    {!isEmpty && (
+                      <span style={{ whiteSpace: "nowrap" }}>
+                        OTE: {formatCurrency(oteRealized)}
+                        {goalValue > 0 && <span style={{ color: "#F97316", marginLeft: "4px" }}>({otePercent.toFixed(0)}%)</span>}
+                      </span>
+                    )}
+                  </div>
+                  {!isEmpty && (
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span>Calls: {formatInteger(agendadas)}</span>
+                      <span>No-show: <span style={{ color: noShowColor(closer.percentNoShow) }}>{closer.percentNoShow.toFixed(1)}%</span></span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Progress bar */}
+                {goalValue > 0 && !isEmpty && (
+                  <div className="mt-2"><GradientBar percent={otePercent} height={4} /></div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
-// ─── Screen 3: Social Selling ───
-function ScreenSocialSelling({ ssEntries }: { ssEntries: any[] }) {
-  const totals = useMemo(() => {
-    if (!ssEntries || ssEntries.length === 0) return { conversas: 0, convites: 0, formularios: 0, agendamentos: 0 };
-    return {
-      conversas: ssEntries.reduce((s, e) => s + e.conversas_iniciadas, 0),
-      convites: ssEntries.reduce((s, e) => s + e.convites_enviados, 0),
-      formularios: ssEntries.reduce((s, e) => s + e.formularios_preenchidos, 0),
-      agendamentos: ssEntries.reduce((s, e) => s + e.agendamentos, 0),
-    };
-  }, [ssEntries]);
-
-  const allZero = totals.conversas === 0 && totals.convites === 0 && totals.formularios === 0 && totals.agendamentos === 0;
-  const convRateForm = totals.formularios > 0 ? (totals.agendamentos / totals.formularios) * 100 : 0;
-  const convRateConv = totals.conversas > 0 ? (totals.formularios / totals.conversas) * 100 : 0;
-
-  const metrics = [
-    { label: "Conversas Iniciadas", value: totals.conversas, icon: <MessageSquare className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
-    { label: "Convites Enviados", value: totals.convites, icon: <Send className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
-    { label: "Formulários", value: totals.formularios, icon: <FileText className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
-    { label: "Agendamentos", value: totals.agendamentos, icon: <CalendarCheck className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
-  ];
-
-  return (
-    <div className="flex flex-col h-full">
-      <ScreenTitle>Social Selling</ScreenTitle>
-
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {metrics.map((m) => (
-          <TVCard key={m.label} className="flex flex-col justify-center">
-            <MetricLabel>{m.label}</MetricLabel>
-            {allZero ? (
-              <EmptyState icon={m.icon} />
-            ) : (
-              <MetricValue color={m.value > 0 ? "#FFFFFF" : "rgba(255,255,255,0.3)"}>
-                {formatInteger(m.value)}
-              </MetricValue>
-            )}
-          </TVCard>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 flex-1">
-        <TVCard className="flex flex-col items-center justify-center">
-          <MetricLabel>Conv. Formulário → Agendamento</MetricLabel>
-          {allZero ? (
-            <EmptyState icon={<CalendarCheck className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} />} />
-          ) : (
-            <div className="mt-4">
-              <DonutChart percent={convRateForm} />
-            </div>
-          )}
-        </TVCard>
-        <TVCard className="flex flex-col items-center justify-center">
-          <MetricLabel>Conv. Conversa → Formulário</MetricLabel>
-          {allZero ? (
-            <EmptyState icon={<FileText className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} />} />
-          ) : (
-            <div className="mt-4">
-              <DonutChart percent={convRateConv} />
-            </div>
-          )}
-        </TVCard>
-      </div>
-    </div>
-  );
-}
-
 // ─── Screen 4: Conteúdo ───
 function ScreenConteudo({ contentLogs }: { contentLogs: any[] }) {
   const totals = useMemo(() => ({
