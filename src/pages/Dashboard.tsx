@@ -24,8 +24,6 @@ import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { OrigemLeadCard } from '@/components/dashboard/OrigemLeadCard';
 import { Venda } from '@/types/crm';
 import { useOteRealized, useOteTeamStats } from '@/hooks/useOteGoals';
-import { OteProgressBar } from '@/components/ote/OteProgressBar';
-import { OteBadge } from '@/components/ote/OteBadge';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -273,7 +271,7 @@ export default function DashboardPage() {
         <>
           <SectionLabel title="Receita" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            <RevenueCard
+          <RevenueCard
               volumeVendas={stats?.volumeVendas ?? 0}
               totalVendas={stats?.totalVendas ?? 0}
               valorPix={stats?.valorPix ?? 0}
@@ -281,6 +279,20 @@ export default function DashboardPage() {
               valorBoleto={stats?.valorBoleto ?? 0}
               caixaDoMes={stats?.caixaDoMes ?? 0}
               proporcaoCaixa={stats?.proporcaoCaixa ?? 0}
+              closers={closers}
+              selectedCloser={selectedCloser}
+              onCloserChange={setSelectedCloser}
+              expectedProportion={expectedProportion}
+              expectedPercent={expectedPercent}
+              currentDay={currentDay}
+              daysInMonth={daysInMonth}
+              metaMensalValue={metaMensalValue}
+              metaMensalPercent={metaMensalPercent}
+              oteTarget={oteDisplayData.target}
+              oteRealized={oteDisplayData.realized}
+              otePercentAchieved={oteDisplayData.percentAchieved}
+              oteBadge={oteDisplayData.badge}
+              oteLabel={oteDisplayData.label}
             />
             <div className="flex flex-col gap-4">
               <StatCard
@@ -301,164 +313,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* BLOCO — Metas do Mês (Unificado: OTE + Meta Mensal) */}
-      {canViewSection('section:dashboard:ote') && (
-        <div className="mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Target className="h-4 w-4 text-primary" />
-                  Metas do Mês
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Linha 1: Meta OTE */}
-              {(() => {
-                const hasOteGoal = oteDisplayData.target > 0;
-                const oteExpected = oteDisplayData.target * expectedProportion;
-                const oteColor = getMetaColor(oteDisplayData.realized, oteExpected);
-                const oteExpectedPct = expectedPercent;
-
-                return (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
-                          Meta OTE {oteDisplayData.label !== 'Time' ? `— ${oteDisplayData.label}` : 'do Time'}
-                        </p>
-                        {hasOteGoal && (
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-lg font-bold text-primary">
-                              {formatCurrencyShort(oteDisplayData.realized)}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              / {formatCurrencyShort(oteDisplayData.target)}
-                            </span>
-                            <OteBadge badge={oteDisplayData.badge} />
-                          </div>
-                        )}
-                      </div>
-                      {hasOteGoal && (
-                        <div className="text-right">
-                          <p className="text-2xl font-bold" style={{ color: oteColor }}>
-                            {oteDisplayData.percentAchieved.toFixed(0)}%
-                          </p>
-                          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>do esperado</p>
-                        </div>
-                      )}
-                    </div>
-                    {hasOteGoal ? (
-                      <div className="pb-6">
-                        <OteProgressBar
-                          percentAchieved={oteDisplayData.percentAchieved}
-                          height="md"
-                          expectedPercent={oteExpectedPct}
-                        />
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Nenhuma meta OTE cadastrada para este mês.</p>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* Divider */}
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
-
-              {/* Linha 2: Meta Mensal */}
-              {metaMensal !== undefined && (() => {
-                const metaExpected = metaMensalValue * expectedProportion;
-                const metaColor = getMetaColor(volumeVendas, metaExpected);
-
-                return (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-lg font-bold text-foreground">
-                            {formatCurrencyShort(volumeVendas)}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            / {formatCurrencyShort(metaMensalValue)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold" style={{ color: metaColor }}>
-                          {metaMensalPercent.toFixed(0)}%
-                        </p>
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>do esperado</p>
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <div
-                        className="w-full overflow-hidden"
-                        style={{ height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)' }}
-                      >
-                        <div
-                          className={cn(
-                            'h-full transition-all duration-1000',
-                            metaMensalPercent >= 100 ? 'progress-fill-success' : 'progress-fill'
-                          )}
-                          style={{ width: `${Math.min(metaMensalPercent, 100)}%`, borderRadius: '999px' }}
-                        />
-                      </div>
-                      {/* Ghost ruler */}
-                      <div
-                        className="absolute top-1/2 -translate-y-1/2"
-                        style={{
-                          left: `${Math.min(expectedPercent, 100)}%`,
-                          width: '2px',
-                          height: '14px',
-                          background: '#FBBF24',
-                          opacity: 0.8,
-                        }}
-                        title={`Meta esperada: ${expectedPercent.toFixed(0)}% (dia ${currentDay}/${daysInMonth})`}
-                      />
-                      <div
-                        className="absolute -translate-x-1/2 whitespace-nowrap"
-                        style={{
-                          left: `${Math.min(expectedPercent, 100)}%`,
-                          top: '14px',
-                          fontSize: '10px',
-                          color: '#FBBF24',
-                          fontWeight: 500,
-                        }}
-                      >
-                        Esperado: {expectedPercent.toFixed(0)}%
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Footer: Ver detalhes */}
-              <div className="pt-2">
-                <Link to="/meta-ote">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full gap-2"
-                    style={{
-                      border: '1px solid #333',
-                      color: '#F5F5F5',
-                      background: 'transparent',
-                    }}
-                    onMouseEnter={(e) => { (e.target as HTMLElement).style.background = '#2a2a2a'; }}
-                    onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'transparent'; }}
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                    Ver detalhes
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Metas now unified inside RevenueCard */}
 
       {/* BLOCO 2 — Performance Comercial */}
       {canViewSection('section:dashboard:performance') && (
