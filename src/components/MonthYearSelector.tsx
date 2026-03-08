@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, subMonths, addMonths, startOfMonth, isBefore, isAfter } from 'date-fns';
+import { format, subMonths, addMonths, startOfMonth, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface MonthYearSelectorProps {
@@ -24,14 +24,16 @@ export function MonthYearSelector({ value, onChange }: MonthYearSelectorProps) {
     }
   };
 
-  const label = format(current, "MMMM 'de' yyyy", { locale: ptBR });
+  // Format in lowercase Portuguese: "fevereiro de 2026"
+  const rawLabel = format(current, "MMMM 'de' yyyy", { locale: ptBR });
+  const label = rawLabel.charAt(0).toLowerCase() + rawLabel.slice(1);
 
   return (
     <div className="flex items-center gap-1 shrink-0">
       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrev}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <span className="text-sm font-medium min-w-[160px] text-center capitalize">
+      <span className="text-sm font-medium min-w-[160px] text-center">
         {label}
       </span>
       <Button
