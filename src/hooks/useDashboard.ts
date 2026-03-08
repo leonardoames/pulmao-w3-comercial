@@ -176,6 +176,10 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
         .select(`
           closer_user_id,
           valor_total,
+          valor_pix,
+          valor_cartao,
+          valor_boleto_parcela,
+          quantidade_parcelas_boleto,
           closer:profiles!vendas_closer_user_id_fkey(id, nome)
         `)
         .gte('data_fechamento', start.toISOString().split('T')[0])
