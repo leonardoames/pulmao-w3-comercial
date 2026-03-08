@@ -652,11 +652,14 @@ export type Database = {
           enviado_cs: boolean
           enviado_financeiro: boolean
           id: string
+          motivo_reembolso: string | null
           nome_empresa: string
           nome_lead: string
           observacoes: string | null
           pago: boolean
           quantidade_parcelas_boleto: number
+          reembolsado_em: string | null
+          reembolsado_por: string | null
           status: Database["public"]["Enums"]["venda_status"]
           valor_boleto_parcela: number
           valor_cartao: number
@@ -674,11 +677,14 @@ export type Database = {
           enviado_cs?: boolean
           enviado_financeiro?: boolean
           id?: string
+          motivo_reembolso?: string | null
           nome_empresa?: string
           nome_lead?: string
           observacoes?: string | null
           pago?: boolean
           quantidade_parcelas_boleto?: number
+          reembolsado_em?: string | null
+          reembolsado_por?: string | null
           status?: Database["public"]["Enums"]["venda_status"]
           valor_boleto_parcela?: number
           valor_cartao?: number
@@ -696,11 +702,14 @@ export type Database = {
           enviado_cs?: boolean
           enviado_financeiro?: boolean
           id?: string
+          motivo_reembolso?: string | null
           nome_empresa?: string
           nome_lead?: string
           observacoes?: string | null
           pago?: boolean
           quantidade_parcelas_boleto?: number
+          reembolsado_em?: string | null
+          reembolsado_por?: string | null
           status?: Database["public"]["Enums"]["venda_status"]
           valor_boleto_parcela?: number
           valor_cartao?: number
@@ -732,6 +741,20 @@ export type Database = {
           {
             foreignKeyName: "vendas_closer_user_id_fkey"
             columns: ["closer_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_reembolsado_por_fkey"
+            columns: ["reembolsado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_reembolsado_por_fkey"
+            columns: ["reembolsado_por"]
             isOneToOne: false
             referencedRelation: "profiles_safe"
             referencedColumns: ["id"]
@@ -853,7 +876,12 @@ export type Database = {
         | "Financeiro"
         | "Marketing"
       venda_forma_pagamento: "Pix" | "Cartao" | "Boleto"
-      venda_status: "Ativo" | "Congelado" | "Cancelado" | "Finalizado"
+      venda_status:
+        | "Ativo"
+        | "Congelado"
+        | "Cancelado"
+        | "Finalizado"
+        | "Reembolsado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1042,7 +1070,13 @@ export const Constants = {
         "Marketing",
       ],
       venda_forma_pagamento: ["Pix", "Cartao", "Boleto"],
-      venda_status: ["Ativo", "Congelado", "Cancelado", "Finalizado"],
+      venda_status: [
+        "Ativo",
+        "Congelado",
+        "Cancelado",
+        "Finalizado",
+        "Reembolsado",
+      ],
     },
   },
 } as const
