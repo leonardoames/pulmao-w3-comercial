@@ -13,25 +13,34 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile topbar */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-20 h-14 bg-sidebar border-b border-sidebar-border flex items-center px-4 gap-3">
+      <header
+        className="md:hidden fixed top-0 left-0 right-0 z-20 h-14 flex items-center px-4 gap-3"
+        style={{
+          background: 'hsl(var(--sidebar-background))',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setSidebarOpen(true)}
-          className="text-sidebar-foreground hover:bg-sidebar-accent/50"
+          className="text-foreground"
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <span className="text-sidebar-foreground font-bold text-lg">
-          <span className="text-sidebar-primary">Pulmão</span> W3
+        <span className="font-bold text-lg">
+          <span className="text-primary">Pulmão</span>{' '}
+          <span className="text-foreground">W3</span>
         </span>
       </header>
 
       <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="md:pl-64">
-        <div className="pt-14 md:pt-0 p-4 md:p-8">
-          {children}
+        <div className="pt-14 md:pt-0" style={{ padding: '24px 32px', paddingTop: '24px' }}>
+          <div className="pt-14 md:pt-0">
+            {children}
+          </div>
         </div>
       </main>
     </div>
