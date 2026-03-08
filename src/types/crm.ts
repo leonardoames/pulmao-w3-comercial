@@ -62,6 +62,7 @@ export const VENDA_STATUS_LABELS: Record<VendaStatus, string> = {
   Congelado: 'Congelado',
   Cancelado: 'Cancelado',
   Finalizado: 'Finalizado',
+  Reembolsado: 'Reembolsado',
 };
 
 // Legacy role labels (for profiles.role field - not used in new system)
