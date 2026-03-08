@@ -4,11 +4,11 @@ import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useMarketplaceClientes, useMarketplaceAllRegistros } from '@/hooks/useMarketplaces';
 import { useClosers } from '@/hooks/useProfiles';
+import { MonthYearSelector } from '@/components/MonthYearSelector';
 import { DollarSign, TrendingUp, TrendingDown, Users, BarChart3, AlertTriangle, Trophy, Percent } from 'lucide-react';
 import { format, subMonths } from 'date-fns';
 
