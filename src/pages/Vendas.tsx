@@ -17,7 +17,7 @@ import { useVendas, useCreateVenda, useUpdateVenda, useDeleteVenda, useRefundVen
 import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento, useIsMaster } from '@/hooks/useUserRoles';
-import { Venda } from '@/types/crm';
+import { Venda, ORIGEM_LEAD_OPTIONS, OrigemLead } from '@/types/crm';
 import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
@@ -36,6 +36,7 @@ export default function VendasPage() {
   const [dataVenda, setDataVenda] = useState<Date>(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCloserId, setSelectedCloserId] = useState<string>('');
+  const [origemLead, setOrigemLead] = useState<string>('');
 
   // Quick date filter — default to "Este mês"
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('month');
@@ -52,6 +53,7 @@ export default function VendasPage() {
   const [flagContrato, setFlagContrato] = useState(false);
   const [flagFinanceiro, setFlagFinanceiro] = useState(false);
   const [flagCS, setFlagCS] = useState(false);
+  const [filtroOrigem, setFiltroOrigem] = useState<string>('Todas');
 
   // Compute effective date range from quick filter
   const { dateFrom, dateTo } = useMemo(() => {
@@ -92,7 +94,7 @@ export default function VendasPage() {
   const [refundTarget, setRefundTarget] = useState<Venda | null>(null);
   const [refundReason, setRefundReason] = useState('');
 
-  const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo;
+  const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo || filtroOrigem !== 'Todas';
 
   const clearFilters = () => {
     setQuickFilter('month');
@@ -104,6 +106,7 @@ export default function VendasPage() {
     setFlagContrato(false);
     setFlagFinanceiro(false);
     setFlagCS(false);
+    setFiltroOrigem('Todas');
   };
 
   const filteredVendas = vendas?.filter(venda => {
@@ -150,6 +153,9 @@ export default function VendasPage() {
     if (flagFinanceiro && !venda.enviado_financeiro) return false;
     if (flagCS && !venda.enviado_cs) return false;
 
+    // Origem filter
+    if (filtroOrigem !== 'Todas' && venda.origem_lead !== filtroOrigem) return false;
+
     return matchesCloser && matchesSearch;
   });
 
@@ -168,17 +174,17 @@ export default function VendasPage() {
   const handleOpenNew = () => {
     setEditingVenda(null);
     setDataVenda(new Date());
-    // Se for closer, usa o próprio ID; se não, limpa para forçar seleção
     setSelectedCloserId(isCloser ? (profile?.id || '') : '');
+    setOrigemLead('');
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (venda: Venda) => {
     setEditingVenda(venda);
-    // Parse date as YYYY-MM-DD string directly to avoid timezone issues
     const [year, month, day] = venda.data_fechamento.split('-').map(Number);
     setDataVenda(new Date(year, month - 1, day));
     setSelectedCloserId(venda.closer_user_id);
+    setOrigemLead(venda.origem_lead ?? '');
     setDialogOpen(true);
   };
 
@@ -233,6 +239,7 @@ export default function VendasPage() {
       enviado_financeiro: formData.get('enviado_financeiro') === 'on',
       enviado_cs: formData.get('enviado_cs') === 'on',
       observacoes: observacoesRaw || undefined,
+      origem_lead: origemLead || null,
     };
 
     try {
@@ -285,6 +292,7 @@ export default function VendasPage() {
         <td>${v.nome_lead}</td>
         <td>${v.nome_empresa}</td>
         <td>${closerNome}</td>
+        <td>${v.origem_lead || '—'}</td>
         <td>${v.duracao_contrato_meses}m</td>
         <td class="r">${formatCurrency(v.valor_pix)}</td>
         <td class="r">${formatCurrency(v.valor_cartao)}</td>
@@ -314,7 +322,7 @@ export default function VendasPage() {
     <h1>Relatório de Vendas</h1>
     <p class="sub">${totalVendas} vendas • Faturamento: ${formatCurrency(totalFaturamento)} • Ticket Médio: ${formatCurrency(ticketMedio)}</p>
     <table><thead><tr>
-      <th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Duração</th>
+      <th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Origem</th><th>Duração</th>
       <th class="r">Pix</th><th class="r">Cartão</th><th class="r">Boleto</th><th class="r">Valor Total</th>
       <th class="c">Pago</th><th class="c">Contrato</th><th class="c">Financeiro</th><th class="c">CS</th>
     </tr></thead>
@@ -461,7 +469,23 @@ export default function VendasPage() {
                       defaultValue={editingVenda?.nome_lead}
                       required 
                     />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Origem do Lead</Label>
+                    <Select value={origemLead} onValueChange={setOrigemLead}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a origem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ORIGEM_LEAD_OPTIONS.map((opcao) => (
+                          <SelectItem key={opcao} value={opcao}>{opcao}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
                   <div className="space-y-2">
                     <Label htmlFor="nome_empresa">Nome da Empresa *</Label>
                     <Input 
@@ -731,6 +755,22 @@ export default function VendasPage() {
                     <SelectItem value="50000+">Acima de R$ 50.000</SelectItem>
                   </SelectContent>
                 </Select>
+            </div>
+
+              {/* Origem */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Origem do Lead</Label>
+                <Select value={filtroOrigem} onValueChange={setFiltroOrigem}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todas">Todas as origens</SelectItem>
+                    {ORIGEM_LEAD_OPTIONS.map(o => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -776,6 +816,7 @@ export default function VendasPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead className="hidden md:table-cell">Duração</TableHead>
                 <TableHead>Valor Total</TableHead>
+                <TableHead className="hidden md:table-cell">Origem</TableHead>
                 <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Closer</TableHead>
                 <TableHead className="w-28 hidden md:table-cell">Flags</TableHead>
@@ -826,6 +867,24 @@ export default function VendasPage() {
                             </span>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {(() => {
+                          const origem = venda.origem_lead;
+                          if (!origem) return <span className="text-muted-foreground text-xs">—</span>;
+                          const colors: Record<string, string> = {
+                            'Tráfego Pago': 'bg-blue-500/15 text-blue-400',
+                            'Formulário Direto': 'bg-green-500/15 text-green-400',
+                            'Bio': 'bg-purple-500/15 text-purple-400',
+                            'SDR': 'bg-orange-500/15 text-orange-400',
+                            'Social Selling': 'bg-pink-500/15 text-pink-400',
+                          };
+                          return (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${colors[origem] ?? 'bg-muted text-muted-foreground'}`}>
+                              {origem}
+                            </span>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="text-xs space-y-1">

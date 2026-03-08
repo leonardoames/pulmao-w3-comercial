@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange } from '@/hooks/useDashboard';
+import { useDashboardStats, useCloserRankings, useNoShowByCloser, DateFilter, DateRange, getDateRange } from '@/hooks/useDashboard';
 import { useClosers } from '@/hooks/useProfiles';
 import { Phone, TrendingUp, Target, Trophy, CalendarIcon, AlertCircle, ShoppingCart, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,8 @@ import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
+import { OrigemLeadCard } from '@/components/dashboard/OrigemLeadCard';
+import { Venda } from '@/types/crm';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -61,6 +63,24 @@ export default function DashboardPage() {
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
   const { data: noShowByCloser } = useNoShowByCloser(filter, customRange);
   const { data: metaMensal } = useTvMetaMensal();
+
+  // Vendas for OrigemLeadCard
+  const dateRange = useMemo(() => getDateRange(filter, customRange), [filter, customRange]);
+  const { data: vendasOrigem } = useQuery({
+    queryKey: ['vendas-origem', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString(), selectedCloser],
+    queryFn: async () => {
+      let q = supabase
+        .from('vendas')
+        .select('id, valor_total, origem_lead, status')
+        .gte('data_fechamento', dateRange.start.toISOString().split('T')[0])
+        .lte('data_fechamento', dateRange.end.toISOString().split('T')[0])
+        .neq('status', 'Reembolsado');
+      if (selectedCloser && selectedCloser !== 'all') q = q.eq('closer_user_id', selectedCloser);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as unknown as Venda[];
+    },
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -190,6 +210,13 @@ export default function DashboardPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Origem dos Leads */}
+      {canViewSection('section:dashboard:receita') && vendasOrigem && vendasOrigem.length > 0 && (
+        <div className="mb-6">
+          <OrigemLeadCard vendas={vendasOrigem} />
+        </div>
       )}
 
       {canViewSection('section:dashboard:ote') && (

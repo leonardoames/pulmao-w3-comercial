@@ -1,6 +1,15 @@
 export type UserRole = 'CEO' | 'Founder' | 'GestorComercial' | 'Closer' | 'SDR' | 'CS' | 'Mentor' | 'Financeiro' | 'Marketing';
 export type UserArea = 'Comercial' | 'CS' | 'Financeiro' | 'Marketing' | 'Diretoria';
 export type VendaStatus = 'Ativo' | 'Congelado' | 'Cancelado' | 'Finalizado' | 'Reembolsado';
+export type OrigemLead = 'Tráfego Pago' | 'Formulário Direto' | 'Bio' | 'SDR' | 'Social Selling';
+
+export const ORIGEM_LEAD_OPTIONS: OrigemLead[] = [
+  'Tráfego Pago',
+  'Formulário Direto',
+  'Bio',
+  'SDR',
+  'Social Selling',
+];
 
 export interface Profile {
   id: string;
@@ -37,6 +46,7 @@ export interface Venda {
   motivo_reembolso?: string;
   reembolsado_por?: string;
   reembolsado_em?: string;
+  origem_lead?: OrigemLead | null;
   // Relations
   closer?: Profile;
 }

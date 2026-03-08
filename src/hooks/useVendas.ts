@@ -56,6 +56,7 @@ interface CreateVendaInput {
   enviado_financeiro?: boolean;
   enviado_cs?: boolean;
   observacoes?: string;
+  origem_lead?: string | null;
 }
 
 export function useCreateVenda() {
@@ -113,6 +114,7 @@ interface UpdateVendaInput {
   enviado_cs?: boolean;
   status?: VendaStatus;
   observacoes?: string;
+  origem_lead?: string | null;
 }
 
 export function useUpdateVenda() {
