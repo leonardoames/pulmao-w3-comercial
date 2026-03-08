@@ -101,11 +101,11 @@ Deno.serve(async (req) => {
       },
     };
 
-    // Send to webhook
-    const webhookRes = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+    // Send to webhook via GET with payload as query param
+    const encodedPayload = encodeURIComponent(JSON.stringify(payload));
+    const separator = webhookUrl.includes('?') ? '&' : '?';
+    const webhookRes = await fetch(`${webhookUrl}${separator}data=${encodedPayload}`, {
+      method: "GET",
     });
 
     if (!webhookRes.ok) {
