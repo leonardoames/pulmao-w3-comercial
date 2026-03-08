@@ -201,73 +201,103 @@ function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number
 function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] }) {
   const closers = rankings?.rankingGeral || [];
   const count = closers.length;
-
-  // Determine grid layout: 3 closers = 3 cols, otherwise 2 cols
   const gridCols = count === 3 ? "grid-cols-3" : count <= 2 ? `grid-cols-${count || 1}` : "grid-cols-2";
 
   return (
     <div className="flex flex-col h-full">
       <ScreenTitle>Performance Individual dos Closers</ScreenTitle>
-      <div className={cn("grid gap-4 flex-1", gridCols)}>
+      <div className={cn("grid gap-4 flex-1 content-start", gridCols)}>
         {closers.slice(0, 8).map((closer: any, index: number) => {
           const goal = oteGoals?.find((g) => g.closer_user_id === closer.id);
           const goalValue = goal?.ote_target_value || 0;
-          const progressPercent = goalValue > 0 ? Math.min((closer.volume / goalValue) * 100, 100) : 0;
+          const oteRealized = closer.volume || 0;
+          const otePercent = goalValue > 0 ? (oteRealized / goalValue) * 100 : 0;
           const isTop = index === 0;
           const isEmpty = closer.volume === 0 && closer.vendas === 0;
 
           return (
-            <TVCard key={closer.id} highlight={isTop} style={{ minHeight: "220px" }} className="flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0"
-                    style={{
-                      background: isTop ? "#F97316" : "rgba(255,255,255,0.1)",
-                      color: isTop ? "#000" : "rgba(255,255,255,0.6)",
-                    }}
-                  >
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p style={{ fontSize: "20px", fontWeight: 700, color: "#FFFFFF" }} className="truncate">{closer.nome}</p>
-                      {isTop && (
-                        <span
-                          className="shrink-0 px-2 py-0.5 rounded-full flex items-center gap-1"
-                          style={{ background: "#F97316", color: "#000", fontSize: "11px", fontWeight: 700 }}
-                        >
-                          <Trophy className="h-3 w-3" /> Líder
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.4)" }}>
-                      {closer.vendas} vendas • {closer.taxaConversao.toFixed(0)}% conversão
-                    </p>
-                  </div>
+            <TVCard key={closer.id} highlight={isTop} style={{ padding: "20px 24px" }} className="flex flex-col justify-between">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
+                  style={{ background: isTop ? "#F97316" : "rgba(255,255,255,0.1)", color: isTop ? "#000" : "rgba(255,255,255,0.6)" }}
+                >
+                  {index + 1}
                 </div>
-
-                {isEmpty ? (
-                  <div>
-                    <p style={{ fontSize: "44px", fontWeight: 700, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>
-                      {formatCurrency(0)}
-                    </p>
-                    <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.25)", marginTop: "4px" }}>Aguardando vendas</p>
-                  </div>
-                ) : (
-                  <MetricValue color={isTop ? "#F97316" : "#FFFFFF"} size="44px">
-                    {formatCurrency(closer.volume)}
-                  </MetricValue>
-                )}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <p style={{ fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }} className="truncate">{closer.nome}</p>
+                  {isTop && (
+                    <span className="shrink-0 px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: "#F97316", color: "#000", fontSize: "11px", fontWeight: 700 }}>
+                      <Trophy className="h-3 w-3" /> Líder
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {goalValue > 0 && (
-                <div className="mt-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>Meta individual</span>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#F97316" }}>{progressPercent.toFixed(0)}%</span>
-                  </div>
-                  <GradientBar percent={progressPercent} />
+              {/* Three-column: Vendas | OTE | No-show */}
+              <div className="flex flex-1 min-h-0">
+                {/* Left: Vendas (45%) */}
+                <div className="flex flex-col justify-center" style={{ width: "45%" }}>
+                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "4px" }}>
+                    {isEmpty ? "Vendas" : `${closer.vendas} vendas`}
+                  </p>
+                  {isEmpty ? (
+                    <>
+                      <p style={{ fontSize: "28px", fontWeight: 700, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
+                      <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.2)", marginTop: "2px" }}>Aguardando vendas</p>
+                    </>
+                  ) : (
+                    <p style={{ fontSize: "28px", fontWeight: 700, color: isTop ? "#F97316" : "#FFFFFF", lineHeight: 1.1 }} className="truncate">
+                      {formatCurrency(closer.volume)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div style={{ width: "1px", background: "rgba(255,255,255,0.08)", margin: "0 12px", alignSelf: "stretch" }} />
+
+                {/* Center: OTE (35%) */}
+                <div className="flex flex-col justify-center" style={{ width: "30%" }}>
+                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "4px" }}>Meta OTE</p>
+                  {isEmpty ? (
+                    <p style={{ fontSize: "20px", fontWeight: 700, color: "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>—</p>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: "18px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1 }} className="truncate">
+                        {goalValue > 0 ? formatCurrency(goalValue) : "—"}
+                      </p>
+                      {goalValue > 0 && (
+                        <p style={{ fontSize: "12px", fontWeight: 600, color: "#F97316", marginTop: "2px" }}>
+                          {otePercent.toFixed(0)}% da meta
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Divider */}
+                <div style={{ width: "1px", background: "rgba(255,255,255,0.08)", margin: "0 12px", alignSelf: "stretch" }} />
+
+                {/* Right: No-show */}
+                <div className="flex flex-col justify-center flex-1 min-w-0">
+                  <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "4px" }}>No-show</p>
+                  <p style={{ fontSize: "20px", fontWeight: 700, color: closer.noShow > 0 ? "#FFFFFF" : "rgba(255,255,255,0.3)", lineHeight: 1.1 }}>
+                    {closer.noShow || 0}
+                  </p>
+                  {closer.percentNoShow != null && closer.percentNoShow > 0 && (
+                    <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}>
+                      {closer.percentNoShow.toFixed(0)}%
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              {goalValue > 0 && !isEmpty && (
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="flex-1"><GradientBar percent={otePercent} height={5} /></div>
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#F97316", flexShrink: 0 }}>{otePercent.toFixed(0)}%</span>
                 </div>
               )}
             </TVCard>
