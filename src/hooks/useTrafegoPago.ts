@@ -103,6 +103,23 @@ export function useTrafegoPagoAllRegistros(mesAno?: string) {
   });
 }
 
+export function useTrafegoPagoRegistrosByMonths(months: string[]) {
+  return useQuery({
+    queryKey: ['trafego-pago-registros-months', months],
+    queryFn: async () => {
+      if (months.length === 0) return [];
+      const { data, error } = await supabase
+        .from('trafego_pago_registros')
+        .select('*')
+        .in('mes_ano', months)
+        .order('mes_ano', { ascending: false });
+      if (error) throw error;
+      return data as unknown as TrafegoPagoRegistro[];
+    },
+    enabled: months.length > 0,
+  });
+}
+
 export function useUpsertTrafegoPagoCliente() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
