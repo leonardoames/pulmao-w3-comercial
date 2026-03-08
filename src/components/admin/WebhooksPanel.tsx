@@ -167,6 +167,25 @@ export function WebhooksPanel() {
                   <p className="text-xs text-muted-foreground mt-1">Evento: {webhook.evento}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={testingId === webhook.id}
+                        onClick={() => handleTest(webhook)}
+                      >
+                        {testingId === webhook.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
+                        Enviar Teste
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Envia a última venda registrada para este webhook</TooltipContent>
+                  </Tooltip>
                   <Switch
                     checked={webhook.ativo}
                     onCheckedChange={() => handleToggle(webhook)}
