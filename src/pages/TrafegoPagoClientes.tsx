@@ -47,6 +47,7 @@ export default function TrafegoPagoClientes() {
   const [filterGestor, setFilterGestor] = useState('all');
   const [filterPlataforma, setFilterPlataforma] = useState('all');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<TrafegoPagoCliente | null>(null);
   const [activeTab, setActiveTab] = useState('dados');
 
