@@ -350,6 +350,7 @@ export default function VendasPage() {
             { value: '7days' as QuickFilter, label: '7 dias' },
             { value: 'month' as QuickFilter, label: 'Este mês' },
             { value: '30days' as QuickFilter, label: '30 dias' },
+            { value: 'custom' as QuickFilter, label: 'Custom' },
           ]).map((option) => {
             const isActive = quickFilter === option.value;
             return (
@@ -377,7 +378,7 @@ export default function VendasPage() {
           })}
         </div>
 
-        <div className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:items-center">
+        <div className="flex items-center gap-2">
           <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
             <FileDown className="h-4 w-4" />
             Exportar PDF

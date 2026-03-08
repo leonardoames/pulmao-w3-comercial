@@ -98,7 +98,7 @@ export default function MarketingDashboard() {
     <AppLayout>
       <PageHeader title="Dashboard de Marketing" description="Métricas de aquisição e performance de tráfego">
         <Select value={selectedCloser} onValueChange={setSelectedCloser}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
             <SelectValue placeholder="Filtrar por closer" />
           </SelectTrigger>
           <SelectContent>
@@ -112,6 +112,48 @@ export default function MarketingDashboard() {
         <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
           {filterOptions.map((option) => {
             const isActive = filter === option.value;
+            if (option.value === 'custom') {
+              return (
+                <Popover key="custom" open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={isActive ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => handleFilterChange('custom')}
+                      className="min-w-[70px]"
+                      style={
+                        isActive
+                          ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                          : {
+                              background: 'transparent',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                              borderRadius: '8px',
+                              fontSize: '13px',
+                              color: 'rgba(255,255,255,0.6)',
+                            }
+                      }
+                    >
+                      {displayRange || 'Custom'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-4" align="end">
+                    <Calendar
+                      mode="range"
+                      selected={{ from: tempRange.from, to: tempRange.to }}
+                      onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
+                      locale={ptBR}
+                      numberOfMonths={2}
+                      className="pointer-events-auto"
+                    />
+                    <div className="flex justify-end mt-4">
+                      <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
+                        Aplicar
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
+            }
             return (
               <Button
                 key={option.value}
@@ -131,32 +173,11 @@ export default function MarketingDashboard() {
                       }
                 }
               >
-                {option.value === 'custom' && displayRange ? displayRange : option.label}
+                {option.label}
               </Button>
             );
           })}
         </div>
-        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0">
-              <CalendarIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-4" align="end">
-            <Calendar
-              mode="range"
-              selected={{ from: tempRange.from, to: tempRange.to }}
-              onSelect={(range) => setTempRange({ from: range?.from, to: range?.to })}
-              locale={ptBR}
-              numberOfMonths={2}
-            />
-            <div className="flex justify-end mt-4">
-              <Button onClick={handleApplyCustomRange} disabled={!tempRange.from || !tempRange.to}>
-                Aplicar
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
       </PageHeader>
 
       {/* Investment input (gestores only) */}

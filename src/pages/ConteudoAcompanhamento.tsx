@@ -89,62 +89,9 @@ export default function ConteudoAcompanhamento() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <PageHeader title="Acompanhamento Diário" description="Histórico de registros operacionais" />
-          {canEdit && (
-            <Button onClick={handleNew} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus className="h-4 w-4" /> Novo registro
-            </Button>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-            {periodButtons.map(b => (
-              <Button
-                key={b.key}
-                variant={period === b.key ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => {
-                  setPeriod(b.key);
-                  if (b.key === 'custom') setCustomPickerOpen(true);
-                }}
-                className={cn(
-                  'text-xs h-8',
-                  period === b.key && 'bg-primary text-primary-foreground',
-                )}
-              >
-                {b.label}
-              </Button>
-            ))}
-          </div>
-
-          {period === 'custom' && (
-            <Popover open={customPickerOpen} onOpenChange={setCustomPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 text-xs">
-                  <CalendarIcon className="h-3.5 w-3.5" />
-                  {customRange?.from && customRange?.to
-                    ? `${format(customRange.from, 'dd/MM')} - ${format(customRange.to, 'dd/MM')}`
-                    : 'Selecionar período'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={customRange}
-                  onSelect={setCustomRange}
-                  locale={ptBR}
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          )}
-
+        <PageHeader title="Acompanhamento Diário" description="Histórico de registros operacionais">
           <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-            <SelectTrigger className="w-[150px] h-8 text-xs">
+            <SelectTrigger className="w-[150px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
               <SelectValue placeholder="Responsável" />
             </SelectTrigger>
             <SelectContent>
@@ -154,7 +101,79 @@ export default function ConteudoAcompanhamento() {
               ))}
             </SelectContent>
           </Select>
-        </div>
+
+          <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            {periodButtons.map(b => {
+              const isActive = period === b.key;
+              if (b.key === 'custom') {
+                return (
+                  <Popover key="custom" open={customPickerOpen} onOpenChange={setCustomPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={isActive ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => { setPeriod('custom'); setCustomPickerOpen(true); }}
+                        className="min-w-[70px]"
+                        style={
+                          isActive
+                            ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                            : {
+                                background: 'transparent',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: '8px',
+                                fontSize: '13px',
+                                color: 'rgba(255,255,255,0.6)',
+                              }
+                        }
+                      >
+                        {customRange?.from && customRange?.to
+                          ? `${format(customRange.from, 'dd/MM')} - ${format(customRange.to, 'dd/MM')}`
+                          : b.label}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="range"
+                        selected={customRange}
+                        onSelect={setCustomRange}
+                        locale={ptBR}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                );
+              }
+              return (
+                <Button
+                  key={b.key}
+                  variant={isActive ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPeriod(b.key)}
+                  className="min-w-[60px]"
+                  style={
+                    isActive
+                      ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                      : {
+                          background: 'transparent',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          color: 'rgba(255,255,255,0.6)',
+                        }
+                  }
+                >
+                  {b.label}
+                </Button>
+              );
+            })}
+          </div>
+
+          {canEdit && (
+            <Button onClick={handleNew} className="gap-2">
+              <Plus className="h-4 w-4" /> Novo registro
+            </Button>
+          )}
+        </PageHeader>
 
         {/* Table */}
         <div className="rounded-lg border border-border overflow-hidden">

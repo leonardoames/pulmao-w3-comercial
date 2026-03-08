@@ -8,30 +8,30 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, children }: PageHeaderProps) {
   return (
-    <div className="mb-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mb-6">
+      <div className="flex items-center justify-between gap-4 flex-nowrap overflow-x-auto">
         {/* Left: title + subtitle */}
         <div className="shrink-0">
           <h1
-            className="tracking-tight text-foreground leading-tight"
+            className="tracking-tight text-foreground leading-tight whitespace-nowrap"
             style={{ fontSize: '20px', fontWeight: 700 }}
           >
             {title}
           </h1>
           {description && (
-            <p className="mt-0.5" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+            <p className="mt-0.5 whitespace-nowrap" style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
               {description}
             </p>
           )}
         </div>
-        {/* Filters and actions */}
+        {/* Filters and actions — always single line */}
         {children && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap sm:gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {children}
           </div>
         )}
       </div>
-      <div className="mt-4" style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+      <div className="mt-4" style={{ height: '1px', background: '#1e1e1e' }} />
     </div>
   );
 }
