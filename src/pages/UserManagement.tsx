@@ -190,6 +190,12 @@ export default function UserManagement() {
                 Permissões
               </TabsTrigger>
             )}
+            {canManageUsers && (
+              <TabsTrigger value="webhooks" className="gap-2">
+                <Webhook className="h-4 w-4" />
+                Webhooks
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="users" className="mt-6 space-y-4">
