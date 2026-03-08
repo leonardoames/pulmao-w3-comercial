@@ -856,14 +856,16 @@ export default function VendasPage() {
                             <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
                           </div>
                           {venda.observacoes && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <StickyNote className="h-4 w-4 shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-default" />
-                              </TooltipTrigger>
-                              <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
-                                {venda.observacoes}
-                              </TooltipContent>
-                            </Tooltip>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <StickyNote className="h-4 w-4 shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-default" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
+                                  {venda.observacoes}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
                       </TableCell>
