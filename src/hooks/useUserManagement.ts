@@ -14,28 +14,31 @@ export function useUsersWithRoles() {
   return useQuery({
     queryKey: ['users-with-roles'],
     queryFn: async () => {
-      // Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .order('nome');
+        .order('criado_em', { ascending: false });
 
       if (profilesError) throw profilesError;
 
-      // Fetch roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
 
       if (rolesError) throw rolesError;
 
-      // Combine data
       const usersWithRoles = profiles.map((profile) => {
         const role = roles.find(r => r.user_id === profile.id);
         return {
           ...profile,
           user_role: role ? { role: role.role as AppRole } : null
         } as UserWithRole;
+      });
+
+      // Sort: active first (preserving criado_em order within each group), then inactive
+      usersWithRoles.sort((a, b) => {
+        if (a.ativo !== b.ativo) return a.ativo ? -1 : 1;
+        return 0; // preserve criado_em order from DB
       });
 
       return usersWithRoles;
@@ -100,7 +103,6 @@ export function useCreateUser() {
       area: UserArea; 
       role: AppRole;
     }) => {
-      // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -112,10 +114,8 @@ export function useCreateUser() {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Falha ao criar usuário');
 
-      // Wait a bit for the trigger to create the profile
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Update profile with area
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ area })
@@ -125,7 +125,6 @@ export function useCreateUser() {
         console.error('Erro ao atualizar perfil:', profileError);
       }
 
-      // Update role using update instead of upsert to avoid type issues
       const { data: existingRole } = await supabase
         .from('user_roles')
         .select('id')

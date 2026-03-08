@@ -20,6 +20,7 @@ export interface Profile {
   ativo: boolean;
   criado_em: string;
   atualizado_em: string;
+  avatar_url?: string | null;
 }
 
 export interface Venda {
@@ -47,7 +48,6 @@ export interface Venda {
   reembolsado_por?: string;
   reembolsado_em?: string;
   origem_lead?: OrigemLead | null;
-  // Relations
   closer?: Profile;
 }
 
@@ -61,9 +61,7 @@ export interface Fechamento {
   observacoes?: string;
   criado_em: string;
   atualizado_em: string;
-  // Derived
   calls_agendadas?: number;
-  // Relations
   closer?: Profile;
 }
 
@@ -75,7 +73,6 @@ export const VENDA_STATUS_LABELS: Record<VendaStatus, string> = {
   Reembolsado: 'Reembolsado',
 };
 
-// Legacy role labels (for profiles.role field - not used in new system)
 export const ROLE_LABELS: Record<UserRole, string> = {
   CEO: 'CEO',
   Founder: 'Founder',

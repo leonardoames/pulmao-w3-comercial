@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -18,15 +18,17 @@ import {
   X,
   Megaphone,
   ShoppingBag,
+  Camera,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentUserRole, useIsSocialSelling } from '@/hooks/useUserRoles';
 import { usePermissionChecks, ROUTE_TO_RESOURCE } from '@/hooks/useRolePermissions';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ROLE_LABELS_NEW } from '@/types/roles';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const navGroups = [
   {
@@ -78,9 +80,10 @@ interface AppSidebarProps {
 
 export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, refreshProfile } = useAuth();
   const { data: userRole } = useCurrentUserRole();
   const { canView } = usePermissionChecks();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const visibleGroups = navGroups
     .map(group => ({
@@ -94,14 +97,12 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
 
   const canViewAdmin = canView('route:painel-admin');
 
-  // Exclusive accordion: find the group containing the active route
   const activeGroupLabel = visibleGroups.find(g =>
     g.items.some(item => location.pathname === item.path)
   )?.label ?? visibleGroups[0]?.label ?? '';
 
   const [openGroup, setOpenGroup] = useState<string>(activeGroupLabel);
 
-  // Update open group when route changes
   useEffect(() => {
     const newActive = visibleGroups.find(g =>
       g.items.some(item => location.pathname === item.path)
@@ -115,6 +116,40 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
 
   const handleLinkClick = () => {
     onClose?.();
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${profile.id}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      toast.error('Erro ao enviar foto');
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: `${publicUrl}?t=${Date.now()}` })
+      .eq('id', profile.id);
+
+    if (updateError) {
+      toast.error('Erro ao atualizar perfil');
+      return;
+    }
+
+    toast.success('Foto atualizada!');
+    refreshProfile?.();
   };
 
   const renderNavLink = (path: string, icon: any, label: string) => {
@@ -303,18 +338,30 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
         {profile && (
           <div className="p-4" style={{ borderTop: '1px solid hsla(0, 0%, 100%, 0.06)' }}>
             <div className="flex items-center gap-3 mb-4">
-              <Avatar className="h-10 w-10 border-2 border-primary/30">
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                  {profile.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <Avatar className="h-10 w-10 border-2 border-primary/30">
+                  <AvatarImage src={profile.avatar_url || undefined} alt={profile.nome} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                    {profile.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="h-4 w-4 text-white" />
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate text-foreground">{profile.nome}</p>
                 <p className="text-xs" style={{ color: 'hsla(0, 0%, 100%, 0.35)' }}>
                   {userRole ? ROLE_LABELS_NEW[userRole.role] : 'Carregando...'}
                 </p>
               </div>
-              <ThemeToggle />
             </div>
             <Button
               variant="ghost"
