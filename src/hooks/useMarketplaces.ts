@@ -84,7 +84,7 @@ export function useMarketplaceClientes(filters?: {
         .order('criado_em', { ascending: false });
 
       if (filters?.status && filters.status !== 'all') {
-        q = q.eq('status', filters.status);
+        q = q.eq('status', filters.status as any);
       }
       if (filters?.gestor && filters.gestor !== 'all') {
         q = q.eq('gestor_user_id', filters.gestor);
