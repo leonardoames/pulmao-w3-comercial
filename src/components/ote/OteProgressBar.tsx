@@ -66,6 +66,20 @@ export function OteProgressBar({
               </span>
             </div>
           ))}
+
+          {/* Expected progress ghost ruler */}
+          {expectedPercent !== undefined && (
+            <div
+              className="absolute top-0 bottom-0 w-0.5"
+              style={{ left: `${(Math.min(expectedPercent, 130) / 130) * 100}%` }}
+              title={`Esperado: ${expectedPercent.toFixed(0)}%`}
+            >
+              <div className="absolute inset-0 bg-warning/80" />
+              <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-warning font-medium whitespace-nowrap">
+                Esp.
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>
