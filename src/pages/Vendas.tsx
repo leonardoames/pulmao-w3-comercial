@@ -514,34 +514,23 @@ export default function VendasPage() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="stat-card flex items-center justify-between">
-          <div>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Total de Vendas</p>
-            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-foreground">{totalVendas}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-primary/10">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
-        </div>
-        <div className="stat-card flex items-center justify-between">
-          <div className="min-w-0">
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Faturamento Total</p>
-            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-primary truncate">{formatCurrency(totalFaturamento)}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-primary/10 shrink-0">
-            <DollarSign className="h-5 w-5 text-primary" />
-          </div>
-        </div>
-        <div className="stat-card flex items-center justify-between">
-          <div className="min-w-0">
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Ticket Médio</p>
-            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-foreground truncate">{formatCurrency(ticketMedio)}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted shrink-0">
-            <TrendingUp className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <StatCard
+          title="Total de Vendas"
+          value={totalVendas}
+          icon={<Users className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Faturamento Total"
+          value={formatCurrency(totalFaturamento)}
+          icon={<DollarSign className="h-5 w-5" />}
+          variant="primary"
+        />
+        <StatCard
+          title="Ticket Médio"
+          value={formatCurrency(ticketMedio)}
+          icon={<TrendingUp className="h-5 w-5" />}
+        />
       </div>
 
       {/* Search + Filter Toggle */}
