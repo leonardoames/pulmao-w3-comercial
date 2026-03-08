@@ -26,6 +26,10 @@ import ConteudoAcompanhamento from "./pages/ConteudoAcompanhamento";
 import NotFound from "./pages/NotFound";
 import SharedDashboard from "./pages/SharedDashboard";
 import ChangePassword from "./pages/ChangePassword";
+import TrafegoPagoDashboard from "./pages/TrafegoPagoDashboard";
+import TrafegoPagoClientes from "./pages/TrafegoPagoClientes";
+import MarketplaceDashboard from "./pages/MarketplaceDashboard";
+import MarketplaceClientes from "./pages/MarketplaceClientes";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +119,12 @@ function AppRoutes() {
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute routePath="/painel-admin"><UserManagement /></ProtectedRoute>} />
       <Route path="/marketing/dashboard" element={<ProtectedRoute routePath="/marketing/dashboard"><MarketingDashboard /></ProtectedRoute>} />
+      {/* Tráfego Pago */}
+      <Route path="/trafego-pago/dashboard" element={<ProtectedRoute routePath="/trafego-pago/dashboard"><TrafegoPagoDashboard /></ProtectedRoute>} />
+      <Route path="/trafego-pago/clientes" element={<ProtectedRoute routePath="/trafego-pago/clientes"><TrafegoPagoClientes /></ProtectedRoute>} />
+      {/* Marketplaces */}
+      <Route path="/marketplaces/dashboard" element={<ProtectedRoute routePath="/marketplaces/dashboard"><MarketplaceDashboard /></ProtectedRoute>} />
+      <Route path="/marketplaces/clientes" element={<ProtectedRoute routePath="/marketplaces/clientes"><MarketplaceClientes /></ProtectedRoute>} />
       {/* Conteúdo routes */}
       <Route path="/conteudo/dashboard" element={<ProtectedRoute routePath="/conteudo/dashboard"><ConteudoDashboard /></ProtectedRoute>} />
       <Route path="/conteudo/acompanhamento" element={<ProtectedRoute routePath="/conteudo/acompanhamento"><ConteudoAcompanhamento /></ProtectedRoute>} />
