@@ -221,10 +221,23 @@ export default function MarketplaceClientes() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clientes?.map(c => (
+              {clientes?.map(c => {
+                const handleInlineUpdate = (field: string, val: string) => {
+                  let payload: any = { id: c.id, nome_ecommerce: c.nome_ecommerce, [field]: val };
+                  if (field === 'valor_fixo' || field === 'faturamento_ao_entrar') {
+                    payload[field] = parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
+                  }
+                  upsertCliente.mutate(payload, {
+                    onSuccess: () => toast.success('Atualizado!'),
+                    onError: (err: any) => toast.error(err.message || 'Erro'),
+                  });
+                };
+                return (
                 <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30" onClick={() => openEdit(c)}>
                   <TableCell className="font-medium">{c.nome_ecommerce}</TableCell>
-                  <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{c.nicho || '—'}</TableCell>
+                  <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    <InlineEditCell value={c.nicho || ''} onSave={v => handleInlineUpdate('nicho', v)} />
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {c.marketplaces?.map(m => (
@@ -232,7 +245,14 @@ export default function MarketplaceClientes() {
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    <InlineEditCell
+                      value={c.data_entrada || ''}
+                      type="date"
+                      onSave={v => handleInlineUpdate('data_entrada', v)}
+                      displayValue={c.data_entrada ? format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}
+                    />
+                  </TableCell>
                   <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{gestorMap[c.gestor_user_id || ''] || '—'}</TableCell>
                   <TableCell>
                     <Badge variant="outline" style={{ borderColor: STATUS_COLORS[c.status], color: STATUS_COLORS[c.status] }}>{c.status}</Badge>
@@ -244,7 +264,8 @@ export default function MarketplaceClientes() {
                     <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); openEdit(c); }}><Edit className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               {(!clientes || clientes.length === 0) && (
                 <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">Nenhum cliente encontrado</TableCell></TableRow>
               )}
