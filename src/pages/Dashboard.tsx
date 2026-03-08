@@ -212,13 +212,6 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* Origem dos Leads */}
-      {canViewSection('section:dashboard:receita') && vendasOrigem && vendasOrigem.length > 0 && (
-        <div className="mb-6">
-          <OrigemLeadCard vendas={vendasOrigem} />
-        </div>
-      )}
-
       {canViewSection('section:dashboard:ote') && (
         <div className="mb-6">
           <OteDashboardCard
