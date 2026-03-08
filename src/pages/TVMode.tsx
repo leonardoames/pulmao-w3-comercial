@@ -136,6 +136,24 @@ function GradientBar({ percent, height = 6 }: { percent: number; height?: number
   );
 }
 
+// ─── Helpers ───
+function getWorkingDaysInMonth(date: Date) {
+  const days = eachDayOfInterval({ start: startOfMonthFn(date), end: endOfMonthFn(date) });
+  return days.filter(d => !isWeekend(d)).length;
+}
+
+function getWorkingDaysElapsed(date: Date) {
+  const days = eachDayOfInterval({ start: startOfMonthFn(date), end: date });
+  return days.filter(d => !isWeekend(d)).length;
+}
+
+function getExpectedProgressPercent() {
+  const now = new Date();
+  const totalDays = getDaysInMonth(now);
+  const currentDay = getDate(now);
+  return (currentDay / totalDays) * 100;
+}
+
 // ─── Screen 1: Resultado Comercial ───
 function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number }) {
   const revenue = stats?.volumeVendas || 0;
@@ -146,49 +164,140 @@ function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number
   const pctBoleto = totalPayments > 0 ? ((stats?.valorBoleto || 0) / totalPayments) * 100 : 0;
   const monthLabel = format(new Date(), "MMMM yyyy", { locale: ptBR }).toUpperCase();
 
+  // Expected value calculations
+  const now = new Date();
+  const workingDaysTotal = getWorkingDaysInMonth(now);
+  const workingDaysElapsed = getWorkingDaysElapsed(now);
+  const expectedToday = workingDaysTotal > 0 ? (metaMensal / workingDaysTotal) * workingDaysElapsed : 0;
+  const variance = revenue - expectedToday;
+  const isAhead = variance >= 0;
+  const expectedProgressPercent = getExpectedProgressPercent();
+
+  // Conversion & no-show color helpers
+  const convRate = stats?.taxaConversao || 0;
+  const noShowRate = stats?.percentNoShow || 0;
+  const convColor = convRate >= 30 ? "#22C55E" : convRate >= 15 ? "#F97316" : "#EF4444";
+  const noShowColor = noShowRate <= 20 ? "#22C55E" : noShowRate <= 35 ? "#F97316" : "#EF4444";
+
   return (
-    <div className="flex flex-col h-full" style={{ gap: "12px" }}>
-      {/* Title – compact */}
+    <div className="flex flex-col h-full" style={{ gap: "10px" }}>
+      {/* Title */}
       <ScreenTitle>Resultado Comercial — {monthLabel}</ScreenTitle>
 
-      {/* Section 1 – 4 metric cards */}
-      <div className="grid grid-cols-4 gap-3" style={{ height: "calc(30vh - 24px)", flexShrink: 0 }}>
+      {/* ROW 1 — HERO METRIC */}
+      <div
+        className="rounded-[20px] flex items-center justify-between shrink-0"
+        style={{
+          height: "22vh",
+          background: "#1e1a14",
+          border: "1px solid rgba(249,115,22,0.2)",
+          padding: "24px 32px",
+        }}
+      >
+        <div className="flex flex-col justify-center">
+          <p style={{ fontSize: "11px", letterSpacing: "0.15em", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: "8px" }}>
+            Receita Total
+          </p>
+          <p style={{ fontSize: "clamp(42px, 5vw, 64px)", fontWeight: 800, color: "#F97316", lineHeight: 1.1, whiteSpace: "nowrap" }}>
+            {formatCurrency(revenue)}
+          </p>
+        </div>
+        <div className="flex flex-col items-end justify-center gap-2">
+          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>
+            Esperado hoje: {formatCurrency(expectedToday)}
+          </p>
+          <span
+            className="inline-flex items-center gap-1"
+            style={{
+              fontSize: "13px",
+              padding: "4px 12px",
+              borderRadius: "999px",
+              whiteSpace: "nowrap",
+              background: isAhead ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
+              color: isAhead ? "#22C55E" : "#EF4444",
+            }}
+          >
+            {isAhead ? "✓" : "↓"} {formatCurrency(Math.abs(variance))} {isAhead ? "acima" : "abaixo"} do esperado
+          </span>
+        </div>
+      </div>
+
+      {/* ROW 2 — META PROGRESS */}
+      <div
+        className="rounded-[20px] flex flex-col justify-center shrink-0"
+        style={{
+          height: "10vh",
+          background: "#1a1a1a",
+          border: "1px solid rgba(255,255,255,0.06)",
+          padding: "12px 24px",
+        }}
+      >
+        <div className="flex items-center justify-between" style={{ marginBottom: "12px" }}>
+          <div className="flex items-baseline gap-2" style={{ whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>Meta Mensal</span>
+            <span style={{ fontSize: "clamp(14px, 1.5vw, 20px)", fontWeight: 700, color: "#FFFFFF" }}>{formatCurrency(revenue)}</span>
+            <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>/ {formatCurrency(metaMensal)}</span>
+          </div>
+          <p style={{ fontSize: "28px", fontWeight: 700, color: "#F97316", lineHeight: 1 }}>{progressPercent.toFixed(0)}%</p>
+        </div>
+        <div className="relative w-full">
+          <GradientBar percent={progressPercent} height={8} />
+          {/* Expected progress tick mark */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-4px",
+              left: `${Math.min(expectedProgressPercent, 100)}%`,
+              width: "2px",
+              height: "16px",
+              background: "rgba(255,255,255,0.5)",
+              borderRadius: "1px",
+              transform: "translateX(-1px)",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* ROW 3 — SECONDARY METRICS */}
+      <div className="grid grid-cols-3 gap-3 shrink-0" style={{ height: "18vh" }}>
         {[
-          { label: "Receita Total", value: formatCurrency(revenue), color: "#F97316" },
-          { label: "Ticket Médio", value: formatCurrency(stats?.ticketMedio || 0), color: "#FFFFFF" },
-          { label: "Fat. por Call", value: formatCurrency(stats?.faturamentoPorCall || 0), color: "#FFFFFF" },
-          { label: "Total de Vendas", value: formatInteger(stats?.totalVendas || 0), color: "#FFFFFF" },
+          { label: "Ticket Médio", value: formatCurrency(stats?.ticketMedio || 0) },
+          { label: "Fat. por Call", value: formatCurrency(stats?.faturamentoPorCall || 0) },
+          { label: "Total de Vendas", value: formatInteger(stats?.totalVendas || 0) },
         ].map((m) => (
-          <TVCard key={m.label} style={{ padding: "16px 20px" }} className="flex flex-col justify-center h-full">
-            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "8px" }}>{m.label}</p>
-            <p style={{ fontSize: "clamp(28px, 2.8vw, 40px)", fontWeight: 700, color: m.color, lineHeight: 1.1, whiteSpace: "nowrap" }}>{m.value}</p>
+          <TVCard key={m.label} style={{ padding: "16px 20px", border: "1px solid rgba(255,255,255,0.06)" }} className="flex flex-col justify-center h-full">
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>{m.label}</p>
+            <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>{m.value}</p>
           </TVCard>
         ))}
       </div>
 
-      {/* Section 2 – Meta Mensal */}
-      <TVCard style={{ padding: "14px 24px", height: "calc(15vh - 24px)", flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div className="flex items-center justify-between" style={{ marginBottom: "12px" }}>
-          <div className="flex items-baseline gap-2 flex-wrap-none" style={{ whiteSpace: "nowrap" }}>
-            <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)" }}>Meta Mensal</span>
-            <span style={{ fontSize: "clamp(16px, 1.8vw, 22px)", fontWeight: 700, color: "#FFFFFF" }}>{formatCurrency(revenue)}</span>
-            <span style={{ fontSize: "13px", fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>/ {formatCurrency(metaMensal)}</span>
-          </div>
-          <p style={{ fontSize: "clamp(24px, 2.5vw, 32px)", fontWeight: 700, color: "#F97316", lineHeight: 1 }}>{progressPercent.toFixed(0)}%</p>
-        </div>
-        <GradientBar percent={progressPercent} height={8} />
-      </TVCard>
+      {/* ROW 4 — CONVERSION & PIPELINE */}
+      <div className="grid grid-cols-3 gap-3 shrink-0" style={{ height: "18vh" }}>
+        <TVCard style={{ padding: "16px 20px", border: "1px solid rgba(255,255,255,0.06)" }} className="flex flex-col justify-center h-full">
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>Taxa de Conversão</p>
+          <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: convColor, lineHeight: 1.1 }}>{convRate.toFixed(1)}%</p>
+        </TVCard>
+        <TVCard style={{ padding: "16px 20px", border: "1px solid rgba(255,255,255,0.06)" }} className="flex flex-col justify-center h-full">
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>No-show Global</p>
+          <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: noShowColor, lineHeight: 1.1 }}>{noShowRate.toFixed(1)}%</p>
+        </TVCard>
+        <TVCard style={{ padding: "16px 20px", border: "1px solid rgba(255,255,255,0.06)" }} className="flex flex-col justify-center h-full">
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "8px" }}>Calls Realizadas</p>
+          <p style={{ fontSize: "clamp(22px, 2.2vw, 32px)", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1 }}>{formatInteger(stats?.callsRealizadas || 0)}</p>
+        </TVCard>
+      </div>
 
-      {/* Section 3 – Pix / Cartão / Boleto */}
-      <div className="grid grid-cols-3 gap-3" style={{ height: "calc(30vh - 24px)", flexShrink: 0 }}>
+      {/* ROW 5 — PAYMENT BREAKDOWN */}
+      <div className="grid grid-cols-3 gap-3 flex-1 min-h-0">
         {[
           { label: "Pix", value: stats?.valorPix || 0, pct: pctPix },
           { label: "Cartão", value: stats?.valorCartao || 0, pct: pctCartao },
           { label: "Boleto", value: stats?.valorBoleto || 0, pct: pctBoleto },
         ].map((m) => (
-          <TVCard key={m.label} style={{ padding: "16px 20px" }} className="flex flex-col justify-center h-full">
-            <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.45)", marginBottom: "6px" }}>{m.label}</p>
-            <p style={{ fontSize: "clamp(24px, 2.5vw, 36px)", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>{formatCurrency(m.value)}</p>
+          <TVCard key={m.label} style={{ padding: "16px 20px", border: "1px solid rgba(255,255,255,0.06)" }} className="flex flex-col justify-center h-full">
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)", marginBottom: "6px" }}>{m.label}</p>
+            <p style={{ fontSize: "clamp(20px, 2vw, 28px)", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1, whiteSpace: "nowrap" }}>{formatCurrency(m.value)}</p>
             <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>{m.pct.toFixed(1)}%</p>
           </TVCard>
         ))}
@@ -196,7 +305,6 @@ function ScreenComercial({ stats, metaMensal }: { stats: any; metaMensal: number
     </div>
   );
 }
-
 // ─── Screen 2: Ranking dos Closers ───
 function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] }) {
   const closers = rankings?.rankingGeral || [];
