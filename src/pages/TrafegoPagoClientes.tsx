@@ -232,6 +232,9 @@ export default function TrafegoPagoClientes() {
             {closers?.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-2">
+          <Upload className="h-4 w-4" /> Importar CSV
+        </Button>
         <Button onClick={openNew} className="gap-2">
           <Plus className="h-4 w-4" /> Novo Cliente
         </Button>
