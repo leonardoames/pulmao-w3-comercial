@@ -495,6 +495,74 @@ function ScreenRanking({ rankings, oteGoals }: { rankings: any; oteGoals: any[] 
     </div>
   );
 }
+// ─── Screen 3: Social Selling ───
+function ScreenSocialSelling({ ssEntries }: { ssEntries: any[] }) {
+  const totals = useMemo(() => {
+    if (!ssEntries || ssEntries.length === 0) return { conversas: 0, convites: 0, formularios: 0, agendamentos: 0 };
+    return {
+      conversas: ssEntries.reduce((s, e) => s + e.conversas_iniciadas, 0),
+      convites: ssEntries.reduce((s, e) => s + e.convites_enviados, 0),
+      formularios: ssEntries.reduce((s, e) => s + e.formularios_preenchidos, 0),
+      agendamentos: ssEntries.reduce((s, e) => s + e.agendamentos, 0),
+    };
+  }, [ssEntries]);
+
+  const allZero = totals.conversas === 0 && totals.convites === 0 && totals.formularios === 0 && totals.agendamentos === 0;
+  const convRateForm = totals.formularios > 0 ? (totals.agendamentos / totals.formularios) * 100 : 0;
+  const convRateConv = totals.conversas > 0 ? (totals.formularios / totals.conversas) * 100 : 0;
+
+  const metrics = [
+    { label: "Conversas Iniciadas", value: totals.conversas, icon: <MessageSquare className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
+    { label: "Convites Enviados", value: totals.convites, icon: <Send className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
+    { label: "Formulários", value: totals.formularios, icon: <FileText className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
+    { label: "Agendamentos", value: totals.agendamentos, icon: <CalendarCheck className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} /> },
+  ];
+
+  return (
+    <div className="flex flex-col h-full">
+      <ScreenTitle>Social Selling</ScreenTitle>
+
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {metrics.map((m) => (
+          <TVCard key={m.label} className="flex flex-col justify-center">
+            <MetricLabel>{m.label}</MetricLabel>
+            {allZero ? (
+              <EmptyState icon={m.icon} />
+            ) : (
+              <MetricValue color={m.value > 0 ? "#FFFFFF" : "rgba(255,255,255,0.3)"}>
+                {formatInteger(m.value)}
+              </MetricValue>
+            )}
+          </TVCard>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 flex-1">
+        <TVCard className="flex flex-col items-center justify-center">
+          <MetricLabel>Conv. Formulário → Agendamento</MetricLabel>
+          {allZero ? (
+            <EmptyState icon={<CalendarCheck className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} />} />
+          ) : (
+            <div className="mt-4">
+              <DonutChart percent={convRateForm} />
+            </div>
+          )}
+        </TVCard>
+        <TVCard className="flex flex-col items-center justify-center">
+          <MetricLabel>Conv. Conversa → Formulário</MetricLabel>
+          {allZero ? (
+            <EmptyState icon={<FileText className="h-6 w-6" style={{ color: "rgba(255,255,255,0.3)" }} />} />
+          ) : (
+            <div className="mt-4">
+              <DonutChart percent={convRateConv} />
+            </div>
+          )}
+        </TVCard>
+      </div>
+    </div>
+  );
+}
+
 // ─── Screen 4: Conteúdo ───
 function ScreenConteudo({ contentLogs }: { contentLogs: any[] }) {
   const totals = useMemo(() => ({
