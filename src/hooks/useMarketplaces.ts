@@ -139,6 +139,23 @@ export function useMarketplaceAllRegistros(mesAno?: string) {
   });
 }
 
+export function useMarketplaceRegistrosByMonths(months: string[]) {
+  return useQuery({
+    queryKey: ['marketplace-registros-months', months],
+    queryFn: async () => {
+      if (months.length === 0) return [];
+      const { data, error } = await supabase
+        .from('marketplace_registros')
+        .select('*')
+        .in('mes_ano', months)
+        .order('mes_ano', { ascending: false });
+      if (error) throw error;
+      return data as unknown as MarketplaceRegistro[];
+    },
+    enabled: months.length > 0,
+  });
+}
+
 export function useUpsertMarketplaceCliente() {
   const queryClient = useQueryClient();
   const { user } = useAuth();

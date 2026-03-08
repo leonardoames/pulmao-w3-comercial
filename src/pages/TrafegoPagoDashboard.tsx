@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatCard } from '@/components/ui/stat-card';
@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useTrafegoPagoClientes, useTrafegoPagoAllRegistros, TrafegoPagoCliente, TrafegoPagoRegistro } from '@/hooks/useTrafegoPago';
+import { useTrafegoPagoClientes, useTrafegoPagoRegistrosByMonths, TrafegoPagoCliente } from '@/hooks/useTrafegoPago';
 import { useClosers } from '@/hooks/useProfiles';
-import { MonthYearSelector } from '@/components/MonthYearSelector';
+import { DateFilterBar, DateFilter, DateRange, getDateRange, getMonthsInRange } from '@/components/DateFilterBar';
 import { DollarSign, TrendingUp, TrendingDown, Users, BarChart3, AlertTriangle, Trophy, Zap } from 'lucide-react';
-import { format, subMonths } from 'date-fns';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -20,13 +21,20 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function TrafegoPagoDashboard() {
-  const [mesAno, setMesAno] = useState(format(new Date(), 'yyyy-MM'));
-  const mesAnterior = format(subMonths(new Date(mesAno + '-01'), 1), 'yyyy-MM');
+  const [filter, setFilter] = useState<DateFilter>('month');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date>(new Date());
+
+  const dateRange = useMemo(() => getDateRange(filter, customRange), [filter, customRange]);
+  const months = useMemo(() => getMonthsInRange(dateRange), [dateRange]);
 
   const { data: clientes } = useTrafegoPagoClientes();
-  const { data: regsAtual } = useTrafegoPagoAllRegistros(mesAno);
-  const { data: regsAnterior } = useTrafegoPagoAllRegistros(mesAnterior);
+  const { data: regsAtual, dataUpdatedAt } = useTrafegoPagoRegistrosByMonths(months);
   const { data: closers } = useClosers();
+
+  useEffect(() => {
+    if (dataUpdatedAt) setLastUpdatedAt(new Date(dataUpdatedAt));
+  }, [dataUpdatedAt]);
 
   const gestorMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -47,11 +55,12 @@ export default function TrafegoPagoDashboard() {
     return c?.status === 'Ativo' ? s + Number(r.valor_pago) : s;
   }, 0) ?? 0;
 
-  const clientesNovosMes = clientes?.filter(c => c.data_entrada?.startsWith(mesAno)) || [];
+  const primaryMonth = months[months.length - 1] || format(new Date(), 'yyyy-MM');
+  const clientesNovosMes = clientes?.filter(c => c.data_entrada?.startsWith(primaryMonth)) || [];
   const mrrNovo = clientesNovosMes.reduce((s, c) => s + Number(c.valor_mrr), 0);
 
   const clientesCancelados = clientes?.filter(c =>
-    (c.status === 'Cancelado' || c.status === 'Pausado') && c.atualizado_em?.startsWith(mesAno)
+    (c.status === 'Cancelado' || c.status === 'Pausado') && c.atualizado_em?.startsWith(primaryMonth)
   ) || [];
   const churn = clientesCancelados.reduce((s, c) => s + Number(c.valor_mrr), 0);
   const mrrLiquido = mrrTotal + mrrNovo - churn;
@@ -75,22 +84,13 @@ export default function TrafegoPagoDashboard() {
   // Performance por gestor
   const gestorPerf = useMemo(() => {
     const map: Record<string, { clientes: number; investimento: number; receita: number }> = {};
+    const clientesByGestor: Record<string, Set<string>> = {};
     regsAtual?.forEach(r => {
       const c = clienteMap[r.cliente_id];
       const gId = c?.gestor_user_id || 'sem-gestor';
       if (!map[gId]) map[gId] = { clientes: 0, investimento: 0, receita: 0 };
       map[gId].investimento += Number(r.investimento_gerenciado);
       map[gId].receita += Number(r.valor_pago);
-    });
-    clientes?.forEach(c => {
-      const gId = c.gestor_user_id || 'sem-gestor';
-      if (!map[gId]) map[gId] = { clientes: 0, investimento: 0, receita: 0 };
-    });
-    // Count unique clients per gestor
-    const clientesByGestor: Record<string, Set<string>> = {};
-    regsAtual?.forEach(r => {
-      const c = clienteMap[r.cliente_id];
-      const gId = c?.gestor_user_id || 'sem-gestor';
       if (!clientesByGestor[gId]) clientesByGestor[gId] = new Set();
       clientesByGestor[gId].add(r.cliente_id);
     });
@@ -100,7 +100,7 @@ export default function TrafegoPagoDashboard() {
       clientes: clientesByGestor[id]?.size || 0,
       ...data,
     })).sort((a, b) => b.receita - a.receita);
-  }, [regsAtual, clienteMap, gestorMap, clientes]);
+  }, [regsAtual, clienteMap, gestorMap]);
 
   // Alertas
   const alertas = useMemo(() => {
@@ -110,20 +110,33 @@ export default function TrafegoPagoDashboard() {
       .map(r => ({ ...r, cliente: clienteMap[r.cliente_id] }));
   }, [regsAtual, clienteMap]);
 
-  // Chart - last 12 months
-  const chartData = useMemo(() => {
-    const months: string[] = [];
-    for (let i = 11; i >= 0; i--) {
-      months.push(format(subMonths(new Date(), i), 'yyyy-MM'));
-    }
-    return months.map(m => ({ month: m.slice(5), mrr: 0, investido: 0 }));
-    // Would need all registros across months for real chart; placeholder
-  }, []);
+  // Timestamp
+  const minutesSinceUpdate = Math.floor((Date.now() - lastUpdatedAt.getTime()) / 60000);
+  const timestampColor = minutesSinceUpdate < 5 ? '#22C55E' : minutesSinceUpdate <= 15 ? '#FBBF24' : '#888888';
+  const timestampPulse = minutesSinceUpdate < 5;
 
   return (
     <AppLayout>
       <PageHeader title="Dashboard — Tráfego Pago" description="Métricas de gestão de tráfego pago">
-        <MonthYearSelector value={mesAno} onChange={setMesAno} />
+        <DateFilterBar
+          filter={filter}
+          onFilterChange={setFilter}
+          customRange={customRange}
+          onCustomRangeChange={setCustomRange}
+        />
+        <div className="flex items-center gap-2 shrink-0">
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '14px' }}>|</span>
+          <div
+            className="flex items-center gap-1.5"
+            style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}
+          >
+            <span
+              className={cn('inline-block w-2 h-2 rounded-full', timestampPulse && 'animate-pulse')}
+              style={{ background: timestampColor }}
+            />
+            Atualizado às {format(lastUpdatedAt, 'HH:mm')}
+          </div>
+        </div>
       </PageHeader>
 
       <SectionLabel title="Receita Recorrente" />
