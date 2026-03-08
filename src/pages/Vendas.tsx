@@ -322,6 +322,41 @@ export default function VendasPage() {
   return (
     <AppLayout>
       <PageHeader title="Vendas" description="Contratos e faturamento">
+        {/* Quick date filter pills */}
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          {([
+            { value: 'today' as QuickFilter, label: 'Hoje' },
+            { value: 'yesterday' as QuickFilter, label: 'Ontem' },
+            { value: '7days' as QuickFilter, label: '7 dias' },
+            { value: 'month' as QuickFilter, label: 'Este mês' },
+            { value: '30days' as QuickFilter, label: '30 dias' },
+          ]).map((option) => {
+            const isActive = quickFilter === option.value;
+            return (
+              <Button
+                key={option.value}
+                variant={isActive ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setQuickFilter(option.value)}
+                className="min-w-[60px]"
+                style={
+                  isActive
+                    ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                    : {
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.6)',
+                      }
+                }
+              >
+                {option.label}
+              </Button>
+            );
+          })}
+        </div>
+
         <div className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:items-center">
           <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
             <FileDown className="h-4 w-4" />
