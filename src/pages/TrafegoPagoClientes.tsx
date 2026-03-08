@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle } from 'lucide-react';
+import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink } from 'lucide-react';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
 import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
