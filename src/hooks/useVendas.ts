@@ -78,10 +78,17 @@ export function useCreateVenda() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['vendas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Venda registrada com sucesso!');
+      
+      // Fire webhook (non-blocking)
+      supabase.functions.invoke('venda-webhook', {
+        body: { venda_id: data.id },
+      }).catch((err) => {
+        console.error('Webhook error (non-blocking):', err);
+      });
     },
     onError: (error) => {
       toast.error('Erro ao registrar venda: ' + error.message);
