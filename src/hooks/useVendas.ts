@@ -165,3 +165,58 @@ export function useUpdateVenda() {
     }
   });
 }
+
+export function useDeleteVenda() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('vendas')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      toast.success('Venda excluída com sucesso');
+    },
+    onError: (error) => {
+      toast.error('Erro ao excluir venda: ' + error.message);
+    }
+  });
+}
+
+export function useRefundVenda() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, motivo_reembolso, reembolsado_por }: { id: string; motivo_reembolso?: string; reembolsado_por: string }) => {
+      const { data, error } = await supabase
+        .from('vendas')
+        .update({
+          status: 'Reembolsado' as any,
+          motivo_reembolso,
+          reembolsado_por,
+          reembolsado_em: new Date().toISOString(),
+        } as any)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+      
+      if (error) throw error;
+      if (!data) throw new Error('Venda não encontrada');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      toast.success('Venda marcada como reembolsada');
+    },
+    onError: (error) => {
+      toast.error('Erro ao reembolsar venda: ' + error.message);
+    }
+  });
+}
