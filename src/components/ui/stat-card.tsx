@@ -28,39 +28,71 @@ export function StatCard({
   return (
     <div className={cn(
       'stat-card animate-fade-in',
-      variant === 'primary' && 'border-primary/15 bg-primary/[0.03]',
-      variant === 'success' && 'border-success/15 bg-success/[0.03]',
-      variant === 'warning' && 'border-warning/15 bg-warning/[0.03]',
-      variant === 'destructive' && 'border-destructive/15 bg-destructive/[0.03]',
       className
     )}>
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold mt-2 tracking-tight">{value}</p>
+        <div className="flex-1 min-w-0">
+          {/* Card label: 13px, weight 400, muted */}
+          <p
+            className="font-normal"
+            style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}
+          >
+            {title}
+          </p>
+          {/* Main metric: 36px, weight 700 */}
+          <p
+            className="mt-2 tracking-tight truncate"
+            style={{
+              fontSize: '36px',
+              fontWeight: 700,
+              color: variant === 'primary' ? '#F97316' : '#FFFFFF',
+            }}
+          >
+            {value}
+          </p>
           {subtitle && (
-            <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+            <p
+              className="mt-1"
+              style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}
+            >
+              {subtitle}
+            </p>
           )}
           {trend && (
-            <div className={cn(
-              'flex items-center gap-1 mt-2 text-sm font-medium',
-              trend.isPositive ? 'text-success' : 'text-destructive'
-            )}>
-              <span>{trend.isPositive ? '↑' : '↓'}</span>
-              <span>{Math.abs(trend.value)}%</span>
+            <div className="mt-2">
+              <span className={cn(
+                'trend-pill',
+                trend.isPositive ? 'trend-pill-positive' : 'trend-pill-negative'
+              )}>
+                {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
+              </span>
             </div>
           )}
           {badge && <div className="mt-1">{badge}</div>}
         </div>
         {icon && (
-          <div className={cn(
-            'p-3 rounded-lg',
-            variant === 'default' && 'bg-muted/50',
-            variant === 'primary' && 'bg-primary/10 text-primary',
-            variant === 'success' && 'bg-success/10 text-success',
-            variant === 'warning' && 'bg-warning/10 text-warning',
-            variant === 'destructive' && 'bg-destructive/10 text-destructive'
-          )}>
+          <div
+            className="shrink-0 flex items-center justify-center"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: variant === 'destructive'
+                ? 'rgba(239, 68, 68, 0.12)'
+                : variant === 'success'
+                ? 'rgba(34, 197, 94, 0.12)'
+                : variant === 'warning'
+                ? 'rgba(251, 191, 36, 0.12)'
+                : 'rgba(249, 115, 22, 0.15)',
+              color: variant === 'destructive'
+                ? '#EF4444'
+                : variant === 'success'
+                ? '#22C55E'
+                : variant === 'warning'
+                ? '#FBBF24'
+                : '#F97316',
+            }}
+          >
             {icon}
           </div>
         )}

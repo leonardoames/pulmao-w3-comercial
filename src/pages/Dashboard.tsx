@@ -109,18 +109,32 @@ export default function DashboardPage() {
             </SelectContent>
           </Select>
 
-          <div className="flex gap-1 p-1 bg-muted rounded-lg flex-wrap">
-            {filterOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant={filter === option.value ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => handleFilterChange(option.value)}
-                className="min-w-[70px]"
-              >
-                {option.value === 'custom' && displayRange ? displayRange : option.label}
-              </Button>
-            ))}
+          <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            {filterOptions.map((option) => {
+              const isActive = filter === option.value;
+              return (
+                <Button
+                  key={option.value}
+                  variant={isActive ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleFilterChange(option.value)}
+                  className="min-w-[70px]"
+                  style={
+                    isActive
+                      ? { background: '#F97316', color: '#000000', fontWeight: 600, fontSize: '13px', borderRadius: '8px' }
+                      : {
+                          background: 'transparent',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '8px',
+                          fontSize: '13px',
+                          color: 'rgba(255,255,255,0.6)',
+                        }
+                  }
+                >
+                  {option.value === 'custom' && displayRange ? displayRange : option.label}
+                </Button>
+              );
+            })}
           </div>
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
@@ -157,7 +171,7 @@ export default function DashboardPage() {
       {canViewSection('section:dashboard:receita') && (
         <>
           <SectionLabel title="Receita" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             <RevenueCard
               volumeVendas={stats?.volumeVendas ?? 0}
               totalVendas={stats?.totalVendas ?? 0}
@@ -167,7 +181,7 @@ export default function DashboardPage() {
               caixaDoMes={stats?.caixaDoMes ?? 0}
               proporcaoCaixa={stats?.proporcaoCaixa ?? 0}
             />
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
               <StatCard
                 title="Ticket Médio"
                 value={formatCurrency(stats?.ticketMedio ?? 0)}
@@ -183,6 +197,7 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+
       {canViewSection('section:dashboard:ote') && (
         <div className="mb-6">
           <OteDashboardCard
@@ -202,37 +217,60 @@ export default function DashboardPage() {
         const actualPercent = metaMensal > 0 ? ((stats?.volumeVendas ?? 0) / metaMensal * 100) : 0;
 
         return (
-          <div className="mb-10 p-5 rounded-xl bg-card border">
-            <div className="flex items-center justify-between mb-3">
+          <div
+            className="mb-8 rounded-2xl"
+            style={{
+              padding: '24px',
+              background: 'hsl(var(--card))',
+              border: '1px solid rgba(255, 165, 0, 0.12)',
+              boxShadow: '0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Meta Mensal</p>
-                <p className="text-xl font-bold">
-                  {formatCurrency(stats?.volumeVendas ?? 0)} / {formatCurrency(metaMensal)}
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
+                <p style={{ fontSize: '22px', fontWeight: 700, color: '#FFFFFF' }}>
+                  {formatCurrency(stats?.volumeVendas ?? 0)}{' '}
+                  <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.35)' }}>
+                    / {formatCurrency(metaMensal)}
+                  </span>
                 </p>
               </div>
-              <p className="text-3xl font-bold text-primary">
+              <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>
                 {actualPercent.toFixed(0)}%
               </p>
             </div>
             <div className="relative">
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
+              <div className="progress-track progress-track-lg">
                 <div
                   className={cn(
                     'h-full rounded-full transition-all duration-1000',
-                    actualPercent >= 100 ? 'bg-success' : 'bg-primary'
+                    actualPercent >= 100 ? 'progress-fill-success' : 'progress-fill'
                   )}
                   style={{ width: `${Math.min(actualPercent, 100)}%` }}
                 />
               </div>
-              {/* Ghost ruler - expected progress marker */}
+              {/* Ghost ruler */}
               <div
-                className="absolute top-0 h-3 w-0.5 bg-foreground/40"
-                style={{ left: `${Math.min(expectedPercent, 100)}%` }}
+                className="absolute top-1/2 -translate-y-1/2"
+                style={{
+                  left: `${Math.min(expectedPercent, 100)}%`,
+                  width: '2px',
+                  height: '14px',
+                  background: '#FBBF24',
+                  opacity: 0.8,
+                }}
                 title={`Meta esperada: ${expectedPercent.toFixed(0)}% (dia ${currentDay}/${daysInMonth})`}
               />
               <div
-                className="absolute top-4 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap"
-                style={{ left: `${Math.min(expectedPercent, 100)}%` }}
+                className="absolute -translate-x-1/2 whitespace-nowrap"
+                style={{
+                  left: `${Math.min(expectedPercent, 100)}%`,
+                  top: '14px',
+                  fontSize: '10px',
+                  color: '#FBBF24',
+                  fontWeight: 500,
+                }}
               >
                 Esperado: {expectedPercent.toFixed(0)}%
               </div>
@@ -245,7 +283,7 @@ export default function DashboardPage() {
       {canViewSection('section:dashboard:performance') && (
         <>
           <SectionLabel title="Performance Comercial" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard
               title="Taxa de Conversão"
               value={`${(stats?.taxaConversao ?? 0).toFixed(1)}%`}
@@ -279,144 +317,192 @@ export default function DashboardPage() {
       {canViewSection('section:dashboard:destaques') && (
         <>
           <SectionLabel title="Destaques" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Coluna 1: Ranking de Closers */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ranking de Closers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {rankings?.rankingGeral && rankings.rankingGeral.length > 0 ? (
-              <div className="space-y-3">
-                {rankings.rankingGeral.map((closer, index) => (
-                  <div
-                    key={closer.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm',
-                        index === 0 && 'bg-primary text-primary-foreground',
-                        index === 1 && 'medal-silver',
-                        index === 2 && 'medal-bronze',
-                        index > 2 && 'bg-muted text-muted-foreground'
-                      )}>
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{closer.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {closer.vendas} vendas • {closer.taxaConversao.toFixed(0)}% conv.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">
-                        {formatCurrency(closer.volume)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {closer.callsRealizadas} calls
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                Nenhum dado no período selecionado
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Coluna 2: Destaques + No-Show */}
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                Destaques
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-primary/[0.06] border border-primary/20">
-                  <p className="text-sm text-muted-foreground mb-1">Top Closer do Dia</p>
-                  <p className="font-bold text-lg">{rankings?.topCloserDia?.nome || '-'}</p>
-                  {rankings?.topCloserDia && (
-                    <p className="text-sm text-primary font-medium">
-                      {formatCurrency(rankings.topCloserDia.volume)}
-                    </p>
-                  )}
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                  <p className="text-sm text-muted-foreground mb-1">Top Closer da Semana</p>
-                  <p className="font-bold text-lg">{rankings?.topCloserSemana?.nome || '-'}</p>
-                  {rankings?.topCloserSemana && (
-                    <p className="text-sm text-muted-foreground font-medium">
-                      {formatCurrency(rankings.topCloserSemana.volume)}
-                    </p>
-                  )}
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                  <p className="text-sm text-muted-foreground mb-1">Top Conversão</p>
-                  <p className="font-bold text-lg">{rankings?.topConversao?.nome || '-'}</p>
-                  {rankings?.topConversao && (
-                    <p className="text-sm text-muted-foreground font-medium">
-                      {rankings.topConversao.taxaConversao.toFixed(1)}%
-                    </p>
-                  )}
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
-                  <p className="text-sm text-muted-foreground mb-1">Menor No-Show</p>
-                  <p className="font-bold text-lg">{rankings?.menorNoShow?.nome || '-'}</p>
-                  {rankings?.menorNoShow && (
-                    <p className="text-sm text-muted-foreground font-medium">
-                      {rankings.menorNoShow.percentNoShow.toFixed(1)}%
-                    </p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Coluna 1: Ranking de Closers */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  No-Show por Closer
-                </CardTitle>
+                <CardTitle>Ranking de Closers</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4">
-                  {noShowByCloser.map((closer) => (
-                    <div
-                      key={closer.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-muted/30"
-                    >
-                      <div>
-                        <p className="font-medium">{closer.nome}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {closer.noShow} no-shows de {closer.callsAgendadas} agendadas
-                        </p>
+                {rankings?.rankingGeral && rankings.rankingGeral.length > 0 ? (
+                  <div className="space-y-2">
+                    {rankings.rankingGeral.map((closer, index) => (
+                      <div
+                        key={closer.id}
+                        className="flex items-center justify-between p-3 rounded-xl"
+                        style={{ background: 'rgba(255,255,255,0.04)' }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            'w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm',
+                            index === 0 && 'bg-primary text-primary-foreground',
+                            index === 1 && 'medal-silver',
+                            index === 2 && 'medal-bronze',
+                            index > 2 && 'bg-muted text-muted-foreground'
+                          )}>
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{closer.nome}</p>
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                              {closer.vendas} vendas • {closer.taxaConversao.toFixed(0)}% conv.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold" style={{ color: '#F97316' }}>
+                            {formatCurrency(closer.volume)}
+                          </p>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                            {closer.callsRealizadas} calls
+                          </p>
+                        </div>
                       </div>
-                      <div className={cn(
-                        "text-lg font-bold px-3 py-1 rounded-full",
-                        closer.percentNoShow > 30 ? "bg-destructive/20 text-destructive" :
-                        closer.percentNoShow > 15 ? "bg-warning/20 text-warning" :
-                        "bg-success/20 text-success"
-                      )}>
-                        {closer.percentNoShow.toFixed(1)}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    Nenhum dado no período selecionado
+                  </p>
+                )}
               </CardContent>
             </Card>
-          )}
-        </div>
-      </div>
+
+            {/* Coluna 2: Destaques + No-Show */}
+            <div className="flex flex-col gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div
+                      className="flex items-center justify-center"
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: 'rgba(249,115,22,0.1)',
+                      }}
+                    >
+                      <Trophy className="h-4 w-4" style={{ color: '#F97316' }} />
+                    </div>
+                    Destaques
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div
+                      className="p-4 rounded-xl"
+                      style={{
+                        background: 'rgba(249, 115, 22, 0.06)',
+                        border: '1px solid rgba(249, 115, 22, 0.2)',
+                      }}
+                    >
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>Top Closer do Dia</p>
+                      <p className="font-bold text-lg text-foreground">{rankings?.topCloserDia?.nome || '-'}</p>
+                      {rankings?.topCloserDia && (
+                        <p className="font-medium" style={{ fontSize: '13px', color: '#F97316' }}>
+                          {formatCurrency(rankings.topCloserDia.volume)}
+                        </p>
+                      )}
+                    </div>
+                    <div
+                      className="p-4 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>Top Closer da Semana</p>
+                      <p className="font-bold text-lg text-foreground">{rankings?.topCloserSemana?.nome || '-'}</p>
+                      {rankings?.topCloserSemana && (
+                        <p className="font-medium" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                          {formatCurrency(rankings.topCloserSemana.volume)}
+                        </p>
+                      )}
+                    </div>
+                    <div
+                      className="p-4 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>Top Conversão</p>
+                      <p className="font-bold text-lg text-foreground">{rankings?.topConversao?.nome || '-'}</p>
+                      {rankings?.topConversao && (
+                        <p className="font-medium" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                          {rankings.topConversao.taxaConversao.toFixed(1)}%
+                        </p>
+                      )}
+                    </div>
+                    <div
+                      className="p-4 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginBottom: '4px' }}>Menor No-Show</p>
+                      <p className="font-bold text-lg text-foreground">{rankings?.menorNoShow?.nome || '-'}</p>
+                      {rankings?.menorNoShow && (
+                        <p className="font-medium" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                          {rankings.menorNoShow.percentNoShow.toFixed(1)}%
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {selectedCloser === 'all' && noShowByCloser && noShowByCloser.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <div
+                        className="flex items-center justify-center"
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          background: 'rgba(239,68,68,0.1)',
+                        }}
+                      >
+                        <AlertCircle className="h-4 w-4" style={{ color: '#EF4444' }} />
+                      </div>
+                      No-Show por Closer
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-3">
+                      {noShowByCloser.map((closer) => (
+                        <div
+                          key={closer.id}
+                          className="flex items-center justify-between p-4 rounded-xl"
+                          style={{ background: 'rgba(255,255,255,0.04)' }}
+                        >
+                          <div>
+                            <p className="font-medium text-foreground">{closer.nome}</p>
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+                              {closer.noShow} no-shows de {closer.callsAgendadas} agendadas
+                            </p>
+                          </div>
+                          <span
+                            className={cn(
+                              "text-lg font-bold px-3 py-1 rounded-full",
+                            )}
+                            style={{
+                              background: closer.percentNoShow > 30
+                                ? 'rgba(239, 68, 68, 0.12)'
+                                : closer.percentNoShow > 15
+                                ? 'rgba(251, 191, 36, 0.12)'
+                                : 'rgba(34, 197, 94, 0.12)',
+                              color: closer.percentNoShow > 30
+                                ? '#EF4444'
+                                : closer.percentNoShow > 15
+                                ? '#FBBF24'
+                                : '#22C55E',
+                            }}
+                          >
+                            {closer.percentNoShow.toFixed(1)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         </>
       )}
     </AppLayout>
