@@ -153,6 +153,9 @@ export default function VendasPage() {
     if (flagFinanceiro && !venda.enviado_financeiro) return false;
     if (flagCS && !venda.enviado_cs) return false;
 
+    // Origem filter
+    if (filtroOrigem !== 'Todas' && venda.origem_lead !== filtroOrigem) return false;
+
     return matchesCloser && matchesSearch;
   });
 
