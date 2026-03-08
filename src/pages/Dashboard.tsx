@@ -24,8 +24,6 @@ import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { OrigemLeadCard } from '@/components/dashboard/OrigemLeadCard';
 import { Venda } from '@/types/crm';
 import { useOteRealized, useOteTeamStats } from '@/hooks/useOteGoals';
-import { OteProgressBar } from '@/components/ote/OteProgressBar';
-import { OteBadge } from '@/components/ote/OteBadge';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
