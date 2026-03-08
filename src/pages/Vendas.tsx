@@ -617,15 +617,16 @@ export default function VendasPage() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start gap-2 font-normal">
                       <CalendarIcon className="h-4 w-4" />
-                      {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Início"}
+                      {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : "Início"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={dateFrom}
-                      onSelect={(date) => { setDateFrom(date || undefined); setDateFromOpen(false); }}
+                      selected={customDateFrom}
+                      onSelect={(date) => { setCustomDateFrom(date || undefined); setQuickFilter('custom'); setDateFromOpen(false); }}
                       locale={ptBR}
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
