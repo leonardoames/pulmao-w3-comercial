@@ -743,7 +743,7 @@ export default function VendasPage() {
                       <TableCell className="font-bold text-primary">
                         {formatCurrency(venda.valor_total)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="text-xs space-y-1">
                           {venda.valor_pix > 0 && <p>Pix: {formatCurrency(venda.valor_pix)}</p>}
                           {venda.valor_cartao > 0 && <p>Cartão: {formatCurrency(venda.valor_cartao)}</p>}
@@ -752,8 +752,8 @@ export default function VendasPage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{(venda.closer as any)?.nome}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">{(venda.closer as any)?.nome}</TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <TooltipProvider>
                           <div className="flex gap-1">
                             <Tooltip>
