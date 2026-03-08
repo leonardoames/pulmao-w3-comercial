@@ -104,7 +104,15 @@ export function OteDashboardCard({
             </div>
             
             <div className="py-0 my-[3px] pb-[30px]">
-              <OteProgressBar percentAchieved={displayData.percentAchieved} height="md" />
+              {(() => {
+                const now = new Date();
+                const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                const currentDay = now.getDate();
+                const expectedPct = (currentDay / daysInMonth) * displayData.percentAchieved > 0
+                  ? (currentDay / daysInMonth) * 100
+                  : undefined;
+                return <OteProgressBar percentAchieved={displayData.percentAchieved} height="md" expectedPercent={expectedPct} />;
+              })()}
             </div>
 
             <Link to="/meta-ote">
