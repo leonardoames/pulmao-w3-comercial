@@ -843,10 +843,10 @@ export default function VendasPage() {
                   const isRefunded = venda.status === 'Reembolsado';
                   return (
                     <TableRow key={venda.id} style={isRefunded ? { background: 'rgba(234,179,8,0.04)' } : undefined}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium whitespace-nowrap">
                         {(() => {
                           const [year, month, day] = venda.data_fechamento.split('-').map(Number);
-                          return format(new Date(year, month - 1, day), 'dd/MM/yyyy');
+                          return format(new Date(year, month - 1, day), 'dd/MM/yy');
                         })()}
                       </TableCell>
                       <TableCell>
@@ -859,7 +859,9 @@ export default function VendasPage() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <StickyNote className="h-4 w-4 shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-default" />
+                                  <span className="inline-flex shrink-0 cursor-default">
+                                    <StickyNote className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                                  </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
                                   {venda.observacoes}
