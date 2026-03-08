@@ -239,6 +239,7 @@ export default function VendasPage() {
       enviado_financeiro: formData.get('enviado_financeiro') === 'on',
       enviado_cs: formData.get('enviado_cs') === 'on',
       observacoes: observacoesRaw || undefined,
+      origem_lead: origemLead || null,
     };
 
     try {
