@@ -19,7 +19,7 @@ export const vendaSchema = z.object({
 
 export const updateVendaSchema = vendaSchema.partial().extend({
   id: z.string().uuid('ID da venda inválido'),
-  status: z.enum(['Ativo', 'Congelado', 'Cancelado', 'Finalizado']).optional(),
+  status: z.enum(['Ativo', 'Congelado', 'Cancelado', 'Finalizado', 'Reembolsado']).optional(),
 });
 
 export const fechamentoSchema = z.object({
