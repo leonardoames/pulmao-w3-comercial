@@ -639,15 +639,16 @@ export default function VendasPage() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start gap-2 font-normal">
                       <CalendarIcon className="h-4 w-4" />
-                      {dateTo ? format(dateTo, "dd/MM/yyyy") : "Fim"}
+                      {customDateTo ? format(customDateTo, "dd/MM/yyyy") : "Fim"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={dateTo}
-                      onSelect={(date) => { setDateTo(date || undefined); setDateToOpen(false); }}
+                      selected={customDateTo}
+                      onSelect={(date) => { setCustomDateTo(date || undefined); setQuickFilter('custom'); setDateToOpen(false); }}
                       locale={ptBR}
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
