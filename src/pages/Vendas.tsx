@@ -914,11 +914,11 @@ export default function VendasPage() {
                       <TableCell className="hidden md:table-cell">{(venda.closer as any)?.nome}</TableCell>
                       <TableCell className="hidden md:table-cell">
                         <TooltipProvider>
-                          <div className="flex gap-1">
+                          <div className="flex flex-col gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.pago ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground opacity-30'}`}>
-                                  <Check className="h-3 w-3" />
+                                  <DollarSign className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>Pagamento confirmado</TooltipContent>
@@ -929,7 +929,7 @@ export default function VendasPage() {
                                   <Edit2 className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>Contrato assinado pelo cliente</TooltipContent>
+                              <TooltipContent>Contrato assinado</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -937,7 +937,7 @@ export default function VendasPage() {
                                   <Landmark className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>Enviado ao setor financeiro</TooltipContent>
+                              <TooltipContent>Enviado ao financeiro</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -945,70 +945,63 @@ export default function VendasPage() {
                                   <Headphones className="h-3 w-3" />
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>Enviado ao time de Customer Success</TooltipContent>
+                              <TooltipContent>Enviado ao CS</TooltipContent>
                             </Tooltip>
                           </div>
                         </TooltipProvider>
                       </TableCell>
-                      {isMaster && (
-                        <TableCell>
-                          <TooltipProvider>
-                            <div className="flex gap-1">
-                              {isRefunded ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span
-                                      className="inline-flex items-center justify-center"
-                                      style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)' }}
-                                    >
-                                      <RotateCcw className="h-4 w-4" style={{ color: '#EAB308' }} />
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Já reembolsado</TooltipContent>
-                                </Tooltip>
-                              ) : (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => setRefundTarget(venda)}
-                                      className="inline-flex items-center justify-center transition-colors"
-                                      style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}
-                                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(234,179,8,0.12)'; e.currentTarget.style.borderColor = 'rgba(234,179,8,0.3)'; (e.currentTarget.querySelector('svg') as any).style.color = '#EAB308'; }}
-                                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget.querySelector('svg') as any).style.color = 'rgba(255,255,255,0.3)'; }}
-                                    >
-                                      <RotateCcw className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Marcar como reembolsado</TooltipContent>
-                                </Tooltip>
-                              )}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    onClick={() => setDeleteTarget(venda)}
-                                    className="inline-flex items-center justify-center transition-colors"
-                                    style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.1)' }}
-                                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.3)'; (e.currentTarget.querySelector('svg') as any).style.color = '#EF4444'; }}
-                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget.querySelector('svg') as any).style.color = 'rgba(255,255,255,0.3)'; }}
-                                  >
-                                    <Trash2 className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent>Excluir venda</TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </TooltipProvider>
-                        </TableCell>
-                      )}
                       {canEdit && (
                         <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => handleOpenEdit(venda)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleOpenEdit(venda)}>
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, pago: !venda.pago });
+                              }}>
+                                <DollarSign className="h-4 w-4 mr-2" />
+                                {venda.pago ? 'Desmarcar pagamento' : 'Pagamento confirmado'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, contrato_assinado: !venda.contrato_assinado });
+                              }}>
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                {venda.contrato_assinado ? 'Desmarcar contrato' : 'Marcar como assinado'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, enviado_financeiro: !venda.enviado_financeiro });
+                              }}>
+                                <Landmark className="h-4 w-4 mr-2" />
+                                {venda.enviado_financeiro ? 'Desmarcar financeiro' : 'Enviado ao financeiro'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                updateVenda.mutate({ id: venda.id, enviado_cs: !venda.enviado_cs });
+                              }}>
+                                <Headphones className="h-4 w-4 mr-2" />
+                                {venda.enviado_cs ? 'Desmarcar CS' : 'Enviado ao CS'}
+                              </DropdownMenuItem>
+                              {isMaster && !isRefunded && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => setRefundTarget(venda)} className="text-yellow-500">
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Reembolsar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => setDeleteTarget(venda)} className="text-destructive">
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       )}
                     </TableRow>
