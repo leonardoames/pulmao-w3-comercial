@@ -850,9 +850,21 @@ export default function VendasPage() {
                         })()}
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <p className="font-medium">{venda.nome_lead}</p>
-                          <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-medium">{venda.nome_lead}</p>
+                            <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
+                          </div>
+                          {venda.observacoes && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <StickyNote className="h-4 w-4 shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-default" />
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
+                                {venda.observacoes}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{venda.duracao_contrato_meses} meses</TableCell>
