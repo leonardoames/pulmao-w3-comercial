@@ -584,6 +584,7 @@ export type Database = {
           area: Database["public"]["Enums"]["user_area"]
           ativo: boolean
           atualizado_em: string
+          avatar_url: string | null
           criado_em: string
           email: string
           id: string
@@ -594,6 +595,7 @@ export type Database = {
           area?: Database["public"]["Enums"]["user_area"]
           ativo?: boolean
           atualizado_em?: string
+          avatar_url?: string | null
           criado_em?: string
           email: string
           id: string
@@ -604,6 +606,7 @@ export type Database = {
           area?: Database["public"]["Enums"]["user_area"]
           ativo?: boolean
           atualizado_em?: string
+          avatar_url?: string | null
           criado_em?: string
           email?: string
           id?: string
