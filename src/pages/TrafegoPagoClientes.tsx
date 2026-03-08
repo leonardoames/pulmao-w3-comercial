@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Plus, Search, CalendarIcon, Edit, AlertTriangle, Upload } from 'lucide-react';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
+import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -257,6 +258,16 @@ export default function TrafegoPagoClientes() {
             <TableBody>
               {clientes?.map(c => {
                 const alert = pagamentoAlertMap[c.id];
+                const handleInlineUpdate = (field: string, val: string) => {
+                  let payload: any = { id: c.id, nome_ecommerce: c.nome_ecommerce, [field]: val };
+                  if (field === 'valor_mrr' || field === 'faturamento_ao_entrar') {
+                    payload[field] = parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
+                  }
+                  upsertCliente.mutate(payload, {
+                    onSuccess: () => toast.success('Atualizado!'),
+                    onError: (err: any) => toast.error(err.message || 'Erro'),
+                  });
+                };
                 return (
                   <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30" onClick={() => openEdit(c)}>
                     <TableCell className="font-medium">
@@ -267,9 +278,16 @@ export default function TrafegoPagoClientes() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{c.nicho || '—'}</TableCell>
                     <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      {c.data_entrada ? format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}
+                      <InlineEditCell value={c.nicho || ''} onSave={v => handleInlineUpdate('nicho', v)} />
+                    </TableCell>
+                    <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <InlineEditCell
+                        value={c.data_entrada || ''}
+                        type="date"
+                        onSave={v => handleInlineUpdate('data_entrada', v)}
+                        displayValue={c.data_entrada ? format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}
+                      />
                     </TableCell>
                     <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{gestorMap[c.gestor_user_id || ''] || '—'}</TableCell>
                     <TableCell>
@@ -278,7 +296,12 @@ export default function TrafegoPagoClientes() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-semibold" style={{ color: '#F97316' }}>
-                      {formatCurrency(Number(c.valor_mrr))}
+                      <InlineEditCell
+                        value={String(c.valor_mrr || 0)}
+                        type="currency"
+                        onSave={v => handleInlineUpdate('valor_mrr', v)}
+                        displayValue={formatCurrency(Number(c.valor_mrr))}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); openEdit(c); }}>
