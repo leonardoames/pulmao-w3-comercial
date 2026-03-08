@@ -292,6 +292,7 @@ export default function VendasPage() {
         <td>${v.nome_lead}</td>
         <td>${v.nome_empresa}</td>
         <td>${closerNome}</td>
+        <td>${v.origem_lead || '—'}</td>
         <td>${v.duracao_contrato_meses}m</td>
         <td class="r">${formatCurrency(v.valor_pix)}</td>
         <td class="r">${formatCurrency(v.valor_cartao)}</td>
