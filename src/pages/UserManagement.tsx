@@ -371,6 +371,12 @@ export default function UserManagement() {
               <RolePermissionsPanel />
             </TabsContent>
           )}
+
+          {canManageUsers && (
+            <TabsContent value="webhooks" className="mt-6">
+              <WebhooksPanel />
+            </TabsContent>
+          )}
         </Tabs>
 
         {/* Edit Dialog */}
