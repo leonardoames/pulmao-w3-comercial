@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export type DateFilter = 'today' | 'yesterday' | '7days' | 'month' | '30days' | 'custom';
@@ -11,6 +10,40 @@ export type DateFilter = 'today' | 'yesterday' | '7days' | 'month' | '30days' | 
 export interface DateRange {
   start: Date;
   end: Date;
+}
+
+export function getDateRange(filter: DateFilter, customRange?: DateRange): DateRange {
+  const now = new Date();
+  switch (filter) {
+    case 'today':
+      return { start: startOfDay(now), end: endOfDay(now) };
+    case 'yesterday': {
+      const yesterday = subDays(now, 1);
+      return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+    }
+    case '7days':
+      return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) };
+    case 'month':
+      return { start: startOfMonth(now), end: endOfMonth(now) };
+    case '30days':
+      return { start: startOfDay(subDays(now, 29)), end: endOfDay(now) };
+    case 'custom':
+      return customRange || { start: startOfDay(now), end: endOfDay(now) };
+  }
+}
+
+/** Convert a date range to the set of yyyy-MM months it spans */
+export function getMonthsInRange(range: DateRange): string[] {
+  const months: Set<string> = new Set();
+  const current = new Date(range.start);
+  while (current <= range.end) {
+    months.add(format(current, 'yyyy-MM'));
+    current.setMonth(current.getMonth() + 1);
+    current.setDate(1);
+  }
+  // always include end month
+  months.add(format(range.end, 'yyyy-MM'));
+  return Array.from(months);
 }
 
 const filterOptions: { value: DateFilter; label: string }[] = [
