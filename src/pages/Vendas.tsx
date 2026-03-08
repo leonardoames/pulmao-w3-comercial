@@ -83,6 +83,14 @@ export default function VendasPage() {
   const canManageClosers = useCanEditAnyFechamento();
   const createVenda = useCreateVenda();
   const updateVenda = useUpdateVenda();
+  const deleteVenda = useDeleteVenda();
+  const refundVenda = useRefundVenda();
+  const isMaster = useIsMaster();
+
+  // Admin action modals
+  const [deleteTarget, setDeleteTarget] = useState<Venda | null>(null);
+  const [refundTarget, setRefundTarget] = useState<Venda | null>(null);
+  const [refundReason, setRefundReason] = useState('');
 
   const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo;
 
