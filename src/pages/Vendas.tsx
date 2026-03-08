@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -291,7 +292,7 @@ export default function VendasPage() {
   return (
     <AppLayout>
       <PageHeader title="Vendas" description="Contratos e faturamento">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col w-full gap-2 sm:flex-row sm:w-auto sm:items-center">
           <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
             <FileDown className="h-4 w-4" />
             Exportar PDF
@@ -514,39 +515,29 @@ export default function VendasPage() {
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="stat-card flex items-center justify-between">
-          <div>
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Total de Vendas</p>
-            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-foreground">{totalVendas}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-primary/10">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
-        </div>
-        <div className="stat-card flex items-center justify-between">
-          <div className="min-w-0">
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Faturamento Total</p>
-            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-primary truncate">{formatCurrency(totalFaturamento)}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-primary/10 shrink-0">
-            <DollarSign className="h-5 w-5 text-primary" />
-          </div>
-        </div>
-        <div className="stat-card flex items-center justify-between">
-          <div className="min-w-0">
-            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>Ticket Médio</p>
-            <p style={{ fontSize: '36px', fontWeight: 700 }} className="text-foreground truncate">{formatCurrency(ticketMedio)}</p>
-          </div>
-          <div className="p-3 rounded-lg bg-muted shrink-0">
-            <TrendingUp className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <StatCard
+          title="Total de Vendas"
+          value={totalVendas}
+          icon={<Users className="h-5 w-5" />}
+        />
+        <StatCard
+          title="Faturamento Total"
+          value={formatCurrency(totalFaturamento)}
+          icon={<DollarSign className="h-5 w-5" />}
+          variant="primary"
+        />
+        <StatCard
+          title="Ticket Médio"
+          value={formatCurrency(ticketMedio)}
+          icon={<TrendingUp className="h-5 w-5" />}
+        />
       </div>
 
       {/* Search + Filter Toggle */}
-      <div className="flex flex-col md:flex-row gap-2 md:gap-4 mb-4">
-        <div className="relative w-full md:flex-1 md:max-w-sm">
+      <div className="flex flex-col gap-2 mb-4">
+        {/* Row 1: Search (full width on mobile) */}
+        <div className="relative w-full lg:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Pesquisar lead, empresa ou closer..."
@@ -555,30 +546,33 @@ export default function VendasPage() {
             className="pl-9"
           />
         </div>
-        <Select value={closerFilter} onValueChange={setCloserFilter}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Closer" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os closers</SelectItem>
-            {closers?.map(closer => (
-              <SelectItem key={closer.id} value={closer.id}>{closer.nome}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          variant={showFilters ? "secondary" : "outline"}
-          onClick={() => setShowFilters(!showFilters)}
-          className="gap-2 w-full md:w-auto"
-        >
-          <Filter className="h-4 w-4" />
-          Filtros
-          {hasActiveFilters && (
-            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-              !
-            </span>
-          )}
-        </Button>
+        {/* Row 2: Closer + Filters side by side on mobile */}
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:gap-4">
+          <Select value={closerFilter} onValueChange={setCloserFilter}>
+            <SelectTrigger className="w-full lg:w-[180px]">
+              <SelectValue placeholder="Closer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os closers</SelectItem>
+              {closers?.map(closer => (
+                <SelectItem key={closer.id} value={closer.id}>{closer.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant={showFilters ? "secondary" : "outline"}
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2 w-full lg:w-auto"
+          >
+            <Filter className="h-4 w-4" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                !
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Advanced Filters */}
@@ -695,8 +689,10 @@ export default function VendasPage() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-          <Table>
+          <div className="relative overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {/* Scroll fade hint */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10 lg:hidden" style={{ background: 'linear-gradient(to right, transparent, hsl(var(--card)))' }} />
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>

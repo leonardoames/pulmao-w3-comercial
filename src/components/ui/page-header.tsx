@@ -9,7 +9,7 @@ interface PageHeaderProps {
 export function PageHeader({ title, description, children }: PageHeaderProps) {
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: title + subtitle */}
         <div className="shrink-0">
           <h1
@@ -24,8 +24,12 @@ export function PageHeader({ title, description, children }: PageHeaderProps) {
             </p>
           )}
         </div>
-        {/* Center/Right: filters and actions in a single row */}
-        {children && <div className="flex items-center gap-3 flex-wrap">{children}</div>}
+        {/* Filters and actions */}
+        {children && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap sm:gap-3">
+            {children}
+          </div>
+        )}
       </div>
       <div className="mt-4" style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
     </div>
