@@ -814,14 +814,13 @@ export default function VendasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
-                <TableHead>Cliente</TableHead>
+                <TableHead style={{ minWidth: 200 }}>Cliente</TableHead>
                 <TableHead className="hidden md:table-cell">Duração</TableHead>
                 <TableHead>Valor Total</TableHead>
                 <TableHead className="hidden md:table-cell">Origem</TableHead>
                 <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Closer</TableHead>
-                <TableHead className="w-28 hidden md:table-cell">Flags</TableHead>
-                {isMaster && <TableHead className="w-20">Ações</TableHead>}
+                <TableHead className="hidden md:table-cell">Flags</TableHead>
                 {canEdit && <TableHead className="w-10"></TableHead>}
               </TableRow>
             </TableHeader>
