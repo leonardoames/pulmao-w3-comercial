@@ -29,6 +29,7 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { Plus, Trash2, Pencil, Webhook, AlertTriangle, Send, Loader2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useWebhooks, useCreateWebhook, useUpdateWebhook, useDeleteWebhook, Webhook as WebhookType } from '@/hooks/useWebhooks';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
