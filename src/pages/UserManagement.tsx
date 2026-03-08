@@ -40,6 +40,7 @@ import { AREA_LABELS, UserArea } from '@/types/crm';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RolePermissionsPanel } from '@/components/admin/RolePermissionsPanel';
+import { WebhooksPanel } from '@/components/admin/WebhooksPanel';
 
 const AREAS: UserArea[] = ['Comercial', 'CS', 'Financeiro', 'Marketing', 'Diretoria'];
 
