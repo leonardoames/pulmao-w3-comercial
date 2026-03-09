@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -11,13 +14,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatCard } from '@/components/ui/stat-card';
-import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, LinkIcon, RefreshCw, UserCheck, UserX } from 'lucide-react';
+import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, LinkIcon, RefreshCw, UserCheck, UserX, GitMerge } from 'lucide-react';
 import { useRHColaboradores, useCreateColaborador, useImportClosers, useRHSetoresConfig } from '@/hooks/useRH';
 import { useClosers, useProfiles } from '@/hooks/useProfiles';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { SETOR_LABELS, STATUS_COLABORADOR_LABELS, STATUS_COLABORADOR_COLORS, TIPO_CONTRATO_LABELS, type SetorRH, type TipoContrato, type StatusColaborador } from '@/types/rh';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+const MERGE_FIELDS = [
+  { key: 'nome', label: 'Nome' }, { key: 'email', label: 'Email' },
+  { key: 'cargo', label: 'Cargo' }, { key: 'setor', label: 'Setor' },
+  { key: 'cpf_cnpj', label: 'CPF/CNPJ' }, { key: 'telefone', label: 'Telefone' },
+  { key: 'status', label: 'Status' }, { key: 'tipo_contrato', label: 'Contrato' },
+  { key: 'data_entrada', label: 'Entrada' }, { key: 'salario', label: 'Salário' },
+  { key: 'ote_comissao', label: 'OTE' }, { key: 'aniversario', label: 'Aniversário' },
+  { key: 'chave_pix', label: 'Pix' }, { key: 'observacoes', label: 'Obs.' },
+];
 
 export default function RHColaboradores() {
   const navigate = useNavigate();
@@ -29,8 +42,17 @@ export default function RHColaboradores() {
   const importClosers = useImportClosers();
 
   const isAdmin = userRole?.role === 'MASTER' || userRole?.role === 'DIRETORIA' || userRole?.role === 'GESTOR_COMERCIAL';
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
+  const [showMerge, setShowMerge] = useState(false);
+  const [mergeStep, setMergeStep] = useState<1 | 2>(1);
+  const [mergeAId, setMergeAId] = useState('');
+  const [mergeBId, setMergeBId] = useState('');
+  const [mergeSearchA, setMergeSearchA] = useState('');
+  const [mergeSearchB, setMergeSearchB] = useState('');
+  const [mergeChoices, setMergeChoices] = useState<Record<string, 'a' | 'b'>>({});
+  const [merging, setMerging] = useState(false);
   const [filterSetor, setFilterSetor] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterContrato, setFilterContrato] = useState<string>('all');
@@ -65,6 +87,27 @@ export default function RHColaboradores() {
     [allClosers, importedCloserIds]
   );
 
+  const normalizeName = (name: string) =>
+    name.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+
+  const possibleDuplicates = useMemo(() => {
+    const result: Record<string, { colab: typeof colaboradores[0]; reason: string }> = {};
+    for (const profile of newCloserProfiles) {
+      const normP = normalizeName(profile.nome);
+      for (const colab of colaboradores) {
+        if (colab.closer_id) continue;
+        const normC = normalizeName(colab.nome);
+        if (normP === normC || normP.includes(normC) || normC.includes(normP)) {
+          result[profile.id] = { colab, reason: 'nome' }; break;
+        }
+        if (profile.email && colab.email && profile.email.toLowerCase() === colab.email.toLowerCase()) {
+          result[profile.id] = { colab, reason: 'e-mail' }; break;
+        }
+      }
+    }
+    return result;
+  }, [newCloserProfiles, colaboradores]);
+
   // Users linked to colaboradores (via user_id)
   const linkedUserIds = useMemo(
     () => new Set(colaboradores.filter(c => c.user_id).map(c => c.user_id)),
@@ -98,6 +141,11 @@ export default function RHColaboradores() {
   }, [colaboradores, isAdmin]);
 
   const handleImportAll = () => {
+    if (Object.keys(possibleDuplicates).length > 0) {
+      setSelectedClosers(newCloserProfiles.map(p => p.id));
+      setShowImportReview(true);
+      return;
+    }
     importClosers.mutate(newCloserProfiles.map(p => ({ id: p.id, nome: p.nome })));
   };
 
@@ -107,6 +155,44 @@ export default function RHColaboradores() {
       importClosers.mutate(selected.map(p => ({ id: p.id, nome: p.nome })));
     }
     setShowImportReview(false);
+  };
+
+  const startMergeCompare = () => {
+    const a = colaboradores.find(c => c.id === mergeAId)!;
+    const b = colaboradores.find(c => c.id === mergeBId)!;
+    const choices: Record<string, 'a' | 'b'> = {};
+    MERGE_FIELDS.forEach(({ key }) => {
+      if (String((a as any)[key] ?? '') !== String((b as any)[key] ?? '')) choices[key] = 'a';
+    });
+    setMergeChoices(choices);
+    setMergeStep(2);
+  };
+
+  const handleMerge = async () => {
+    const colabA = colaboradores.find(c => c.id === mergeAId)!;
+    const colabB = colaboradores.find(c => c.id === mergeBId)!;
+    setMerging(true);
+    try {
+      const merged: any = {};
+      MERGE_FIELDS.forEach(({ key }) => {
+        merged[key] = mergeChoices[key] === 'b' ? (colabB as any)[key] : (colabA as any)[key];
+      });
+      merged.closer_id = colabA.closer_id || colabB.closer_id;
+      merged.user_id = colabA.user_id || colabB.user_id;
+      const { error: e1 } = await supabase.from('rh_colaboradores').update(merged).eq('id', colabA.id);
+      if (e1) throw e1;
+      await supabase.from('rh_feedbacks').update({ colaborador_id: colabA.id } as any).eq('colaborador_id', colabB.id);
+      await supabase.from('rh_avaliacoes').update({ avaliado_id: colabA.id } as any).eq('avaliado_id', colabB.id);
+      const { error: e4 } = await supabase.from('rh_colaboradores').delete().eq('id', colabB.id);
+      if (e4) throw e4;
+      queryClient.invalidateQueries({ queryKey: ['rh-colaboradores'] });
+      toast.success(`${colabB.nome} mesclado em ${colabA.nome}`);
+      setShowMerge(false); setMergeStep(1); setMergeAId(''); setMergeBId(''); setMergeChoices({});
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao mesclar');
+    } finally {
+      setMerging(false);
+    }
   };
 
   const handleCreate = () => {
@@ -139,7 +225,10 @@ export default function RHColaboradores() {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <PageHeader title="Colaboradores" description="Gestão de colaboradores da W3">
-            {isAdmin && <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><UserPlus className="h-4 w-4 mr-2" />Novo Colaborador</Button>}
+            <div className="flex gap-2">
+              {isAdmin && <Button variant="outline" onClick={() => { setMergeStep(1); setShowMerge(true); }}><GitMerge className="h-4 w-4 mr-2" />Mesclar</Button>}
+              {isAdmin && <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><UserPlus className="h-4 w-4 mr-2" />Novo Colaborador</Button>}
+            </div>
           </PageHeader>
         </div>
 
@@ -350,11 +439,115 @@ export default function RHColaboradores() {
         </SheetContent>
       </Sheet>
 
+      {/* Merge Dialog */}
+      <Dialog open={showMerge} onOpenChange={open => { setShowMerge(open); if (!open) { setMergeStep(1); setMergeAId(''); setMergeBId(''); setMergeChoices({}); } }}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitMerge className="h-5 w-5" />
+              {mergeStep === 1 ? 'Selecionar duplicatas' : 'Comparar e mesclar'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {mergeStep === 1 && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Selecione dois colaboradores. O <strong>A</strong> sobrevive (ID mantido), o <strong>B</strong> é excluído. Feedbacks e avaliações do B migram para o A.</p>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Colab A */}
+                <div className="space-y-2">
+                  <Label className="text-green-400">A — Manter</Label>
+                  <Input placeholder="Buscar..." value={mergeSearchA} onChange={e => setMergeSearchA(e.target.value)} />
+                  <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-lg border border-white/10 p-1">
+                    {colaboradores.filter(c => c.id !== mergeBId && (!mergeSearchA || c.nome.toLowerCase().includes(mergeSearchA.toLowerCase()))).slice(0, 10).map(c => (
+                      <button key={c.id} onClick={() => setMergeAId(c.id)}
+                        className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors ${mergeAId === c.id ? 'bg-green-500/20 text-green-300' : 'hover:bg-white/5'}`}>
+                        {c.nome}
+                        <span className="text-[10px] text-muted-foreground ml-1">{c.cargo}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Colab B */}
+                <div className="space-y-2">
+                  <Label className="text-destructive">B — Excluir</Label>
+                  <Input placeholder="Buscar..." value={mergeSearchB} onChange={e => setMergeSearchB(e.target.value)} />
+                  <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-lg border border-white/10 p-1">
+                    {colaboradores.filter(c => c.id !== mergeAId && (!mergeSearchB || c.nome.toLowerCase().includes(mergeSearchB.toLowerCase()))).slice(0, 10).map(c => (
+                      <button key={c.id} onClick={() => setMergeBId(c.id)}
+                        className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors ${mergeBId === c.id ? 'bg-destructive/20 text-red-300' : 'hover:bg-white/5'}`}>
+                        {c.nome}
+                        <span className="text-[10px] text-muted-foreground ml-1">{c.cargo}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowMerge(false)}>Cancelar</Button>
+                <Button onClick={startMergeCompare} disabled={!mergeAId || !mergeBId || mergeAId === mergeBId} className="bg-primary hover:bg-primary/90">
+                  Comparar campos →
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {mergeStep === 2 && (() => {
+            const colabA = colaboradores.find(c => c.id === mergeAId)!;
+            const colabB = colaboradores.find(c => c.id === mergeBId)!;
+            if (!colabA || !colabB) return null;
+            const diffFields = MERGE_FIELDS.filter(({ key }) => String((colabA as any)[key] ?? '') !== String((colabB as any)[key] ?? '') && ((colabA as any)[key] || (colabB as any)[key]));
+            const sameFields = MERGE_FIELDS.filter(({ key }) => String((colabA as any)[key] ?? '') === String((colabB as any)[key] ?? '') && (colabA as any)[key]);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 text-[11px] font-semibold text-muted-foreground px-2">
+                  <span>Campo</span>
+                  <span className="text-green-400">A — {colabA.nome}</span>
+                  <span className="text-red-400">B — {colabB.nome}</span>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-1">
+                  {diffFields.map(({ key, label }) => (
+                    <div key={key} className="grid grid-cols-3 items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'hsla(0,0%,100%,0.03)' }}>
+                      <span className="text-xs text-muted-foreground">{label}</span>
+                      <button onClick={() => setMergeChoices(c => ({ ...c, [key]: 'a' }))}
+                        className={`text-left text-xs px-2 py-1 rounded transition-colors truncate ${mergeChoices[key] !== 'b' ? 'bg-green-500/20 text-green-300 ring-1 ring-green-500/40' : 'text-muted-foreground hover:bg-white/5'}`}>
+                        {String((colabA as any)[key] ?? '—')}
+                      </button>
+                      <button onClick={() => setMergeChoices(c => ({ ...c, [key]: 'b' }))}
+                        className={`text-left text-xs px-2 py-1 rounded transition-colors truncate ${mergeChoices[key] === 'b' ? 'bg-red-500/20 text-red-300 ring-1 ring-red-500/40' : 'text-muted-foreground hover:bg-white/5'}`}>
+                        {String((colabB as any)[key] ?? '—')}
+                      </button>
+                    </div>
+                  ))}
+                  {sameFields.length > 0 && (
+                    <div className="px-2 pt-2 pb-1 text-[11px] text-muted-foreground">Campos iguais (mantidos): {sameFields.map(f => f.label).join(', ')}</div>
+                  )}
+                  <div className="px-2 py-1.5 rounded-lg text-xs" style={{ background: 'hsla(200,80%,50%,0.08)', color: 'hsl(200,80%,65%)' }}>
+                    Vínculos auto-mesclados: closer_id={String(colabA.closer_id || colabB.closer_id || '—')}, user_id={String(colabA.user_id || colabB.user_id || '—')}
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setMergeStep(1)}>← Voltar</Button>
+                  <Button onClick={handleMerge} disabled={merging} className="bg-destructive hover:bg-destructive/90">
+                    {merging ? 'Mesclando...' : `Mesclar (excluir ${colabB.nome})`}
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Import Review Dialog */}
       <Dialog open={showImportReview} onOpenChange={setShowImportReview}>
         <DialogContent>
           <DialogHeader><DialogTitle>Revisar Closers</DialogTitle></DialogHeader>
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {Object.keys(possibleDuplicates).length > 0 && (
+              <div className="flex items-center gap-2 p-3 rounded-lg text-sm" style={{ background: 'hsla(38,92%,50%,0.1)', border: '1px solid hsla(38,92%,50%,0.2)', color: 'hsl(38,92%,60%)' }}>
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span><strong>{Object.keys(possibleDuplicates).length}</strong> possível{Object.keys(possibleDuplicates).length !== 1 ? 'is duplicatas detectadas' : ' duplicata detectada'}. Desmarque antes de importar.</span>
+              </div>
+            )}
             {/* Already imported (grayed out) */}
             {allClosers.filter(p => importedCloserIds.has(p.id)).map(p => (
               <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg opacity-50">
@@ -369,8 +562,15 @@ export default function RHColaboradores() {
                 <Checkbox checked={selectedClosers.includes(p.id)} onCheckedChange={checked => {
                   setSelectedClosers(prev => checked ? [...prev, p.id] : prev.filter(id => id !== p.id));
                 }} />
-                <span className="text-sm">{p.nome}</span>
-                <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full" style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316' }}>Novo</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm">{p.nome}</span>
+                  {possibleDuplicates[p.id] && (
+                    <p className="text-[11px]" style={{ color: 'hsl(38,92%,60%)' }}>
+                      ⚠ Duplicata por {possibleDuplicates[p.id].reason}: "{possibleDuplicates[p.id].colab.nome}"
+                    </p>
+                  )}
+                </div>
+                <span className="text-[10px] shrink-0 px-2 py-0.5 rounded-full" style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316' }}>Novo</span>
               </label>
             ))}
           </div>
