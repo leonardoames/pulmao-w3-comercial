@@ -201,6 +201,10 @@ export const ROUTE_TO_RESOURCE: Record<string, string> = {
   '/administrativo/dashboard': 'route:admin-dashboard',
   '/administrativo/almoxarifado': 'route:admin-almoxarifado',
   '/administrativo/patrimonio': 'route:admin-patrimonio',
+  '/rh/colaboradores': 'route:rh-colaboradores',
+  '/rh/feedbacks': 'route:rh-feedbacks',
+  '/rh/avaliacoes': 'route:rh-avaliacoes',
+  '/rh/setores': 'route:rh-setores',
 };
 
 export function useAllRolePermissions() {

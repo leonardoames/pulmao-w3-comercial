@@ -141,6 +141,12 @@ function AppRoutes() {
       <Route path="/administrativo/patrimonio" element={<ProtectedRoute routePath="/administrativo/patrimonio"><Patrimonio /></ProtectedRoute>} />
       <Route path="/administrativo/ambientes" element={<ProtectedRoute routePath="/administrativo/patrimonio"><PatrimonioAmbientes /></ProtectedRoute>} />
       <Route path="/conteudo/dashboard" element={<ProtectedRoute routePath="/conteudo/dashboard"><ConteudoDashboard /></ProtectedRoute>} />
+      {/* Recursos Humanos */}
+      <Route path="/rh/colaboradores" element={<ProtectedRoute routePath="/rh/colaboradores"><RHColaboradores /></ProtectedRoute>} />
+      <Route path="/rh/colaboradores/:id" element={<ProtectedRoute routePath="/rh/colaboradores"><RHColaboradorDetail /></ProtectedRoute>} />
+      <Route path="/rh/feedbacks" element={<ProtectedRoute routePath="/rh/feedbacks"><RHFeedbacks /></ProtectedRoute>} />
+      <Route path="/rh/avaliacoes" element={<ProtectedRoute routePath="/rh/avaliacoes"><RHAvaliacoes /></ProtectedRoute>} />
+      <Route path="/rh/setores" element={<ProtectedRoute routePath="/rh/setores"><RHSetores /></ProtectedRoute>} />
       <Route path="/conteudo/acompanhamento" element={<ProtectedRoute routePath="/conteudo/acompanhamento"><ConteudoAcompanhamento /></ProtectedRoute>} />
       <Route path="/conteudo/controle" element={<ProtectedRoute routePath="/conteudo/controle"><MarketingConteudos /></ProtectedRoute>} />
       <Route path="/conteudo/twitter" element={<ProtectedRoute routePath="/conteudo/twitter"><MarketingTwitter /></ProtectedRoute>} />
