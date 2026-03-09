@@ -81,6 +81,16 @@ export default function Patrimonio() {
 
   const fmtCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  const nextTombamento = useMemo(() => {
+    const usedNumbers = bens.map(b => {
+      const match = b.tombamento.match(/W3-(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+    let next = 1;
+    while (usedNumbers.includes(next)) next++;
+    return `W3-${String(next).padStart(4, '0')}`;
+  }, [bens]);
+
   const openNewBem = () => {
     setEditBem(null);
     setForm({
@@ -88,7 +98,7 @@ export default function Patrimonio() {
       data_aquisicao: new Date().toISOString().split('T')[0], valor_compra: 0,
       fornecedor: '', nota_fiscal: '', vida_util_anos: 5, valor_residual_pct: 10,
       ambiente_id: null, responsavel_user_id: null, estado_conservacao: 'Bom',
-      observacoes_manutencao: '',
+      observacoes_manutencao: '', tombamento: nextTombamento,
     });
     setShowDrawer(true);
   };
@@ -315,6 +325,14 @@ export default function Patrimonio() {
           <SheetHeader><SheetTitle>{editBem ? 'Editar Bem' : 'Cadastrar Novo Bem'}</SheetTitle></SheetHeader>
           <div className="space-y-6 mt-4">
             <Section title="O que é esse bem?">
+              <div>
+                <div className="flex items-center gap-1">
+                  <Label>Código de tombamento</Label>
+                  <Tooltip><TooltipTrigger><HelpCircle className="h-3.5 w-3.5 text-muted-foreground" /></TooltipTrigger><TooltipContent>Código gerado automaticamente. Você pode editar, mas não é recomendado.</TooltipContent></Tooltip>
+                </div>
+                <Input value={form.tombamento || ''} onChange={e => setForm({ ...form, tombamento: e.target.value })} placeholder="W3-0001" className="font-mono" />
+                {!editBem && <p className="text-xs text-muted-foreground mt-1">Próximo código disponível: {form.tombamento}</p>}
+              </div>
               <div><Label>Descrição *</Label><Input value={form.descricao || ''} onChange={e => setForm({ ...form, descricao: e.target.value })} placeholder="Ex: Notebook Dell" /></div>
               <div>
                 <Label>Categoria</Label>
@@ -384,7 +402,7 @@ export default function Patrimonio() {
                   <Input type="number" step="1" value={form.valor_residual_pct || 10} onChange={e => setForm({ ...form, valor_residual_pct: +e.target.value })} />
                 </div>
               </div>
-              {form.valor_compra && form.valor_compra > 0 && (
+              {form.valor_compra != null && form.valor_compra > 0 && (
                 <p className="text-sm text-muted-foreground">
                   Depreciação anual calculada: {fmtCurrency(calcDepreciacao(form.valor_compra, form.valor_residual_pct || 10, form.vida_util_anos || 5).depAnual)}
                 </p>

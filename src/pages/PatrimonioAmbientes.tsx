@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, ArrowLeft } from 'lucide-react';
 import { usePatrimonioAmbientes, useCreateAmbiente, useUpdateAmbiente, PatrimonioAmbiente } from '@/hooks/usePatrimonio';
+import { useNavigate } from 'react-router-dom';
 
 export default function PatrimonioAmbientes() {
   const { data: ambientes = [], isLoading } = usePatrimonioAmbientes();
@@ -33,9 +34,14 @@ export default function PatrimonioAmbientes() {
     });
   };
 
+  const navigate = useNavigate();
+
   return (
     <AppLayout>
       <PageHeader title="Gestão de Ambientes" description="Ambientes e localizações para patrimônio">
+        <Button size="sm" variant="outline" onClick={() => navigate('/administrativo/patrimonio')} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" /> Voltar ao Patrimônio
+        </Button>
         <Button size="sm" onClick={() => setShowNew(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Novo Ambiente</Button>
       </PageHeader>
 
