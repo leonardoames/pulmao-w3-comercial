@@ -160,6 +160,10 @@ export const RESOURCE_DEFINITIONS: { key: string; label: string; group: string }
   // Routes - Marketing & Admin
   { key: 'route:marketing-dashboard', label: 'Marketing Dashboard', group: 'Rotas - Outros' },
   { key: 'route:painel-admin', label: 'Painel Admin', group: 'Rotas - Outros' },
+  // Routes - Administrativo
+  { key: 'route:admin-dashboard', label: 'Dashboard Administrativo', group: 'Rotas - Administrativo' },
+  { key: 'route:admin-almoxarifado', label: 'Almoxarifado', group: 'Rotas - Administrativo' },
+  { key: 'route:admin-patrimonio', label: 'Patrimônio', group: 'Rotas - Administrativo' },
   // Sections - Dashboard
   { key: 'section:dashboard:receita', label: 'Seção Receita', group: 'Seções - Dashboard' },
   { key: 'section:dashboard:performance', label: 'Seção Performance', group: 'Seções - Dashboard' },
