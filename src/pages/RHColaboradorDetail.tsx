@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Pencil, Save, X, LinkIcon, Star } from 'lucide-react';
-import { useRHColaborador, useUpdateColaborador, useFeedbacksByColaborador, useAvaliacoesByColaborador } from '@/hooks/useRH';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Pencil, Save, X, LinkIcon, Star, Phone, CreditCard, Calendar, Gift } from 'lucide-react';
+import { useRHColaborador, useUpdateColaborador, useFeedbacksByColaborador, useAvaliacoesByColaborador, useRHSetoresConfig } from '@/hooks/useRH';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { SETOR_LABELS, STATUS_COLABORADOR_LABELS, STATUS_COLABORADOR_COLORS, TIPO_CONTRATO_LABELS, TIPO_FEEDBACK_COLORS, TIPO_FEEDBACK_LABELS, type SetorRH, type TipoContrato, type StatusColaborador } from '@/types/rh';
 import { format } from 'date-fns';
@@ -21,6 +22,7 @@ export default function RHColaboradorDetail() {
   const { data: colab, isLoading } = useRHColaborador(id);
   const { data: feedbacks = [] } = useFeedbacksByColaborador(id);
   const { data: avaliacoes = [] } = useAvaliacoesByColaborador(id);
+  const { data: setoresConfig = [] } = useRHSetoresConfig();
   const updateColaborador = useUpdateColaborador();
   const { data: userRole } = useCurrentUserRole();
   const isAdmin = userRole?.role === 'MASTER' || userRole?.role === 'DIRETORIA' || userRole?.role === 'GESTOR_COMERCIAL';
@@ -46,6 +48,13 @@ export default function RHColaboradorDetail() {
     return scores.length ? (scores.reduce((a: number, b: number) => a + b, 0) / scores.length).toFixed(1) : '—';
   };
 
+  const toggleCentroCusto = (nome: string) => {
+    setForm((f: any) => {
+      const current = f.centro_custo || [];
+      return { ...f, centro_custo: current.includes(nome) ? current.filter((c: string) => c !== nome) : [...current, nome] };
+    });
+  };
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6 max-w-4xl">
@@ -63,7 +72,14 @@ export default function RHColaboradorDetail() {
               <div className="w-3 h-3 rounded-full" style={{ background: STATUS_COLABORADOR_COLORS[colab.status as keyof typeof STATUS_COLABORADOR_COLORS] }} />
               {colab.closer_id && <Badge variant="outline" className="text-xs gap-1"><LinkIcon className="h-3 w-3" />Closer vinculado</Badge>}
             </div>
-            <p className="text-sm text-muted-foreground">{colab.cargo} · {SETOR_LABELS[colab.setor as keyof typeof SETOR_LABELS]}</p>
+            <p className="text-sm text-muted-foreground">{colab.cargo} · {SETOR_LABELS[colab.setor as keyof typeof SETOR_LABELS] || colab.setor}</p>
+            {colab.centro_custo && colab.centro_custo.length > 0 && (
+              <div className="flex gap-1 mt-1 flex-wrap">
+                {colab.centro_custo.map(cc => (
+                  <span key={cc} className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'hsla(0, 0%, 100%, 0.06)', color: 'hsla(0, 0%, 100%, 0.5)' }}>{cc}</span>
+                ))}
+              </div>
+            )}
           </div>
           {isAdmin && !editing && <Button variant="outline" size="sm" onClick={startEdit}><Pencil className="h-4 w-4 mr-1" />Editar</Button>}
         </div>
@@ -78,6 +94,10 @@ export default function RHColaboradorDetail() {
                 <div><Label>Email</Label><Input value={form.email || ''} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
+                <div><Label>CPF/CNPJ</Label><Input value={form.cpf_cnpj || ''} onChange={e => setForm((f: any) => ({ ...f, cpf_cnpj: e.target.value }))} placeholder="000.000.000-00" /></div>
+                <div><Label>Telefone</Label><Input value={form.telefone || ''} onChange={e => setForm((f: any) => ({ ...f, telefone: e.target.value }))} placeholder="(00) 00000-0000" /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div><Label>Cargo</Label><Input value={form.cargo || ''} onChange={e => setForm((f: any) => ({ ...f, cargo: e.target.value }))} /></div>
                 <div><Label>Setor</Label>
                   <Select value={form.setor} onValueChange={v => setForm((f: any) => ({ ...f, setor: v }))}>
@@ -86,22 +106,52 @@ export default function RHColaboradorDetail() {
                   </Select>
                 </div>
               </div>
+              {/* Centro de Custo multi-select */}
+              {setoresConfig.length > 0 && (
+                <div>
+                  <Label>Centro de Custo</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {setoresConfig.filter(s => s.ativo).map(s => (
+                      <label key={s.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg cursor-pointer text-xs transition-all" style={{
+                        background: (form.centro_custo || []).includes(s.nome) ? `${s.cor}20` : 'hsla(0, 0%, 100%, 0.04)',
+                        color: (form.centro_custo || []).includes(s.nome) ? s.cor : 'hsla(0, 0%, 100%, 0.4)',
+                        border: `1px solid ${(form.centro_custo || []).includes(s.nome) ? `${s.cor}40` : 'transparent'}`,
+                      }}>
+                        <Checkbox
+                          checked={(form.centro_custo || []).includes(s.nome)}
+                          onCheckedChange={() => toggleCentroCusto(s.nome)}
+                          className="h-3 w-3"
+                        />
+                        {s.nome}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-3 gap-3">
                 <div><Label>Data Entrada</Label><Input type="date" value={form.data_entrada || ''} onChange={e => setForm((f: any) => ({ ...f, data_entrada: e.target.value }))} /></div>
+                <div><Label>Data Término</Label><Input type="date" value={form.data_termino || ''} onChange={e => setForm((f: any) => ({ ...f, data_termino: e.target.value }))} /></div>
                 <div><Label>Tipo Contrato</Label>
                   <Select value={form.tipo_contrato} onValueChange={v => setForm((f: any) => ({ ...f, tipo_contrato: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{Object.entries(TIPO_CONTRATO_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
                 <div><Label>Status</Label>
                   <Select value={form.status} onValueChange={v => setForm((f: any) => ({ ...f, status: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{Object.entries(STATUS_COLABORADOR_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                <div><Label>Aniversário</Label><Input value={form.aniversario || ''} onChange={e => setForm((f: any) => ({ ...f, aniversario: e.target.value }))} placeholder="DD-MMM" /></div>
+                <div><Label>Chave Pix</Label><Input value={form.chave_pix || ''} onChange={e => setForm((f: any) => ({ ...f, chave_pix: e.target.value }))} /></div>
               </div>
-              {isAdmin && <div><Label>Salário</Label><Input type="number" value={form.salario || ''} onChange={e => setForm((f: any) => ({ ...f, salario: e.target.value ? parseFloat(e.target.value) : null }))} /></div>}
+              <div className="grid grid-cols-2 gap-3">
+                {isAdmin && <div><Label>Salário</Label><Input type="number" value={form.salario || ''} onChange={e => setForm((f: any) => ({ ...f, salario: e.target.value ? parseFloat(e.target.value) : null }))} /></div>}
+                {isAdmin && <div><Label>OTE / Comissão</Label><Input value={form.ote_comissao || ''} onChange={e => setForm((f: any) => ({ ...f, ote_comissao: e.target.value }))} placeholder="Ex: R$2.500 + comissão" /></div>}
+              </div>
               <div><Label>Observações</Label><Textarea value={form.observacoes || ''} onChange={e => setForm((f: any) => ({ ...f, observacoes: e.target.value }))} /></div>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setEditing(false)}><X className="h-4 w-4 mr-1" />Cancelar</Button>
@@ -112,11 +162,20 @@ export default function RHColaboradorDetail() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><span className="text-muted-foreground">Email:</span> <span>{colab.email || '—'}</span></div>
               <div><span className="text-muted-foreground">Cargo:</span> <span>{colab.cargo || '—'}</span></div>
-              <div><span className="text-muted-foreground">Setor:</span> <span>{SETOR_LABELS[colab.setor as keyof typeof SETOR_LABELS]}</span></div>
-              <div><span className="text-muted-foreground">Contrato:</span> <span>{TIPO_CONTRATO_LABELS[colab.tipo_contrato as keyof typeof TIPO_CONTRATO_LABELS]}</span></div>
+              <div><span className="text-muted-foreground">CPF/CNPJ:</span> <span>{colab.cpf_cnpj || '—'}</span></div>
+              <div className="flex items-center gap-1"><Phone className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Telefone:</span> <span>{colab.telefone || '—'}</span></div>
+              <div><span className="text-muted-foreground">Setor:</span> <span>{SETOR_LABELS[colab.setor as keyof typeof SETOR_LABELS] || colab.setor}</span></div>
+              <div><span className="text-muted-foreground">Contrato:</span> <span>{TIPO_CONTRATO_LABELS[colab.tipo_contrato as keyof typeof TIPO_CONTRATO_LABELS] || colab.tipo_contrato}</span></div>
               <div><span className="text-muted-foreground">Data Entrada:</span> <span>{colab.data_entrada ? format(new Date(colab.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}</span></div>
+              <div><span className="text-muted-foreground">Data Término:</span> <span>{colab.data_termino ? format(new Date(colab.data_termino + 'T12:00:00'), 'dd/MM/yyyy') : '—'}</span></div>
               <div><span className="text-muted-foreground">Status:</span> <span>{STATUS_COLABORADOR_LABELS[colab.status as keyof typeof STATUS_COLABORADOR_LABELS]}</span></div>
+              <div className="flex items-center gap-1"><Gift className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Aniversário:</span> <span>{colab.aniversario || '—'}</span></div>
               {isAdmin && <div><span className="text-muted-foreground">Salário:</span> <span>{colab.salario ? `R$ ${colab.salario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span></div>}
+              {isAdmin && <div><span className="text-muted-foreground">OTE/Comissão:</span> <span>{colab.ote_comissao || '—'}</span></div>}
+              {isAdmin && <div className="flex items-center gap-1"><CreditCard className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Chave Pix:</span> <span>{colab.chave_pix || '—'}</span></div>}
+              {colab.centro_custo && colab.centro_custo.length > 0 && (
+                <div className="col-span-2"><span className="text-muted-foreground">Centro de Custo:</span> <span>{colab.centro_custo.join(', ')}</span></div>
+              )}
               {colab.observacoes && <div className="col-span-2"><span className="text-muted-foreground">Obs:</span> <span>{colab.observacoes}</span></div>}
             </div>
           )}
