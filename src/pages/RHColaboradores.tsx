@@ -82,7 +82,7 @@ export default function RHColaboradores() {
   }, [colaboradores, isAdmin]);
 
   const handleImportAll = () => {
-    importClosers.mutate(closerProfiles.map(p => ({ id: p.id, nome: p.nome })));
+    importClosers.mutate(newCloserProfiles.map(p => ({ id: p.id, nome: p.nome })));
   };
 
   const handleImportSelected = () => {
