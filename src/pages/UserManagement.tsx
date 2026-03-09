@@ -317,7 +317,7 @@ export default function UserManagement() {
                         <Select value={newUser.centro_custo} onValueChange={(v) => setNewUser({ ...newUser, centro_custo: v })}>
                           <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="__none__">Nenhum</SelectItem>
                             {setoresConfig.filter(s => s.ativo).map(s => (
                               <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
                             ))}
