@@ -34,9 +34,14 @@ export default function PatrimonioAmbientes() {
     });
   };
 
+  const navigate = useNavigate();
+
   return (
     <AppLayout>
       <PageHeader title="Gestão de Ambientes" description="Ambientes e localizações para patrimônio">
+        <Button size="sm" variant="outline" onClick={() => navigate('/administrativo/patrimonio')} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" /> Voltar ao Patrimônio
+        </Button>
         <Button size="sm" onClick={() => setShowNew(true)} className="gap-1.5"><Plus className="h-4 w-4" /> Novo Ambiente</Button>
       </PageHeader>
 

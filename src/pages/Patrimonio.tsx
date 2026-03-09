@@ -402,7 +402,7 @@ export default function Patrimonio() {
                   <Input type="number" step="1" value={form.valor_residual_pct || 10} onChange={e => setForm({ ...form, valor_residual_pct: +e.target.value })} />
                 </div>
               </div>
-              {form.valor_compra && form.valor_compra > 0 && (
+              {form.valor_compra != null && form.valor_compra > 0 && (
                 <p className="text-sm text-muted-foreground">
                   Depreciação anual calculada: {fmtCurrency(calcDepreciacao(form.valor_compra, form.valor_residual_pct || 10, form.vida_util_anos || 5).depAnual)}
                 </p>
