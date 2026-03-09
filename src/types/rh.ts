@@ -21,6 +21,7 @@ export interface RHColaborador {
   status: StatusColaborador;
   responsavel_id: string | null;
   closer_id: string | null;
+  user_id: string | null;
   observacoes: string | null;
   cpf_cnpj: string | null;
   telefone: string | null;
