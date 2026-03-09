@@ -81,6 +81,16 @@ export default function Patrimonio() {
 
   const fmtCurrency = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  const nextTombamento = useMemo(() => {
+    const usedNumbers = bens.map(b => {
+      const match = b.tombamento.match(/W3-(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+    let next = 1;
+    while (usedNumbers.includes(next)) next++;
+    return `W3-${String(next).padStart(4, '0')}`;
+  }, [bens]);
+
   const openNewBem = () => {
     setEditBem(null);
     setForm({
@@ -88,7 +98,7 @@ export default function Patrimonio() {
       data_aquisicao: new Date().toISOString().split('T')[0], valor_compra: 0,
       fornecedor: '', nota_fiscal: '', vida_util_anos: 5, valor_residual_pct: 10,
       ambiente_id: null, responsavel_user_id: null, estado_conservacao: 'Bom',
-      observacoes_manutencao: '',
+      observacoes_manutencao: '', tombamento: nextTombamento,
     });
     setShowDrawer(true);
   };
