@@ -29,6 +29,11 @@ export default function Almoxarifado() {
   const [catFilter, setCatFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [tab, setTab] = useState('itens');
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return localStorage.getItem('almoxarifado_welcome_dismissed') !== 'true';
+  });
+
+  const hasItems = itens.length > 0;
 
   // Modals
   const [showNewItem, setShowNewItem] = useState(false);
