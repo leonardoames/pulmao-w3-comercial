@@ -23,7 +23,7 @@ export function DailyLogViewSheet({ open, onOpenChange, log }: DailyLogViewSheet
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto w-full sm:max-w-lg">
+      <SheetContent>
         <SheetHeader>
           <SheetTitle>
             Registro de {format(new Date(log.date + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
