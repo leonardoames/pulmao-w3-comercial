@@ -164,6 +164,11 @@ export const RESOURCE_DEFINITIONS: { key: string; label: string; group: string }
   { key: 'route:admin-dashboard', label: 'Dashboard Administrativo', group: 'Rotas - Administrativo' },
   { key: 'route:admin-almoxarifado', label: 'Almoxarifado', group: 'Rotas - Administrativo' },
   { key: 'route:admin-patrimonio', label: 'Patrimônio', group: 'Rotas - Administrativo' },
+  // Routes - Recursos Humanos
+  { key: 'route:rh-colaboradores', label: 'Colaboradores RH', group: 'Rotas - Recursos Humanos' },
+  { key: 'route:rh-feedbacks', label: 'Feedbacks RH', group: 'Rotas - Recursos Humanos' },
+  { key: 'route:rh-avaliacoes', label: 'Avaliações RH', group: 'Rotas - Recursos Humanos' },
+  { key: 'route:rh-setores', label: 'Visão por Setor RH', group: 'Rotas - Recursos Humanos' },
   // Sections - Dashboard
   { key: 'section:dashboard:receita', label: 'Seção Receita', group: 'Seções - Dashboard' },
   { key: 'section:dashboard:performance', label: 'Seção Performance', group: 'Seções - Dashboard' },
