@@ -22,7 +22,7 @@ import { ptBR } from 'date-fns/locale';
 export default function RHColaboradores() {
   const navigate = useNavigate();
   const { data: colaboradores = [], isLoading } = useRHColaboradores();
-  const { data: profiles = [] } = useProfiles();
+  const { data: allClosers = [] } = useClosers();
   const { data: userRole } = useCurrentUserRole();
   const createColaborador = useCreateColaborador();
   const importClosers = useImportClosers();
@@ -36,6 +36,7 @@ export default function RHColaboradores() {
   const [showNew, setShowNew] = useState(false);
   const [showImportReview, setShowImportReview] = useState(false);
   const [selectedClosers, setSelectedClosers] = useState<string[]>([]);
+  const [showSyncButton, setShowSyncButton] = useState(false);
 
   // New colaborador form
   const [form, setForm] = useState({
@@ -44,13 +45,24 @@ export default function RHColaboradores() {
     status: 'ativo' as StatusColaborador, observacoes: '',
   });
 
-  // Closers not yet imported
-  const closerProfiles = useMemo(() => {
-    const importedCloserIds = new Set(colaboradores.filter(c => c.closer_id).map(c => c.closer_id));
-    return profiles.filter(p => p.role === 'Closer' && p.ativo && !importedCloserIds.has(p.id));
-  }, [profiles, colaboradores]);
+  // Closers already imported
+  const importedCloserIds = useMemo(
+    () => new Set(colaboradores.filter(c => c.closer_id).map(c => c.closer_id)),
+    [colaboradores]
+  );
 
-  const showImportBanner = !isLoading && isAdmin && closerProfiles.length > 0;
+  // Closers not yet imported
+  const newCloserProfiles = useMemo(
+    () => allClosers.filter(p => !importedCloserIds.has(p.id)),
+    [allClosers, importedCloserIds]
+  );
+
+  const alreadyImportedCount = useMemo(
+    () => allClosers.filter(p => importedCloserIds.has(p.id)).length,
+    [allClosers, importedCloserIds]
+  );
+
+  const showImportBanner = !isLoading && isAdmin && newCloserProfiles.length > 0;
 
   const filteredColabs = useMemo(() => {
     return colaboradores.filter(c => {
