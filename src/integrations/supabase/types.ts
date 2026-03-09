@@ -457,6 +457,87 @@ export type Database = {
           },
         ]
       }
+      leads_w3: {
+        Row: {
+          codigo: string
+          created_at: string
+          data_entrada: string | null
+          email: string | null
+          faturamento_inicial: number | null
+          forma_pagamento: string | null
+          id: string
+          is_cliente_educacao: boolean
+          is_cliente_marketplace: boolean
+          is_cliente_trafego: boolean
+          motivo_saida: string | null
+          nicho: string | null
+          nome_mentorado: string | null
+          nome_negocio: string
+          nps: string | null
+          saldo_devedor: number | null
+          status: string | null
+          tempo_real_meses: number | null
+          ticket_medio: number | null
+          updated_at: string
+          valor_pago: number | null
+          valor_total: number | null
+          venda_id: string | null
+          vigencia_meses: number | null
+        }
+        Insert: {
+          codigo?: string
+          created_at?: string
+          data_entrada?: string | null
+          email?: string | null
+          faturamento_inicial?: number | null
+          forma_pagamento?: string | null
+          id?: string
+          is_cliente_educacao?: boolean
+          is_cliente_marketplace?: boolean
+          is_cliente_trafego?: boolean
+          motivo_saida?: string | null
+          nicho?: string | null
+          nome_mentorado?: string | null
+          nome_negocio?: string
+          nps?: string | null
+          saldo_devedor?: number | null
+          status?: string | null
+          tempo_real_meses?: number | null
+          ticket_medio?: number | null
+          updated_at?: string
+          valor_pago?: number | null
+          valor_total?: number | null
+          venda_id?: string | null
+          vigencia_meses?: number | null
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          data_entrada?: string | null
+          email?: string | null
+          faturamento_inicial?: number | null
+          forma_pagamento?: string | null
+          id?: string
+          is_cliente_educacao?: boolean
+          is_cliente_marketplace?: boolean
+          is_cliente_trafego?: boolean
+          motivo_saida?: string | null
+          nicho?: string | null
+          nome_mentorado?: string | null
+          nome_negocio?: string
+          nps?: string | null
+          saldo_devedor?: number | null
+          status?: string | null
+          tempo_real_meses?: number | null
+          ticket_medio?: number | null
+          updated_at?: string
+          valor_pago?: number | null
+          valor_total?: number | null
+          venda_id?: string | null
+          vigencia_meses?: number | null
+        }
+        Relationships: []
+      }
       marketing_investimentos: {
         Row: {
           atualizado_em: string

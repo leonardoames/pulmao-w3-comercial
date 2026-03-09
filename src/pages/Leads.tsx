@@ -132,24 +132,21 @@ export default function Leads() {
         <PageHeader
           title="Base Leads W3"
           description="Gestão de leads e mentorados"
-          action={
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="gap-2 border-white/10"
-                onClick={() => autoVincular.mutate()}
-                disabled={autoVincular.isPending}
-              >
-                <Link2 className="h-4 w-4" />
-                Auto Vincular
-              </Button>
-              <Button onClick={handleNew} className="gap-2 bg-orange-500 hover:bg-orange-600">
-                <Plus className="h-4 w-4" />
-                Novo Lead
-              </Button>
-            </div>
-          }
-        />
+        >
+          <Button
+            variant="outline"
+            className="gap-2 border-white/10"
+            onClick={() => autoVincular.mutate()}
+            disabled={autoVincular.isPending}
+          >
+            <Link2 className="h-4 w-4" />
+            Auto Vincular
+          </Button>
+          <Button onClick={handleNew} className="gap-2 bg-orange-500 hover:bg-orange-600">
+            <Plus className="h-4 w-4" />
+            Novo Lead
+          </Button>
+        </PageHeader>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mt-6 mb-4">
