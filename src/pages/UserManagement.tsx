@@ -35,7 +35,7 @@ import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook, ChevronLeft, Chev
 import { supabase } from '@/integrations/supabase/client';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
-import { AppRole, ROLE_LABELS_NEW, ALL_ROLES, canRoleAccessAdminPanel } from '@/types/roles';
+import { AppRole, ROLE_LABELS_NEW, ROLE_COLORS, ALL_ROLES, canRoleAccessAdminPanel } from '@/types/roles';
 import { AREA_LABELS, UserArea } from '@/types/crm';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -98,6 +98,20 @@ export default function UserManagement() {
       return true;
     });
   }, [users, filterNome, filterArea, filterRole, filterStatus]);
+
+  const roleCounts = useMemo(() => {
+    if (!users) return {} as Record<string, number>;
+    return users.reduce((acc, u) => {
+      const r = u.user_role?.role || 'CLOSER';
+      acc[r] = (acc[r] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [users]);
+
+  const roleBadgeStyle = (role: AppRole) => {
+    const c = ROLE_COLORS[role];
+    return { background: c.bg, color: c.text, border: `1px solid ${c.border}` };
+  };
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const paginatedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -174,15 +188,6 @@ export default function UserManagement() {
     }
   };
 
-  const getRoleBadgeVariant = (role: AppRole) => {
-    switch (role) {
-      case 'MASTER': return 'destructive';
-      case 'DIRETORIA': return 'default';
-      case 'GESTOR_COMERCIAL': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -209,6 +214,27 @@ export default function UserManagement() {
           </TabsList>
 
           <TabsContent value="users" className="mt-6 space-y-4">
+            {/* Role counters */}
+            <div className="flex flex-wrap gap-2">
+              {ALL_ROLES.filter(r => roleCounts[r] > 0).map(r => (
+                <button
+                  key={r}
+                  onClick={() => setFilterRole(prev => prev === r ? 'all' : r)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    ...roleBadgeStyle(r as AppRole),
+                    opacity: filterRole !== 'all' && filterRole !== r ? 0.4 : 1,
+                    outline: filterRole === r ? `2px solid ${ROLE_COLORS[r as AppRole].text}` : 'none',
+                    outlineOffset: '1px',
+                  }}
+                >
+                  <Shield className="h-3 w-3" />
+                  {ROLE_LABELS_NEW[r as AppRole]}
+                  <span className="ml-0.5 opacity-70">{roleCounts[r]}</span>
+                </button>
+              ))}
+            </div>
+
             {/* Filters */}
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex-1 min-w-[200px]">
@@ -331,10 +357,13 @@ export default function UserManagement() {
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{AREA_LABELS[user.area]}</TableCell>
                         <TableCell>
-                          <Badge variant={getRoleBadgeVariant(user.user_role?.role || 'CLOSER')}>
-                            <Shield className="h-3 w-3 mr-1" />
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                            style={roleBadgeStyle(user.user_role?.role || 'CLOSER')}
+                          >
+                            <Shield className="h-3 w-3" />
                             {ROLE_LABELS_NEW[user.user_role?.role || 'CLOSER']}
-                          </Badge>
+                          </span>
                         </TableCell>
                         <TableCell>
                           <Badge variant={user.ativo ? 'default' : 'secondary'}>
