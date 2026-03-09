@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Star,
   BarChart2,
+  GitBranch,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -71,6 +72,7 @@ const navGroups = [
   {
     label: 'Recursos Humanos',
     items: [
+      { path: '/rh/organograma', icon: GitBranch, label: 'Organograma' },
       { path: '/rh/colaboradores', icon: Users, label: 'Colaboradores' },
       { path: '/rh/feedbacks', icon: MessageSquare, label: 'Feedbacks' },
       { path: '/rh/avaliacoes', icon: Star, label: 'Avaliações' },

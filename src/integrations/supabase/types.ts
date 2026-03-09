@@ -1118,6 +1118,41 @@ export type Database = {
           },
         ]
       }
+      rh_organograma_positions: {
+        Row: {
+          colaborador_id: string
+          id: string
+          layout_mode: string
+          node_position_x: number
+          node_position_y: number
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id: string
+          id?: string
+          layout_mode?: string
+          node_position_x?: number
+          node_position_y?: number
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string
+          id?: string
+          layout_mode?: string
+          node_position_x?: number
+          node_position_y?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_organograma_positions_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           can_edit: boolean
