@@ -43,7 +43,10 @@ export default function RHColaboradores() {
     nome: '', email: '', cargo: '', setor: 'outro' as SetorRH,
     data_entrada: '', tipo_contrato: 'clt' as TipoContrato, salario: '',
     status: 'ativo' as StatusColaborador, observacoes: '',
+    cpf_cnpj: '', telefone: '', aniversario: '', chave_pix: '', ote_comissao: '',
+    centro_custo: [] as string[],
   });
+  const { data: setoresConfig = [] } = useRHSetoresConfig();
 
   // Closers already imported
   const importedCloserIds = useMemo(
