@@ -30,6 +30,10 @@ import TrafegoPagoDashboard from "./pages/TrafegoPagoDashboard";
 import TrafegoPagoClientes from "./pages/TrafegoPagoClientes";
 import MarketplaceDashboard from "./pages/MarketplaceDashboard";
 import MarketplaceClientes from "./pages/MarketplaceClientes";
+import AdminDashboard from "./pages/AdminDashboard";
+import Almoxarifado from "./pages/Almoxarifado";
+import Patrimonio from "./pages/Patrimonio";
+import PatrimonioAmbientes from "./pages/PatrimonioAmbientes";
 
 const queryClient = new QueryClient();
 
