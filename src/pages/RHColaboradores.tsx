@@ -103,7 +103,7 @@ export default function RHColaboradores() {
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
-        <PageHeader title="Colaboradores" subtitle="Gestão de colaboradores da W3">
+        <PageHeader title="Colaboradores" description="Gestão de colaboradores da W3">
           {isAdmin && <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><UserPlus className="h-4 w-4 mr-2" />Novo Colaborador</Button>}
         </PageHeader>
 
