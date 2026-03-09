@@ -123,6 +123,101 @@ export type Database = {
           },
         ]
       }
+      almoxarifado_itens: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          criado_por: string
+          estoque_maximo: number
+          estoque_minimo: number
+          fornecedor_habitual: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          quantidade_atual: number
+          ultimo_preco: number
+          unidade_medida: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string
+          criado_em?: string
+          criado_por: string
+          estoque_maximo?: number
+          estoque_minimo?: number
+          fornecedor_habitual?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          quantidade_atual?: number
+          ultimo_preco?: number
+          unidade_medida?: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          categoria?: string
+          criado_em?: string
+          criado_por?: string
+          estoque_maximo?: number
+          estoque_minimo?: number
+          fornecedor_habitual?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          quantidade_atual?: number
+          ultimo_preco?: number
+          unidade_medida?: string
+        }
+        Relationships: []
+      }
+      almoxarifado_movimentacoes: {
+        Row: {
+          criado_em: string
+          data_movimentacao: string
+          id: string
+          item_id: string
+          observacao: string | null
+          quantidade: number
+          responsavel_user_id: string
+          tipo: string
+          valor_unitario: number | null
+        }
+        Insert: {
+          criado_em?: string
+          data_movimentacao?: string
+          id?: string
+          item_id: string
+          observacao?: string | null
+          quantidade: number
+          responsavel_user_id: string
+          tipo: string
+          valor_unitario?: number | null
+        }
+        Update: {
+          criado_em?: string
+          data_movimentacao?: string
+          id?: string
+          item_id?: string
+          observacao?: string | null
+          quantidade?: number
+          responsavel_user_id?: string
+          tipo?: string
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almoxarifado_movimentacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "almoxarifado_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_daily_logs: {
         Row: {
           created_at: string
@@ -575,6 +670,212 @@ export type Database = {
             columns: ["created_by_user_id"]
             isOneToOne: false
             referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimonio_ambientes: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          descricao: string | null
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      patrimonio_bens: {
+        Row: {
+          ambiente_id: string | null
+          atualizado_em: string
+          categoria: string
+          criado_em: string
+          criado_por: string
+          data_aquisicao: string
+          depreciacao_anual: number
+          descricao: string
+          estado_conservacao: string
+          fornecedor: string | null
+          foto_url: string | null
+          id: string
+          marca_modelo: string | null
+          nota_fiscal: string | null
+          numero_serie: string | null
+          observacoes_manutencao: string | null
+          responsavel_user_id: string | null
+          status: string
+          tombamento: string
+          valor_compra: number
+          valor_residual_pct: number
+          vida_util_anos: number
+        }
+        Insert: {
+          ambiente_id?: string | null
+          atualizado_em?: string
+          categoria?: string
+          criado_em?: string
+          criado_por: string
+          data_aquisicao?: string
+          depreciacao_anual?: number
+          descricao: string
+          estado_conservacao?: string
+          fornecedor?: string | null
+          foto_url?: string | null
+          id?: string
+          marca_modelo?: string | null
+          nota_fiscal?: string | null
+          numero_serie?: string | null
+          observacoes_manutencao?: string | null
+          responsavel_user_id?: string | null
+          status?: string
+          tombamento: string
+          valor_compra?: number
+          valor_residual_pct?: number
+          vida_util_anos?: number
+        }
+        Update: {
+          ambiente_id?: string | null
+          atualizado_em?: string
+          categoria?: string
+          criado_em?: string
+          criado_por?: string
+          data_aquisicao?: string
+          depreciacao_anual?: number
+          descricao?: string
+          estado_conservacao?: string
+          fornecedor?: string | null
+          foto_url?: string | null
+          id?: string
+          marca_modelo?: string | null
+          nota_fiscal?: string | null
+          numero_serie?: string | null
+          observacoes_manutencao?: string | null
+          responsavel_user_id?: string | null
+          status?: string
+          tombamento?: string
+          valor_compra?: number
+          valor_residual_pct?: number
+          vida_util_anos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonio_bens_ambiente_id_fkey"
+            columns: ["ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonio_ambientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimonio_manutencoes: {
+        Row: {
+          bem_id: string
+          criado_em: string
+          data_manutencao: string
+          descricao: string
+          id: string
+          registrado_por: string
+        }
+        Insert: {
+          bem_id: string
+          criado_em?: string
+          data_manutencao?: string
+          descricao?: string
+          id?: string
+          registrado_por: string
+        }
+        Update: {
+          bem_id?: string
+          criado_em?: string
+          data_manutencao?: string
+          descricao?: string
+          id?: string
+          registrado_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonio_manutencoes_bem_id_fkey"
+            columns: ["bem_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonio_bens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patrimonio_transferencias: {
+        Row: {
+          bem_id: string
+          criado_em: string
+          data_transferencia: string
+          de_ambiente_id: string | null
+          de_responsavel_user_id: string | null
+          id: string
+          observacao: string | null
+          para_ambiente_id: string | null
+          para_responsavel_user_id: string | null
+          transferido_por: string
+        }
+        Insert: {
+          bem_id: string
+          criado_em?: string
+          data_transferencia?: string
+          de_ambiente_id?: string | null
+          de_responsavel_user_id?: string | null
+          id?: string
+          observacao?: string | null
+          para_ambiente_id?: string | null
+          para_responsavel_user_id?: string | null
+          transferido_por: string
+        }
+        Update: {
+          bem_id?: string
+          criado_em?: string
+          data_transferencia?: string
+          de_ambiente_id?: string | null
+          de_responsavel_user_id?: string | null
+          id?: string
+          observacao?: string | null
+          para_ambiente_id?: string | null
+          para_responsavel_user_id?: string | null
+          transferido_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrimonio_transferencias_bem_id_fkey"
+            columns: ["bem_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonio_bens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrimonio_transferencias_de_ambiente_id_fkey"
+            columns: ["de_ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonio_ambientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrimonio_transferencias_para_ambiente_id_fkey"
+            columns: ["para_ambiente_id"]
+            isOneToOne: false
+            referencedRelation: "patrimonio_ambientes"
             referencedColumns: ["id"]
           },
         ]
@@ -1109,6 +1410,7 @@ export type Database = {
     }
     Functions: {
       can_access_admin_panel: { Args: never; Returns: boolean }
+      can_edit_administrativo: { Args: never; Returns: boolean }
       can_edit_any_fechamento: { Args: never; Returns: boolean }
       can_edit_comercial: { Args: never; Returns: boolean }
       can_edit_content: { Args: never; Returns: boolean }
@@ -1145,6 +1447,7 @@ export type Database = {
         | "ANALISTA_CONTEUDO"
         | "GESTOR_TRAFEGO"
         | "GESTOR_MARKETPLACE"
+        | "ADMINISTRATIVO"
       billing_model: "percentual_faixas" | "fixo_percentual" | "somente_fixo"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
@@ -1338,6 +1641,7 @@ export const Constants = {
         "ANALISTA_CONTEUDO",
         "GESTOR_TRAFEGO",
         "GESTOR_MARKETPLACE",
+        "ADMINISTRATIVO",
       ],
       billing_model: ["percentual_faixas", "fixo_percentual", "somente_fixo"],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],

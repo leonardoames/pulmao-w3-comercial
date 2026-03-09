@@ -102,6 +102,30 @@ const DEFAULT_PERMISSIONS: Partial<Record<AppRole, Record<string, { can_view: bo
     'route:conteudo-ai': { can_view: false, can_edit: false },
     'route:marketing-dashboard': { can_view: false, can_edit: false },
     'route:painel-admin': { can_view: false, can_edit: false },
+    'route:admin-dashboard': { can_view: false, can_edit: false },
+    'route:admin-almoxarifado': { can_view: false, can_edit: false },
+    'route:admin-patrimonio': { can_view: false, can_edit: false },
+  },
+  ADMINISTRATIVO: {
+    'route:dashboard': { can_view: false, can_edit: false },
+    'route:vendas': { can_view: false, can_edit: false },
+    'route:meu-fechamento': { can_view: false, can_edit: false },
+    'route:meta-ote': { can_view: false, can_edit: false },
+    'route:social-selling': { can_view: false, can_edit: false },
+    'route:trafego-pago-dashboard': { can_view: false, can_edit: false },
+    'route:trafego-pago-clientes': { can_view: false, can_edit: false },
+    'route:marketplaces-dashboard': { can_view: false, can_edit: false },
+    'route:marketplaces-clientes': { can_view: false, can_edit: false },
+    'route:conteudo-dashboard': { can_view: false, can_edit: false },
+    'route:conteudo-acompanhamento': { can_view: false, can_edit: false },
+    'route:conteudo-controle': { can_view: false, can_edit: false },
+    'route:conteudo-twitter': { can_view: false, can_edit: false },
+    'route:conteudo-ai': { can_view: false, can_edit: false },
+    'route:marketing-dashboard': { can_view: false, can_edit: false },
+    'route:painel-admin': { can_view: false, can_edit: false },
+    'route:admin-dashboard': { can_view: true, can_edit: true },
+    'route:admin-almoxarifado': { can_view: true, can_edit: true },
+    'route:admin-patrimonio': { can_view: true, can_edit: true },
   },
 };
 
@@ -136,6 +160,10 @@ export const RESOURCE_DEFINITIONS: { key: string; label: string; group: string }
   // Routes - Marketing & Admin
   { key: 'route:marketing-dashboard', label: 'Marketing Dashboard', group: 'Rotas - Outros' },
   { key: 'route:painel-admin', label: 'Painel Admin', group: 'Rotas - Outros' },
+  // Routes - Administrativo
+  { key: 'route:admin-dashboard', label: 'Dashboard Administrativo', group: 'Rotas - Administrativo' },
+  { key: 'route:admin-almoxarifado', label: 'Almoxarifado', group: 'Rotas - Administrativo' },
+  { key: 'route:admin-patrimonio', label: 'Patrimônio', group: 'Rotas - Administrativo' },
   // Sections - Dashboard
   { key: 'section:dashboard:receita', label: 'Seção Receita', group: 'Seções - Dashboard' },
   { key: 'section:dashboard:performance', label: 'Seção Performance', group: 'Seções - Dashboard' },
@@ -165,6 +193,9 @@ export const ROUTE_TO_RESOURCE: Record<string, string> = {
   '/conteudo/ai': 'route:conteudo-ai',
   '/marketing/dashboard': 'route:marketing-dashboard',
   '/painel-admin': 'route:painel-admin',
+  '/administrativo/dashboard': 'route:admin-dashboard',
+  '/administrativo/almoxarifado': 'route:admin-almoxarifado',
+  '/administrativo/patrimonio': 'route:admin-patrimonio',
 };
 
 export function useAllRolePermissions() {

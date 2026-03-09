@@ -19,6 +19,8 @@ import {
   Megaphone,
   ShoppingBag,
   Camera,
+  Package,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,6 +55,14 @@ const navGroups = [
     items: [
       { path: '/marketplaces/dashboard', icon: BarChart3, label: 'Visão Geral' },
       { path: '/marketplaces/clientes', icon: Users, label: 'Clientes' },
+    ],
+  },
+  {
+    label: 'Administrativo W3',
+    items: [
+      { path: '/administrativo/dashboard', icon: BarChart3, label: 'Dashboard' },
+      { path: '/administrativo/almoxarifado', icon: Package, label: 'Almoxarifado' },
+      { path: '/administrativo/patrimonio', icon: Building2, label: 'Patrimônio' },
     ],
   },
   {
