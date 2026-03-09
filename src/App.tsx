@@ -143,6 +143,7 @@ function AppRoutes() {
       <Route path="/administrativo/ambientes" element={<ProtectedRoute routePath="/administrativo/patrimonio"><PatrimonioAmbientes /></ProtectedRoute>} />
       <Route path="/conteudo/dashboard" element={<ProtectedRoute routePath="/conteudo/dashboard"><ConteudoDashboard /></ProtectedRoute>} />
       {/* Recursos Humanos */}
+      <Route path="/rh/organograma" element={<ProtectedRoute routePath="/rh/colaboradores"><RHOrganograma /></ProtectedRoute>} />
       <Route path="/rh/colaboradores" element={<ProtectedRoute routePath="/rh/colaboradores"><RHColaboradores /></ProtectedRoute>} />
       <Route path="/rh/colaboradores/:id" element={<ProtectedRoute routePath="/rh/colaboradores"><RHColaboradorDetail /></ProtectedRoute>} />
       <Route path="/rh/feedbacks" element={<ProtectedRoute routePath="/rh/feedbacks"><RHFeedbacks /></ProtectedRoute>} />
