@@ -39,6 +39,7 @@ import RHColaboradorDetail from "./pages/RHColaboradorDetail";
 import RHFeedbacks from "./pages/RHFeedbacks";
 import RHAvaliacoes from "./pages/RHAvaliacoes";
 import RHSetores from "./pages/RHSetores";
+import RHOrganograma from "./pages/RHOrganograma";
 
 const queryClient = new QueryClient();
 
