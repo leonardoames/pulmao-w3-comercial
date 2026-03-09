@@ -275,7 +275,7 @@ export default function MarketplaceClientes() {
       </Card>
 
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent className="sm:max-w-[640px] overflow-y-auto">
+        <SheetContent>
           <SheetHeader><SheetTitle>{editingCliente ? 'Editar Cliente' : 'Novo Cliente'}</SheetTitle></SheetHeader>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
             <TabsList className="w-full">

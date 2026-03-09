@@ -600,7 +600,7 @@ export default function TrafegoPagoClientes() {
 
       {/* Drawer */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent className="sm:max-w-[600px] overflow-y-auto">
+        <SheetContent>
           <SheetHeader>
             <SheetTitle>{editingCliente ? 'Editar Cliente' : 'Novo Cliente'}</SheetTitle>
           </SheetHeader>

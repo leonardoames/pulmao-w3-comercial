@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -384,19 +385,17 @@ export default function VendasPage() {
             Exportar PDF
           </Button>
           {canEdit && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
+          <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
               <Button onClick={handleOpenNew} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Nova Venda
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>
                   {editingVenda ? 'Editar Venda' : 'Registrar Nova Venda'}
-                </DialogTitle>
-              </DialogHeader>
+                </SheetTitle>
+              </SheetHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -610,8 +609,8 @@ export default function VendasPage() {
                   </Button>
                 </div>
               </form>
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         )}
         </div>
       </PageHeader>

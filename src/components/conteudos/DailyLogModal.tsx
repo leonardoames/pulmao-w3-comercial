@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -211,11 +211,11 @@ export function DailyLogModal({ open, onOpenChange, editLog }: DailyLogModalProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editLog ? 'Editar registro' : 'Novo registro do dia'}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>{editLog ? 'Editar registro' : 'Novo registro do dia'}</SheetTitle>
+        </SheetHeader>
 
         <div className="space-y-6">
           {/* Bloco A: Data + Responsável */}
@@ -356,7 +356,7 @@ export function DailyLogModal({ open, onOpenChange, editLog }: DailyLogModalProp
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
