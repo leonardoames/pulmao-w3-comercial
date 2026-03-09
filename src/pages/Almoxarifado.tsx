@@ -116,13 +116,53 @@ export default function Almoxarifado() {
   return (
     <AppLayout>
       <PageHeader title="Almoxarifado" description="Controle de materiais de consumo">
-        <Button size="sm" onClick={() => setShowEntrada(true)} className="gap-1.5">
-          <ArrowDownToLine className="h-4 w-4" /> Registrar Entrada
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setShowSaida(true)} className="gap-1.5">
-          <ArrowUpFromLine className="h-4 w-4" /> Registrar Saída
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button size="sm" onClick={() => setShowEntrada(true)} className="gap-1.5" disabled={!hasItems}>
+                  <ArrowDownToLine className="h-4 w-4" /> Registrar Entrada
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!hasItems && <TooltipContent>Cadastre pelo menos um item antes de registrar movimentações</TooltipContent>}
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button size="sm" variant="outline" onClick={() => setShowSaida(true)} className="gap-1.5" disabled={!hasItems}>
+                  <ArrowUpFromLine className="h-4 w-4" /> Registrar Saída
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!hasItems && <TooltipContent>Cadastre pelo menos um item antes de registrar movimentações</TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
       </PageHeader>
+
+      {showWelcome && (
+        <div className="mb-4 p-4 rounded-lg border flex items-start gap-3" style={{ borderColor: 'hsl(24, 94%, 53%)', background: 'hsla(24, 94%, 53%, 0.08)' }}>
+          <span className="text-lg shrink-0">👋</span>
+          <div className="flex-1 text-sm">
+            <strong>Primeira vez aqui?</strong> Siga esses passos:{' '}
+            <strong>1.</strong> Cadastre os itens que sua empresa usa →{' '}
+            <strong>2.</strong> Registre as entradas (compras recebidas) →{' '}
+            <strong>3.</strong> Registre as saídas (materiais utilizados).{' '}
+            O sistema cuida do estoque automaticamente.
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0 text-xs"
+            onClick={() => {
+              setShowWelcome(false);
+              localStorage.setItem('almoxarifado_welcome_dismissed', 'true');
+            }}
+          >
+            <X className="h-3.5 w-3.5 mr-1" /> Entendi, não mostrar mais
+          </Button>
+        </div>
+      )}
 
       {itemsAbaixoMinimo.length > 0 && (
         <div className="mb-4 p-3 rounded-lg border flex items-center gap-3" style={{ borderColor: 'hsl(0, 84%, 60%)', background: 'hsla(0, 84%, 60%, 0.08)' }}>
