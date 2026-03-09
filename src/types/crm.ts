@@ -21,6 +21,7 @@ export interface Profile {
   criado_em: string;
   atualizado_em: string;
   avatar_url?: string | null;
+  centro_custo?: string | null;
 }
 
 export interface Venda {

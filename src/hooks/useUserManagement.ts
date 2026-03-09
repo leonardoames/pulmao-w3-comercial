@@ -50,22 +50,24 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      id, 
-      nome, 
-      email, 
-      area, 
-      ativo 
-    }: { 
-      id: string; 
-      nome: string; 
-      email: string; 
-      area: UserArea; 
+    mutationFn: async ({
+      id,
+      nome,
+      email,
+      area,
+      ativo,
+      centro_custo,
+    }: {
+      id: string;
+      nome: string;
+      email: string;
+      area: UserArea;
       ativo: boolean;
+      centro_custo?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('profiles')
-        .update({ nome, email, area, ativo })
+        .update({ nome, email, area, ativo, centro_custo })
         .eq('id', id)
         .select()
         .maybeSingle();

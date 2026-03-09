@@ -35,6 +35,7 @@ import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook, ChevronLeft, Chev
 import { supabase } from '@/integrations/supabase/client';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
+import { useRHSetoresConfig } from '@/hooks/useRH';
 import { AppRole, ROLE_LABELS_NEW, ROLE_COLORS, ALL_ROLES, canRoleAccessAdminPanel } from '@/types/roles';
 import { AREA_LABELS, UserArea } from '@/types/crm';
 import { Navigate } from 'react-router-dom';
@@ -50,6 +51,7 @@ export default function UserManagement() {
   const canManageUsers = userRole?.role === 'MASTER';
   const canAccessAdmin = userRole ? canRoleAccessAdminPanel(userRole.role) : false;
   const { data: users, isLoading } = useUsersWithRoles();
+  const { data: setoresConfig = [] } = useRHSetoresConfig();
   const updateProfile = useUpdateProfile();
   const updateUserRole = useUpdateUserRole();
   const createUser = useCreateUser();
@@ -73,7 +75,8 @@ export default function UserManagement() {
     email: '',
     password: '',
     area: 'Comercial' as UserArea,
-    role: 'CLOSER' as AppRole
+    role: 'CLOSER' as AppRole,
+    centro_custo: '',
   });
 
   // Edit form state
@@ -82,7 +85,8 @@ export default function UserManagement() {
     email: '',
     area: 'Comercial' as UserArea,
     ativo: true,
-    role: 'CLOSER' as AppRole
+    role: 'CLOSER' as AppRole,
+    centro_custo: '',
   });
 
   const filteredUsers = useMemo(() => {
@@ -139,7 +143,7 @@ export default function UserManagement() {
   const handleCreate = async () => {
     await createUser.mutateAsync(newUser);
     setIsCreateOpen(false);
-    setNewUser({ nome: '', email: '', password: '', area: 'Comercial', role: 'CLOSER' });
+    setNewUser({ nome: '', email: '', password: '', area: 'Comercial', role: 'CLOSER', centro_custo: '' });
   };
 
   const handleEdit = (user: any) => {
@@ -149,7 +153,8 @@ export default function UserManagement() {
       email: user.email,
       area: user.area,
       ativo: user.ativo,
-      role: user.user_role?.role || 'CLOSER'
+      role: user.user_role?.role || 'CLOSER',
+      centro_custo: user.centro_custo || '',
     });
   };
 
@@ -160,7 +165,8 @@ export default function UserManagement() {
       nome: editForm.nome,
       email: editForm.email,
       area: editForm.area,
-      ativo: editForm.ativo
+      ativo: editForm.ativo,
+      centro_custo: editForm.centro_custo || null,
     });
     await updateUserRole.mutateAsync({
       userId: editingUser.id,
@@ -321,6 +327,20 @@ export default function UserManagement() {
                         </Select>
                       </div>
                     </div>
+                    {setoresConfig.filter(s => s.ativo).length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Centro de Custo</Label>
+                        <Select value={newUser.centro_custo} onValueChange={(v) => setNewUser({ ...newUser, centro_custo: v })}>
+                          <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum</SelectItem>
+                            {setoresConfig.filter(s => s.ativo).map(s => (
+                              <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
@@ -339,7 +359,7 @@ export default function UserManagement() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Área</TableHead>
+                    <TableHead>Centro de Custo</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -348,14 +368,34 @@ export default function UserManagement() {
                 <TableBody>
                   {paginatedUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">Nenhum usuário encontrado</TableCell>
+                      <TableCell colSpan={7} className="text-center py-8">Nenhum usuário encontrado</TableCell>
                     </TableRow>
                   ) : (
                     paginatedUsers.map((user) => (
                       <TableRow key={user.id} className={!user.ativo ? 'opacity-50' : ''}>
                         <TableCell className="font-medium">{user.nome}</TableCell>
                         <TableCell>{user.email}</TableCell>
-                        <TableCell>{AREA_LABELS[user.area]}</TableCell>
+                        <TableCell>
+                          {user.centro_custo ? (() => {
+                            const setor = setoresConfig.find(s => s.nome === user.centro_custo);
+                            return (
+                              <span
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                style={setor ? {
+                                  background: `${setor.cor}20`,
+                                  color: setor.cor,
+                                  border: `1px solid ${setor.cor}40`,
+                                } : {
+                                  background: 'hsla(0,0%,100%,0.06)',
+                                  color: 'hsl(0,0%,60%)',
+                                  border: '1px solid hsla(0,0%,100%,0.08)',
+                                }}
+                              >
+                                {user.centro_custo}
+                              </span>
+                            );
+                          })() : <span className="text-muted-foreground text-xs">—</span>}
+                        </TableCell>
                         <TableCell>
                           <span
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
@@ -454,6 +494,20 @@ export default function UserManagement() {
                   </Select>
                 </div>
               </div>
+              {setoresConfig.filter(s => s.ativo).length > 0 && (
+                <div className="space-y-2">
+                  <Label>Centro de Custo</Label>
+                  <Select value={editForm.centro_custo} onValueChange={(v) => setEditForm({ ...editForm, centro_custo: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum</SelectItem>
+                      {setoresConfig.filter(s => s.ativo).map(s => (
+                        <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <Switch id="ativo" checked={editForm.ativo} onCheckedChange={(checked) => setEditForm({ ...editForm, ativo: checked })} />
                 <Label htmlFor="ativo">Usuário Ativo</Label>
