@@ -268,14 +268,24 @@ export default function RHColaboradores() {
       {/* Import Review Dialog */}
       <Dialog open={showImportReview} onOpenChange={setShowImportReview}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Revisar Closers para Importar</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Revisar Closers</DialogTitle></DialogHeader>
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
-            {closerProfiles.map(p => (
+            {/* Already imported (grayed out) */}
+            {allClosers.filter(p => importedCloserIds.has(p.id)).map(p => (
+              <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg opacity-50">
+                <Checkbox checked disabled />
+                <span className="text-sm">{p.nome}</span>
+                <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>Já importado</span>
+              </div>
+            ))}
+            {/* New closers */}
+            {newCloserProfiles.map(p => (
               <label key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
                 <Checkbox checked={selectedClosers.includes(p.id)} onCheckedChange={checked => {
                   setSelectedClosers(prev => checked ? [...prev, p.id] : prev.filter(id => id !== p.id));
                 }} />
                 <span className="text-sm">{p.nome}</span>
+                <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full" style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316' }}>Novo</span>
               </label>
             ))}
           </div>
