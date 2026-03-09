@@ -130,6 +130,11 @@ function AppRoutes() {
       <Route path="/marketplaces/dashboard" element={<ProtectedRoute routePath="/marketplaces/dashboard"><MarketplaceDashboard /></ProtectedRoute>} />
       <Route path="/marketplaces/clientes" element={<ProtectedRoute routePath="/marketplaces/clientes"><MarketplaceClientes /></ProtectedRoute>} />
       {/* Conteúdo routes */}
+      {/* Administrativo */}
+      <Route path="/administrativo/dashboard" element={<ProtectedRoute routePath="/administrativo/dashboard"><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/administrativo/almoxarifado" element={<ProtectedRoute routePath="/administrativo/almoxarifado"><Almoxarifado /></ProtectedRoute>} />
+      <Route path="/administrativo/patrimonio" element={<ProtectedRoute routePath="/administrativo/patrimonio"><Patrimonio /></ProtectedRoute>} />
+      <Route path="/administrativo/ambientes" element={<ProtectedRoute routePath="/administrativo/patrimonio"><PatrimonioAmbientes /></ProtectedRoute>} />
       <Route path="/conteudo/dashboard" element={<ProtectedRoute routePath="/conteudo/dashboard"><ConteudoDashboard /></ProtectedRoute>} />
       <Route path="/conteudo/acompanhamento" element={<ProtectedRoute routePath="/conteudo/acompanhamento"><ConteudoAcompanhamento /></ProtectedRoute>} />
       <Route path="/conteudo/controle" element={<ProtectedRoute routePath="/conteudo/controle"><MarketingConteudos /></ProtectedRoute>} />

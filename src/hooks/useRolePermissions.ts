@@ -193,6 +193,9 @@ export const ROUTE_TO_RESOURCE: Record<string, string> = {
   '/conteudo/ai': 'route:conteudo-ai',
   '/marketing/dashboard': 'route:marketing-dashboard',
   '/painel-admin': 'route:painel-admin',
+  '/administrativo/dashboard': 'route:admin-dashboard',
+  '/administrativo/almoxarifado': 'route:admin-almoxarifado',
+  '/administrativo/patrimonio': 'route:admin-patrimonio',
 };
 
 export function useAllRolePermissions() {
