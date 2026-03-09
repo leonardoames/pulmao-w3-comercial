@@ -53,7 +53,7 @@ serve(async (req) => {
     }
 
     // Parse and validate body
-    const { email, password, nome, area, role } = await req.json();
+    const { email, password, nome, role } = await req.json();
 
     if (!email || !password || !nome) {
       return new Response(JSON.stringify({ error: "email, password e nome são obrigatórios" }), {
@@ -97,16 +97,8 @@ serve(async (req) => {
     const newUser = await createRes.json();
     const newUserId = newUser.id;
 
-    // Use service_role client to update profile and role
-    // (triggers handle_new_user + handle_new_profile_role ran synchronously on INSERT)
+    // Use service_role client to update role
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    if (area) {
-      await serviceClient
-        .from("profiles")
-        .update({ area })
-        .eq("id", newUserId);
-    }
 
     if (role) {
       await serviceClient

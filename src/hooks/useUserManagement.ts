@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, UserArea } from '@/types/crm';
+import { Profile } from '@/types/crm';
 import { AppRole } from '@/types/roles';
 import { toast } from 'sonner';
 
@@ -54,20 +54,18 @@ export function useUpdateProfile() {
       id,
       nome,
       email,
-      area,
       ativo,
       centro_custo,
     }: {
       id: string;
       nome: string;
       email: string;
-      area: UserArea;
       ativo: boolean;
       centro_custo?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('profiles')
-        .update({ nome, email, area, ativo, centro_custo })
+        .update({ nome, email, ativo, centro_custo })
         .eq('id', id)
         .select()
         .maybeSingle();
@@ -96,19 +94,17 @@ export function useCreateUser() {
       email,
       password,
       nome,
-      area,
       role,
     }: {
       email: string;
       password: string;
       nome: string;
-      area: UserArea;
       role: AppRole;
     }) => {
       // Uses Edge Function with service_role key so the admin's session
       // is never affected (supabase.auth.signUp() would replace the session).
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
-        body: { email, password, nome, area, role },
+        body: { email, password, nome, role },
       });
 
       if (error) throw error;
