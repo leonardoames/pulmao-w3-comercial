@@ -589,7 +589,7 @@ export default function RHOrganograma() {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <AppLayout noPadding>
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
