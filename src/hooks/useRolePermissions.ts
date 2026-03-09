@@ -66,6 +66,9 @@ const DEFAULT_PERMISSIONS: Partial<Record<AppRole, Record<string, { can_view: bo
     'route:conteudo-ai': { can_view: false, can_edit: false },
     'route:marketing-dashboard': { can_view: false, can_edit: false },
     'route:painel-admin': { can_view: false, can_edit: false },
+    'section:vendas:criar':    { can_view: true, can_edit: true },
+    'section:vendas:exportar': { can_view: true, can_edit: true },
+    'section:vendas:editar':   { can_view: true, can_edit: true },
   },
   GESTOR_TRAFEGO: {
     'route:dashboard': { can_view: false, can_edit: false },

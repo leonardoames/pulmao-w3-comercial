@@ -19,6 +19,7 @@ import { useVendas, useCreateVenda, useUpdateVenda, useDeleteVenda, useRefundVen
 import { useClosers } from '@/hooks/useProfiles';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento, useIsMaster } from '@/hooks/useUserRoles';
+import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { Venda, ORIGEM_LEAD_OPTIONS, OrigemLead } from '@/types/crm';
 import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote, Pencil, MoreVertical } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -83,7 +84,7 @@ export default function VendasPage() {
   
   const { data: vendas, isLoading } = useVendas();
   const { data: closers } = useClosers();
-  const { profile, canEdit } = useAuth();
+  const { profile } = useAuth();
   const isCloser = useIsCloser();
   const canManageClosers = useCanEditAnyFechamento();
   const createVenda = useCreateVenda();
@@ -91,6 +92,10 @@ export default function VendasPage() {
   const deleteVenda = useDeleteVenda();
   const refundVenda = useRefundVenda();
   const isMaster = useIsMaster();
+  const { canView: canViewPerm } = usePermissionChecks();
+  const canCriarVenda   = canViewPerm('section:vendas:criar');
+  const canExportarPDF  = canViewPerm('section:vendas:exportar');
+  const canEditarVenda  = canViewPerm('section:vendas:editar');
 
   // Admin action modals
   const [deleteTarget, setDeleteTarget] = useState<Venda | null>(null);
@@ -380,16 +385,19 @@ export default function VendasPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
-            <FileDown className="h-4 w-4" />
-            Exportar PDF
-          </Button>
-          {canEdit && (
+          {canExportarPDF && (
+            <Button variant="outline" className="gap-2" onClick={handleExportPDF}>
+              <FileDown className="h-4 w-4" />
+              Exportar PDF
+            </Button>
+          )}
+          {canCriarVenda && (
+            <Button onClick={handleOpenNew} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Venda
+            </Button>
+          )}
           <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-              <Button onClick={handleOpenNew} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nova Venda
-              </Button>
             <SheetContent>
               <SheetHeader>
                 <SheetTitle>
@@ -611,7 +619,6 @@ export default function VendasPage() {
               </form>
             </SheetContent>
           </Sheet>
-        )}
         </div>
       </PageHeader>
 
@@ -822,7 +829,7 @@ export default function VendasPage() {
                 <TableHead className="hidden md:table-cell">Detalhes Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Closer</TableHead>
                 <TableHead className="hidden md:table-cell">Flags</TableHead>
-                {canEdit && <TableHead className="w-10"></TableHead>}
+                {canEditarVenda && <TableHead className="w-10"></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -949,7 +956,7 @@ export default function VendasPage() {
                           </div>
                         </TooltipProvider>
                       </TableCell>
-                      {canEdit && (
+                      {canEditarVenda && (
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
