@@ -40,6 +40,7 @@ import RHFeedbacks from "./pages/RHFeedbacks";
 import RHAvaliacoes from "./pages/RHAvaliacoes";
 import RHSetores from "./pages/RHSetores";
 import RHOrganograma from "./pages/RHOrganograma";
+import Leads from "./pages/Leads";
 
 const queryClient = new QueryClient();
 
@@ -126,6 +127,7 @@ function AppRoutes() {
       <Route path="/meu-fechamento" element={<ProtectedRoute routePath="/meu-fechamento"><MeuFechamento /></ProtectedRoute>} />
       <Route path="/meta-ote" element={<ProtectedRoute routePath="/meta-ote"><OteTracking /></ProtectedRoute>} />
       <Route path="/social-selling" element={<ProtectedRoute routePath="/social-selling"><SocialSelling /></ProtectedRoute>} />
+      <Route path="/leads" element={<ProtectedRoute routePath="/leads"><Leads /></ProtectedRoute>} />
       <Route path="/tv" element={<ProtectedRoute><TVMode /></ProtectedRoute>} />
       <Route path="/painel-admin" element={<ProtectedRoute routePath="/painel-admin"><UserManagement /></ProtectedRoute>} />
       <Route path="/marketing/dashboard" element={<ProtectedRoute routePath="/marketing/dashboard"><MarketingDashboard /></ProtectedRoute>} />

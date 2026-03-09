@@ -1,0 +1,128 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export type LeadStatus =
+  | 'Em Andamento' | 'Finalizado' | 'Cancelado' | 'Congelado'
+  | 'Renovação' | 'Reembolsado' | 'Sem Retorno' | 'Não informado';
+
+export interface LeadW3 {
+  id: string;
+  codigo: string;
+  nome_negocio: string;
+  nome_mentorado?: string | null;
+  nicho?: string | null;
+  email?: string | null;
+  data_entrada?: string | null;
+  vigencia_meses?: number | null;
+  tempo_real_meses?: number | null;
+  status?: LeadStatus | null;
+  valor_total?: number | null;
+  valor_pago?: number | null;
+  saldo_devedor?: number | null;
+  forma_pagamento?: string | null;
+  faturamento_inicial?: number | null;
+  ticket_medio?: number | null;
+  nps?: string | null;
+  motivo_saida?: string | null;
+  is_cliente_educacao: boolean;
+  is_cliente_trafego: boolean;
+  is_cliente_marketplace: boolean;
+  venda_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useLeads(filters?: { status?: string; nicho?: string; search?: string }) {
+  return useQuery({
+    queryKey: ['leads_w3', filters],
+    queryFn: async () => {
+      let query = supabase.from('leads_w3').select('*').order('created_at', { ascending: false });
+      if (filters?.status && filters.status !== 'all') query = query.eq('status', filters.status);
+      if (filters?.nicho && filters.nicho !== 'all') query = query.eq('nicho', filters.nicho);
+      if (filters?.search)
+        query = query.or(
+          `nome_negocio.ilike.%${filters.search}%,nome_mentorado.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+        );
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as LeadW3[];
+    },
+  });
+}
+
+type CreateLeadInput = Omit<LeadW3, 'id' | 'created_at' | 'updated_at'>;
+
+export function useCreateLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (lead: CreateLeadInput) => {
+      const { data, error } = await supabase.from('leads_w3').insert([lead]).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads_w3'] });
+      toast.success('Lead criado com sucesso!');
+    },
+    onError: (error: Error) => toast.error('Erro ao criar lead: ' + error.message),
+  });
+}
+
+type UpdateLeadInput = { id: string } & Partial<CreateLeadInput>;
+
+export function useUpdateLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: UpdateLeadInput) => {
+      const { data, error } = await supabase
+        .from('leads_w3')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads_w3'] });
+      toast.success('Lead atualizado com sucesso!');
+    },
+    onError: (error: Error) => toast.error('Erro ao atualizar lead: ' + error.message),
+  });
+}
+
+export function useAutoVincularLeads() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data: leads, error: leadsError } = await supabase
+        .from('leads_w3').select('id, email').not('email', 'is', null);
+      if (leadsError) throw leadsError;
+
+      const { data: vendas, error: vendasError } = await supabase
+        .from('vendas').select('nome_lead');
+      if (vendasError) throw vendasError;
+
+      const vendaEmails = new Set(
+        vendas.map((v) => v.nome_lead?.toLowerCase()).filter(Boolean)
+      );
+      const toUpdate = leads.filter((l) => vendaEmails.has(l.email!.toLowerCase()));
+
+      let count = 0;
+      for (const lead of toUpdate) {
+        const { error } = await supabase
+          .from('leads_w3')
+          .update({ is_cliente_educacao: true, updated_at: new Date().toISOString() })
+          .eq('id', lead.id);
+        if (!error) count++;
+      }
+      return count;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['leads_w3'] });
+      toast.success(`${count} lead(s) vinculado(s) à Educação automaticamente.`);
+    },
+    onError: (error: Error) => toast.error('Erro ao vincular leads: ' + error.message),
+  });
+}

@@ -25,6 +25,7 @@ import {
   Star,
   BarChart2,
   GitBranch,
+  Database,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,6 +46,7 @@ const navGroups = [
       { path: '/meu-fechamento', icon: ClipboardList, label: 'Meu Fechamento' },
       { path: '/meta-ote', icon: Target, label: 'Meta OTE' },
       { path: '/social-selling', icon: Users, label: 'Social Selling' },
+      { path: '/leads', icon: Database, label: 'Base Leads' },
     ],
   },
   {
