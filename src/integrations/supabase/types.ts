@@ -882,11 +882,10 @@ export type Database = {
       }
       profiles: {
         Row: {
-          area_deprecated: Database["public"]["Enums"]["user_area"]
+          area: Database["public"]["Enums"]["user_area"]
           ativo: boolean
           atualizado_em: string
           avatar_url: string | null
-          centro_custo: string | null
           criado_em: string
           email: string
           id: string
@@ -894,11 +893,10 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
-          area_deprecated?: Database["public"]["Enums"]["user_area"]
+          area?: Database["public"]["Enums"]["user_area"]
           ativo?: boolean
           atualizado_em?: string
           avatar_url?: string | null
-          centro_custo?: string | null
           criado_em?: string
           email: string
           id: string
@@ -906,11 +904,10 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
         }
         Update: {
-          area_deprecated?: Database["public"]["Enums"]["user_area"]
+          area?: Database["public"]["Enums"]["user_area"]
           ativo?: boolean
           atualizado_em?: string
           avatar_url?: string | null
-          centro_custo?: string | null
           criado_em?: string
           email?: string
           id?: string
@@ -1673,7 +1670,7 @@ export type Database = {
     Views: {
       profiles_safe: {
         Row: {
-          area_deprecated: Database["public"]["Enums"]["user_area"] | null
+          area: Database["public"]["Enums"]["user_area"] | null
           ativo: boolean | null
           atualizado_em: string | null
           criado_em: string | null
@@ -1683,7 +1680,7 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"] | null
         }
         Insert: {
-          area_deprecated?: Database["public"]["Enums"]["user_area"] | null
+          area?: Database["public"]["Enums"]["user_area"] | null
           ativo?: boolean | null
           atualizado_em?: string | null
           criado_em?: string | null
@@ -1693,7 +1690,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"] | null
         }
         Update: {
-          area_deprecated?: Database["public"]["Enums"]["user_area"] | null
+          area?: Database["public"]["Enums"]["user_area"] | null
           ativo?: boolean | null
           atualizado_em?: string | null
           criado_em?: string | null

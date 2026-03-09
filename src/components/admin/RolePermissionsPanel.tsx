@@ -24,7 +24,7 @@ import {
   ShoppingBag, Settings, AlertTriangle,
 } from 'lucide-react';
 
-const ROLE_ICONS: Record<AppRole, React.ComponentType<{ className?: string }>> = {
+const ROLE_ICONS: Record<AppRole, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   MASTER: Crown,
   DIRETORIA: Building2,
   GESTOR_COMERCIAL: Briefcase,
@@ -242,7 +242,6 @@ export function RolePermissionsPanel() {
                   className="rounded-xl divide-y overflow-hidden"
                   style={{
                     border: '1px solid hsla(0,0%,100%,0.07)',
-                    divideColor: 'hsla(0,0%,100%,0.05)',
                   }}
                 >
                   {resources.map(resource => {
