@@ -385,19 +385,17 @@ export default function VendasPage() {
             Exportar PDF
           </Button>
           {canEdit && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
+          <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
               <Button onClick={handleOpenNew} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Nova Venda
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>
                   {editingVenda ? 'Editar Venda' : 'Registrar Nova Venda'}
-                </DialogTitle>
-              </DialogHeader>
+                </SheetTitle>
+              </SheetHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
