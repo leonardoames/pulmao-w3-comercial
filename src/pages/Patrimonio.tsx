@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, Search, Eye, Pencil, ArrowRightLeft, Wrench, XCircle, HelpCircle, Settings } from 'lucide-react';
 import {
   usePatrimonioBens, usePatrimonioAmbientes, useCreatePatrimonioBem, useUpdatePatrimonioBem,
@@ -322,6 +322,7 @@ export default function Patrimonio() {
       {/* Drawer Cadastro/Edição */}
       <Sheet open={showDrawer} onOpenChange={setShowDrawer}>
         <SheetContent className="w-[420px] sm:w-[480px] overflow-y-auto">
+          <TooltipProvider>
           <SheetHeader><SheetTitle>{editBem ? 'Editar Bem' : 'Cadastrar Novo Bem'}</SheetTitle></SheetHeader>
           <div className="space-y-6 mt-4">
             <Section title="O que é esse bem?">
@@ -415,6 +416,7 @@ export default function Patrimonio() {
               {(createBem.isPending || updateBem.isPending) ? 'Salvando...' : editBem ? 'Salvar Alterações' : 'Cadastrar Bem'}
             </Button>
           </div>
+          </TooltipProvider>
         </SheetContent>
       </Sheet>
 
