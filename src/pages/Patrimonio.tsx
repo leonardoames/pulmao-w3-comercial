@@ -321,7 +321,7 @@ export default function Patrimonio() {
 
       {/* Drawer Cadastro/Edição */}
       <Sheet open={showDrawer} onOpenChange={setShowDrawer}>
-        <SheetContent className="w-[420px] sm:w-[480px] overflow-y-auto">
+        <SheetContent>
           <TooltipProvider>
           <SheetHeader><SheetTitle>{editBem ? 'Editar Bem' : 'Cadastrar Novo Bem'}</SheetTitle></SheetHeader>
           <div className="space-y-6 mt-4">

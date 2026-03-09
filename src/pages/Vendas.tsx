@@ -609,8 +609,8 @@ export default function VendasPage() {
                   </Button>
                 </div>
               </form>
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         )}
         </div>
       </PageHeader>

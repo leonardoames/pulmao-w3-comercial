@@ -356,7 +356,7 @@ export function DailyLogModal({ open, onOpenChange, editLog }: DailyLogModalProp
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
