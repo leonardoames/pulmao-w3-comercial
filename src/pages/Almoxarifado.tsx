@@ -499,25 +499,112 @@ export default function Almoxarifado() {
       </Dialog>
 
       {/* Modal Entrada */}
-      <Dialog open={showEntrada} onOpenChange={setShowEntrada}>
+      <Dialog open={showEntrada} onOpenChange={(open) => { setShowEntrada(open); if (!open) resetEntradaState(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Registrar Entrada de Material</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>Selecionar item *</Label>
-              <Select value={movForm.item_id} onValueChange={v => setMovForm({ ...movForm, item_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Escolha o item" /></SelectTrigger>
-                <SelectContent>
-                  {itens.filter(i => i.ativo).map(i => <SelectItem key={i.id} value={i.id}>{i.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Popover open={entradaSearchOpen} onOpenChange={setEntradaSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                    {entradaSelectedName || 'Buscar ou criar item...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Digite o nome do item..."
+                      value={entradaSearchTerm}
+                      onValueChange={setEntradaSearchTerm}
+                    />
+                    <CommandList>
+                      <CommandEmpty className="py-2 px-3 text-sm text-muted-foreground">Nenhum item encontrado</CommandEmpty>
+                      <CommandGroup>
+                        {itens
+                          .filter(i => i.ativo && (!entradaSearchTerm || i.nome.toLowerCase().includes(entradaSearchTerm.toLowerCase())))
+                          .map(i => (
+                            <CommandItem
+                              key={i.id}
+                              onSelect={() => {
+                                setMovForm({ ...movForm, item_id: i.id });
+                                setEntradaSelectedName(i.nome);
+                                setEntradaCreatingNew(false);
+                                setEntradaSearchOpen(false);
+                              }}
+                            >
+                              {i.nome}
+                              <span className="ml-auto text-xs text-muted-foreground">{i.categoria}</span>
+                            </CommandItem>
+                          ))}
+                        {entradaSearchTerm.trim() && !itens.some(i => i.ativo && i.nome.toLowerCase() === entradaSearchTerm.trim().toLowerCase()) && (
+                          <CommandItem
+                            onSelect={() => {
+                              setEntradaSelectedName(entradaSearchTerm.trim());
+                              setEntradaCreatingNew(true);
+                              setMovForm({ ...movForm, item_id: '' });
+                              setEntradaSearchOpen(false);
+                            }}
+                            className="text-primary"
+                          >
+                            <Plus className="h-4 w-4 mr-1.5" />
+                            Criar "{entradaSearchTerm.trim()}" como novo item
+                          </CommandItem>
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
+
+            {entradaCreatingNew && (
+              <div className="space-y-3 p-3 rounded-lg border border-dashed" style={{ borderColor: 'hsl(24, 94%, 53%)', background: 'hsla(24, 94%, 53%, 0.05)' }}>
+                <p className="text-xs font-medium text-muted-foreground">Novo item: <strong className="text-foreground">{entradaSelectedName}</strong></p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Categoria</Label>
+                    <Select value={entradaNewItem.categoria} onValueChange={v => setEntradaNewItem({ ...entradaNewItem, categoria: v })}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIAS_ALMOXARIFADO.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Unidade de medida</Label>
+                    <Select value={entradaNewItem.unidade_medida} onValueChange={v => setEntradaNewItem({ ...entradaNewItem, unidade_medida: v })}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {UNIDADES_MEDIDA.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Alertar quando chegar em:</Label>
+                    <Input type="number" className="h-9" value={entradaNewItem.estoque_minimo} onChange={e => setEntradaNewItem({ ...entradaNewItem, estoque_minimo: +e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Estoque máximo (opcional)</Label>
+                    <Input type="number" className="h-9" value={entradaNewItem.estoque_maximo} onChange={e => setEntradaNewItem({ ...entradaNewItem, estoque_maximo: +e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div><Label>Quantidade que chegou *</Label><Input type="number" min={1} value={movForm.quantidade} onChange={e => setMovForm({ ...movForm, quantidade: +e.target.value })} /></div>
             <div><Label>Valor pago por unidade (R$)</Label><Input type="number" step="0.01" value={movForm.valor_unitario} onChange={e => setMovForm({ ...movForm, valor_unitario: +e.target.value })} /></div>
             <div><Label>Data da compra</Label><Input type="date" value={movForm.data_movimentacao} onChange={e => setMovForm({ ...movForm, data_movimentacao: e.target.value })} /></div>
             <div><Label>Observação</Label><Textarea value={movForm.observacao} onChange={e => setMovForm({ ...movForm, observacao: e.target.value })} /></div>
-            <Button className="w-full" onClick={handleEntrada} disabled={!movForm.item_id || movForm.quantidade <= 0 || registrarMov.isPending}>
-              {registrarMov.isPending ? 'Registrando...' : 'Confirmar Entrada'}
+            <Button
+              className="w-full"
+              onClick={handleEntrada}
+              disabled={(!movForm.item_id && !entradaCreatingNew) || (!entradaSelectedName && entradaCreatingNew) || movForm.quantidade <= 0 || registrarMov.isPending || entradaSubmitting}
+            >
+              {(registrarMov.isPending || entradaSubmitting) ? 'Registrando...' : 'Confirmar Entrada'}
             </Button>
           </div>
         </DialogContent>
