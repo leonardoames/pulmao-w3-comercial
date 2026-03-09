@@ -11,9 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatCard } from '@/components/ui/stat-card';
-import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, Link as LinkIcon, RefreshCw } from 'lucide-react';
+import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, LinkIcon, RefreshCw, UserCheck, UserX } from 'lucide-react';
 import { useRHColaboradores, useCreateColaborador, useImportClosers, useRHSetoresConfig } from '@/hooks/useRH';
-import { useClosers } from '@/hooks/useProfiles';
+import { useClosers, useProfiles } from '@/hooks/useProfiles';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { SETOR_LABELS, STATUS_COLABORADOR_LABELS, STATUS_COLABORADOR_COLORS, TIPO_CONTRATO_LABELS, type SetorRH, type TipoContrato, type StatusColaborador } from '@/types/rh';
 import { format } from 'date-fns';
@@ -23,6 +23,7 @@ export default function RHColaboradores() {
   const navigate = useNavigate();
   const { data: colaboradores = [], isLoading } = useRHColaboradores();
   const { data: allClosers = [] } = useClosers();
+  const { data: allProfiles = [] } = useProfiles();
   const { data: userRole } = useCurrentUserRole();
   const createColaborador = useCreateColaborador();
   const importClosers = useImportClosers();
@@ -36,7 +37,6 @@ export default function RHColaboradores() {
   const [showNew, setShowNew] = useState(false);
   const [showImportReview, setShowImportReview] = useState(false);
   const [selectedClosers, setSelectedClosers] = useState<string[]>([]);
-  const [showSyncButton, setShowSyncButton] = useState(false);
 
   // New colaborador form
   const [form, setForm] = useState({
@@ -65,11 +65,23 @@ export default function RHColaboradores() {
     [allClosers, importedCloserIds]
   );
 
+  // Users linked to colaboradores (via user_id)
+  const linkedUserIds = useMemo(
+    () => new Set(colaboradores.filter(c => c.user_id).map(c => c.user_id)),
+    [colaboradores]
+  );
+
+  // Profiles NOT linked to any colaborador
+  const unlinkedProfiles = useMemo(
+    () => allProfiles.filter(p => p.id && !linkedUserIds.has(p.id)),
+    [allProfiles, linkedUserIds]
+  );
+
   const showImportBanner = !isLoading && isAdmin && newCloserProfiles.length > 0;
 
   const filteredColabs = useMemo(() => {
     return colaboradores.filter(c => {
-      if (search && !c.nome.toLowerCase().includes(search.toLowerCase()) && !c.cargo.toLowerCase().includes(search.toLowerCase())) return false;
+      if (search && !c.nome.toLowerCase().includes(search.toLowerCase()) && !(c.cargo || '').toLowerCase().includes(search.toLowerCase())) return false;
       if (filterSetor !== 'all' && c.setor !== filterSetor) return false;
       if (filterStatus !== 'all' && c.status !== filterStatus) return false;
       if (filterContrato !== 'all' && c.tipo_contrato !== filterContrato) return false;
@@ -81,7 +93,8 @@ export default function RHColaboradores() {
     const ativos = colaboradores.filter(c => c.status === 'ativo').length;
     const feriasAfastados = colaboradores.filter(c => c.status === 'ferias' || c.status === 'afastado').length;
     const folha = isAdmin ? colaboradores.reduce((s, c) => s + (c.salario || 0), 0) : null;
-    return { ativos, feriasAfastados, folha };
+    const vinculados = colaboradores.filter(c => c.user_id).length;
+    return { ativos, feriasAfastados, folha, vinculados };
   }, [colaboradores, isAdmin]);
 
   const handleImportAll = () => {
@@ -159,11 +172,22 @@ export default function RHColaboradores() {
           </div>
         )}
 
+        {/* Unlinked users banner */}
+        {isAdmin && unlinkedProfiles.length > 0 && (
+          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'hsla(200, 80%, 50%, 0.08)', border: '1px solid hsla(200, 80%, 50%, 0.15)' }}>
+            <UserX className="h-4 w-4 shrink-0" style={{ color: 'hsl(200, 80%, 60%)' }} />
+            <span className="text-xs" style={{ color: 'hsl(200, 80%, 70%)' }}>
+              <strong>{unlinkedProfiles.length}</strong> usuário{unlinkedProfiles.length !== 1 ? 's' : ''} cadastrado{unlinkedProfiles.length !== 1 ? 's' : ''} no Pulmão ainda não vinculado{unlinkedProfiles.length !== 1 ? 's' : ''} a um colaborador
+            </span>
+          </div>
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard title="Total Ativos" value={stats.ativos} icon={<Users className="h-5 w-5" />} />
           <StatCard title="Férias / Afastados" value={stats.feriasAfastados} icon={<Briefcase className="h-5 w-5" />} />
-          <StatCard title="Sem Avaliação Recente" value="—" icon={<AlertTriangle className="h-5 w-5" />} />
+          <StatCard title="Vinculados ao Pulmão" value={stats.vinculados} icon={<UserCheck className="h-5 w-5" />} />
+          <StatCard title="Usuários sem Vínculo" value={unlinkedProfiles.length} icon={<UserX className="h-5 w-5" />} />
           <StatCard title="Folha Salarial" value={stats.folha !== null ? `R$ ${stats.folha.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'} icon={<DollarSign className="h-5 w-5" />} />
         </div>
 
@@ -218,8 +242,23 @@ export default function RHColaboradores() {
                   {c.data_entrada && <p className="text-[11px] mt-1" style={{ color: 'hsla(0, 0%, 100%, 0.3)' }}>desde {format(new Date(c.data_entrada + 'T12:00:00'), "dd/MMM/yyyy", { locale: ptBR })}</p>}
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                {/* Pulmão link tag */}
+                {c.user_id ? (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'hsla(142, 71%, 45%, 0.12)', color: 'hsl(142, 71%, 55%)' }}>
+                    <UserCheck className="h-3 w-3" /> Pulmão
+                  </span>
+                ) : (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'hsla(0, 0%, 100%, 0.04)', color: 'hsla(0, 0%, 100%, 0.35)' }}>
+                    <UserX className="h-3 w-3" /> Sem conta
+                  </span>
+                )}
                 {c.closer_id && <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'hsla(24, 94%, 53%, 0.1)', color: 'hsl(24, 94%, 53%)' }}>🔗 Comercial</span>}
+                {c.centro_custo && c.centro_custo.length > 0 && (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'hsla(260, 60%, 50%, 0.1)', color: 'hsl(260, 60%, 65%)' }}>
+                    {c.centro_custo.join(', ')}
+                  </span>
+                )}
                 <span className="text-xs text-primary ml-auto opacity-0 group-hover:opacity-100 transition-opacity">Ver perfil →</span>
               </div>
             </div>
