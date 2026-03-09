@@ -1039,6 +1039,7 @@ export type Database = {
           telefone: string | null
           tipo_contrato: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           aniversario?: string | null
@@ -1063,6 +1064,7 @@ export type Database = {
           telefone?: string | null
           tipo_contrato?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           aniversario?: string | null
@@ -1087,6 +1089,7 @@ export type Database = {
           telefone?: string | null
           tipo_contrato?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {

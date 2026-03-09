@@ -1,0 +1,1 @@
+ALTER TABLE public.rh_colaboradores ADD COLUMN IF NOT EXISTS user_id uuid;
