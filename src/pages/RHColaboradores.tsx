@@ -107,10 +107,16 @@ export default function RHColaboradores() {
       salario: form.salario ? parseFloat(form.salario) : null,
       status: form.status,
       observacoes: form.observacoes || null,
+      cpf_cnpj: form.cpf_cnpj || null,
+      telefone: form.telefone || null,
+      aniversario: form.aniversario || null,
+      chave_pix: form.chave_pix || null,
+      ote_comissao: form.ote_comissao || null,
+      centro_custo: form.centro_custo.length > 0 ? form.centro_custo : null,
     } as any, {
       onSuccess: () => {
         setShowNew(false);
-        setForm({ nome: '', email: '', cargo: '', setor: 'outro', data_entrada: '', tipo_contrato: 'clt', salario: '', status: 'ativo', observacoes: '' });
+        setForm({ nome: '', email: '', cargo: '', setor: 'outro', data_entrada: '', tipo_contrato: 'clt', salario: '', status: 'ativo', observacoes: '', cpf_cnpj: '', telefone: '', aniversario: '', chave_pix: '', ote_comissao: '', centro_custo: [] });
       },
     });
   };
