@@ -41,6 +41,9 @@ export default function Almoxarifado() {
 
   const hasItems = itens.length > 0;
 
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
   // Modals
   const [showNewItem, setShowNewItem] = useState(false);
   const [showEditItem, setShowEditItem] = useState<AlmoxarifadoItem | null>(null);
@@ -53,6 +56,14 @@ export default function Almoxarifado() {
 
   // Mov form
   const [movForm, setMovForm] = useState({ item_id: '', quantidade: 0, valor_unitario: 0, data_movimentacao: new Date().toISOString().split('T')[0], observacao: '' });
+
+  // Entrada autocomplete state
+  const [entradaSearchOpen, setEntradaSearchOpen] = useState(false);
+  const [entradaSearchTerm, setEntradaSearchTerm] = useState('');
+  const [entradaSelectedName, setEntradaSelectedName] = useState('');
+  const [entradaCreatingNew, setEntradaCreatingNew] = useState(false);
+  const [entradaNewItem, setEntradaNewItem] = useState({ categoria: 'Outros', unidade_medida: 'Unidade', estoque_minimo: 0, estoque_maximo: 0 });
+  const [entradaSubmitting, setEntradaSubmitting] = useState(false);
 
   const profileMap = useMemo(() => {
     const m: Record<string, string> = {};
