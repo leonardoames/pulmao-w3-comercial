@@ -34,7 +34,7 @@ const MERGE_FIELDS = [
 
 export default function RHColaboradores() {
   const navigate = useNavigate();
-  const { data: colaboradores = [], isLoading } = useRHColaboradores();
+  const { data: colaboradores = [], isLoading, error } = useRHColaboradores();
   const { data: allClosers = [] } = useClosers();
   const { data: allProfiles = [] } = useProfiles();
   const { data: userRole } = useCurrentUserRole();
@@ -68,6 +68,15 @@ export default function RHColaboradores() {
     cpf_cnpj: '', telefone: '', aniversario: '', chave_pix: '', ote_comissao: '',
     centro_custo: [] as string[],
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    if (!form.nome.trim()) errors.nome = 'Nome é obrigatório.';
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'E-mail inválido.';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
   const { data: setoresConfig = [] } = useRHSetoresConfig();
 
   // Closers already imported
@@ -196,6 +205,7 @@ export default function RHColaboradores() {
   };
 
   const handleCreate = () => {
+    if (!validateForm()) return;
     createColaborador.mutate({
       nome: form.nome,
       email: form.email || null,
@@ -215,6 +225,7 @@ export default function RHColaboradores() {
     } as any, {
       onSuccess: () => {
         setShowNew(false);
+        setFormErrors({});
         setForm({ nome: '', email: '', cargo: '', setor: 'outro', data_entrada: '', tipo_contrato: 'clt', salario: '', status: 'ativo', observacoes: '', cpf_cnpj: '', telefone: '', aniversario: '', chave_pix: '', ote_comissao: '', centro_custo: [] });
       },
     });
@@ -268,6 +279,17 @@ export default function RHColaboradores() {
             <span className="text-xs" style={{ color: 'hsl(200, 80%, 70%)' }}>
               <strong>{unlinkedProfiles.length}</strong> usuário{unlinkedProfiles.length !== 1 ? 's' : ''} cadastrado{unlinkedProfiles.length !== 1 ? 's' : ''} no Pulmão ainda não vinculado{unlinkedProfiles.length !== 1 ? 's' : ''} a um colaborador
             </span>
+          </div>
+        )}
+
+        {/* Query error */}
+        {error && (
+          <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'hsla(0,80%,50%,0.1)', border: '1px solid hsla(0,80%,50%,0.2)', color: 'hsl(0,80%,65%)' }}>
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium">Erro ao carregar colaboradores</p>
+              <p className="text-xs opacity-70">{(error as any).message}</p>
+            </div>
           </div>
         )}
 
@@ -363,9 +385,17 @@ export default function RHColaboradores() {
         <SheetContent className="w-full sm:max-w-[520px] overflow-y-auto">
           <SheetHeader><SheetTitle>Novo Colaborador</SheetTitle></SheetHeader>
           <div className="space-y-4 mt-4">
-            <div><Label>Nome *</Label><Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} /></div>
+            <div>
+              <Label>Nome *</Label>
+              <Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} className={formErrors.nome ? 'border-destructive' : ''} />
+              {formErrors.nome && <p className="text-xs text-destructive mt-1">{formErrors.nome}</p>}
+            </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Email</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+              <div>
+                <Label>Email</Label>
+                <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={formErrors.email ? 'border-destructive' : ''} />
+                {formErrors.email && <p className="text-xs text-destructive mt-1">{formErrors.email}</p>}
+              </div>
               <div><Label>Telefone</Label><Input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} placeholder="(00) 00000-0000" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -433,7 +463,7 @@ export default function RHColaboradores() {
             <div><Label>Observações</Label><Input value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} /></div>
             <div className="flex gap-2 pt-4">
               <Button variant="ghost" onClick={() => setShowNew(false)} className="flex-1">Cancelar</Button>
-              <Button onClick={handleCreate} disabled={!form.nome || createColaborador.isPending} className="flex-1 bg-primary hover:bg-primary/90">Salvar</Button>
+              <Button onClick={handleCreate} disabled={createColaborador.isPending} className="flex-1 bg-primary hover:bg-primary/90">Salvar</Button>
             </div>
           </div>
         </SheetContent>
