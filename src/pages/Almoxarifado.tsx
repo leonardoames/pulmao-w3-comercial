@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, ArrowDownToLine, ArrowUpFromLine, History, Package, AlertTriangle, Pencil } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Search, ArrowDownToLine, ArrowUpFromLine, History, Package, AlertTriangle, Pencil, X } from 'lucide-react';
 import { useAlmoxarifadoItens, useAlmoxarifadoMovimentacoes, useCreateAlmoxarifadoItem, useUpdateAlmoxarifadoItem, useRegistrarMovimentacao, CATEGORIAS_ALMOXARIFADO, UNIDADES_MEDIDA, SUGESTOES_ITENS, AlmoxarifadoItem } from '@/hooks/useAlmoxarifado';
 import { useProfiles } from '@/hooks/useProfiles';
 import { format } from 'date-fns';
@@ -28,6 +29,11 @@ export default function Almoxarifado() {
   const [catFilter, setCatFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [tab, setTab] = useState('itens');
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return localStorage.getItem('almoxarifado_welcome_dismissed') !== 'true';
+  });
+
+  const hasItems = itens.length > 0;
 
   // Modals
   const [showNewItem, setShowNewItem] = useState(false);
@@ -110,13 +116,53 @@ export default function Almoxarifado() {
   return (
     <AppLayout>
       <PageHeader title="Almoxarifado" description="Controle de materiais de consumo">
-        <Button size="sm" onClick={() => setShowEntrada(true)} className="gap-1.5">
-          <ArrowDownToLine className="h-4 w-4" /> Registrar Entrada
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setShowSaida(true)} className="gap-1.5">
-          <ArrowUpFromLine className="h-4 w-4" /> Registrar Saída
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button size="sm" onClick={() => setShowEntrada(true)} className="gap-1.5" disabled={!hasItems}>
+                  <ArrowDownToLine className="h-4 w-4" /> Registrar Entrada
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!hasItems && <TooltipContent>Cadastre pelo menos um item antes de registrar movimentações</TooltipContent>}
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button size="sm" variant="outline" onClick={() => setShowSaida(true)} className="gap-1.5" disabled={!hasItems}>
+                  <ArrowUpFromLine className="h-4 w-4" /> Registrar Saída
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!hasItems && <TooltipContent>Cadastre pelo menos um item antes de registrar movimentações</TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
       </PageHeader>
+
+      {showWelcome && (
+        <div className="mb-4 p-4 rounded-lg border flex items-start gap-3" style={{ borderColor: 'hsl(24, 94%, 53%)', background: 'hsla(24, 94%, 53%, 0.08)' }}>
+          <span className="text-lg shrink-0">👋</span>
+          <div className="flex-1 text-sm">
+            <strong>Primeira vez aqui?</strong> Siga esses passos:{' '}
+            <strong>1.</strong> Cadastre os itens que sua empresa usa →{' '}
+            <strong>2.</strong> Registre as entradas (compras recebidas) →{' '}
+            <strong>3.</strong> Registre as saídas (materiais utilizados).{' '}
+            O sistema cuida do estoque automaticamente.
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0 text-xs"
+            onClick={() => {
+              setShowWelcome(false);
+              localStorage.setItem('almoxarifado_welcome_dismissed', 'true');
+            }}
+          >
+            <X className="h-3.5 w-3.5 mr-1" /> Entendi, não mostrar mais
+          </Button>
+        </div>
+      )}
 
       {itemsAbaixoMinimo.length > 0 && (
         <div className="mb-4 p-3 rounded-lg border flex items-center gap-3" style={{ borderColor: 'hsl(0, 84%, 60%)', background: 'hsla(0, 84%, 60%, 0.08)' }}>
@@ -176,6 +222,21 @@ export default function Almoxarifado() {
               <TableBody>
                 {isLoading ? (
                   <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                ) : !hasItems ? (
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <Package className="h-12 w-12 text-muted-foreground/40" />
+                        <h3 className="font-semibold text-lg">Nenhum item cadastrado ainda</h3>
+                        <p className="text-sm text-muted-foreground text-center max-w-md">
+                          Comece cadastrando os materiais que sua empresa usa. Depois disso, você poderá registrar entradas e saídas.
+                        </p>
+                        <Button onClick={() => setShowNewItem(true)} className="mt-2 gap-1.5" style={{ background: 'hsl(24, 94%, 53%)' }}>
+                          <Plus className="h-4 w-4" /> Cadastrar Primeiro Item
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : filteredItens.length === 0 ? (
                   <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum item encontrado</TableCell></TableRow>
                 ) : filteredItens.map(item => {
