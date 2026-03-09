@@ -4,9 +4,10 @@ import { Menu } from 'lucide-react';
 
 interface AppLayoutProps {
   children: ReactNode;
+  noPadding?: boolean;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, noPadding = false }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -41,14 +42,20 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content — offset by sidebar width on lg+ */}
       <main className="w-full lg:pl-[260px]">
-        <div
-          className="px-4 pb-6 md:px-6 md:pb-8 lg:px-8"
-          style={{ paddingTop: '72px' }}
-        >
-          <div className="lg:pt-8">
+        {noPadding ? (
+          <div style={{ paddingTop: '56px' }}>
             {children}
           </div>
-        </div>
+        ) : (
+          <div
+            className="px-4 pb-6 md:px-6 md:pb-8 lg:px-8"
+            style={{ paddingTop: '72px' }}
+          >
+            <div className="lg:pt-8">
+              {children}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
