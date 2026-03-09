@@ -112,7 +112,7 @@ interface EmployeeNodeData {
 }
 
 function EmployeeNodeComponent({ data }: NodeProps) {
-  const { colaborador: c, showCargo, showSetor, showSalario, isAdmin, isEditMode, isCurrentUser, isDirectReport, isGestor, onNodeClick } = data;
+  const { colaborador: c, showCargo, showSetor, showSalario, isAdmin, isEditMode, isCurrentUser, isDirectReport, isGestor, onNodeClick } = data as unknown as EmployeeNodeData;
   const avatarColor = AVATAR_COLORS[hashName(c.nome) % AVATAR_COLORS.length];
   const statusColor = STATUS_COLABORADOR_COLORS[c.status] || 'rgba(255,255,255,0.2)';
   const setorColor = SETOR_COLORS[c.setor] || '#6B7280';
