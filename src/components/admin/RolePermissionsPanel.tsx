@@ -242,7 +242,6 @@ export function RolePermissionsPanel() {
                   className="rounded-xl divide-y overflow-hidden"
                   style={{
                     border: '1px solid hsla(0,0%,100%,0.07)',
-                    divideColor: 'hsla(0,0%,100%,0.05)',
                   }}
                 >
                   {resources.map(resource => {

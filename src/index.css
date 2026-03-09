@@ -286,6 +286,12 @@ img.emoji {
     background: linear-gradient(90deg, #22C55E, #4ADE80);
   }
 
+  /* Native date/month input icon color */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(50%) sepia(90%) saturate(1500%) hue-rotate(360deg) brightness(100%);
+  }
+
   /* TV Mode live indicator */
   .tv-live-dot {
     width: 6px;
