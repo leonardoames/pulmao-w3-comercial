@@ -35,14 +35,14 @@ import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook, ChevronLeft, Chev
 import { supabase } from '@/integrations/supabase/client';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
+import { useRHSetoresConfig } from '@/hooks/useRH';
 import { AppRole, ROLE_LABELS_NEW, ROLE_COLORS, ALL_ROLES, canRoleAccessAdminPanel } from '@/types/roles';
-import { AREA_LABELS, UserArea } from '@/types/crm';
+
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RolePermissionsPanel } from '@/components/admin/RolePermissionsPanel';
 import { WebhooksPanel } from '@/components/admin/WebhooksPanel';
 
-const AREAS: UserArea[] = ['Comercial', 'CS', 'Financeiro', 'Marketing', 'Diretoria'];
 const PAGE_SIZE = 10;
 
 export default function UserManagement() {
@@ -50,6 +50,7 @@ export default function UserManagement() {
   const canManageUsers = userRole?.role === 'MASTER';
   const canAccessAdmin = userRole ? canRoleAccessAdminPanel(userRole.role) : false;
   const { data: users, isLoading } = useUsersWithRoles();
+  const { data: setoresConfig = [] } = useRHSetoresConfig();
   const updateProfile = useUpdateProfile();
   const updateUserRole = useUpdateUserRole();
   const createUser = useCreateUser();
@@ -62,7 +63,7 @@ export default function UserManagement() {
 
   // Filters
   const [filterNome, setFilterNome] = useState('');
-  const [filterArea, setFilterArea] = useState<string>('all');
+  const [filterCentroCusto, setFilterCentroCusto] = useState<string>('all');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [page, setPage] = useState(1);
@@ -72,24 +73,24 @@ export default function UserManagement() {
     nome: '',
     email: '',
     password: '',
-    area: 'Comercial' as UserArea,
-    role: 'CLOSER' as AppRole
+    role: 'CLOSER' as AppRole,
+    centro_custo: '',
   });
 
   // Edit form state
   const [editForm, setEditForm] = useState({
     nome: '',
     email: '',
-    area: 'Comercial' as UserArea,
     ativo: true,
-    role: 'CLOSER' as AppRole
+    role: 'CLOSER' as AppRole,
+    centro_custo: '',
   });
 
   const filteredUsers = useMemo(() => {
     if (!users) return [];
     return users.filter(u => {
       if (filterNome && !u.nome.toLowerCase().includes(filterNome.toLowerCase()) && !u.email.toLowerCase().includes(filterNome.toLowerCase())) return false;
-      if (filterArea !== 'all' && u.area !== filterArea) return false;
+      if (filterCentroCusto !== 'all' && u.centro_custo !== filterCentroCusto) return false;
       if (filterRole !== 'all' && (u.user_role?.role || 'CLOSER') !== filterRole) return false;
       if (filterStatus !== 'all') {
         if (filterStatus === 'ativo' && !u.ativo) return false;
@@ -97,7 +98,7 @@ export default function UserManagement() {
       }
       return true;
     });
-  }, [users, filterNome, filterArea, filterRole, filterStatus]);
+  }, [users, filterNome, filterCentroCusto, filterRole, filterStatus]);
 
   const roleCounts = useMemo(() => {
     if (!users) return {} as Record<string, number>;
@@ -117,7 +118,7 @@ export default function UserManagement() {
   const paginatedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Reset page when filters change
-  useMemo(() => { setPage(1); }, [filterNome, filterArea, filterRole, filterStatus]);
+  useMemo(() => { setPage(1); }, [filterNome, filterCentroCusto, filterRole, filterStatus]);
 
   if (roleLoading || isLoading) {
     return (
@@ -139,7 +140,7 @@ export default function UserManagement() {
   const handleCreate = async () => {
     await createUser.mutateAsync(newUser);
     setIsCreateOpen(false);
-    setNewUser({ nome: '', email: '', password: '', area: 'Comercial', role: 'CLOSER' });
+    setNewUser({ nome: '', email: '', password: '', role: 'CLOSER', centro_custo: '' });
   };
 
   const handleEdit = (user: any) => {
@@ -147,9 +148,9 @@ export default function UserManagement() {
     setEditForm({
       nome: user.nome,
       email: user.email,
-      area: user.area,
       ativo: user.ativo,
-      role: user.user_role?.role || 'CLOSER'
+      role: user.user_role?.role || 'CLOSER',
+      centro_custo: user.centro_custo || '',
     });
   };
 
@@ -159,8 +160,8 @@ export default function UserManagement() {
       id: editingUser.id,
       nome: editForm.nome,
       email: editForm.email,
-      area: editForm.area,
-      ativo: editForm.ativo
+      ativo: editForm.ativo,
+      centro_custo: editForm.centro_custo || null,
     });
     await updateUserRole.mutateAsync({
       userId: editingUser.id,
@@ -244,14 +245,14 @@ export default function UserManagement() {
                   onChange={(e) => setFilterNome(e.target.value)}
                 />
               </div>
-              <Select value={filterArea} onValueChange={setFilterArea}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Área" />
+              <Select value={filterCentroCusto} onValueChange={setFilterCentroCusto}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Centro de Custo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as áreas</SelectItem>
-                  {AREAS.map(a => (
-                    <SelectItem key={a} value={a}>{AREA_LABELS[a]}</SelectItem>
+                  <SelectItem value="all">Todos os setores</SelectItem>
+                  {setoresConfig.filter(s => s.ativo).map(s => (
+                    <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -301,26 +302,29 @@ export default function UserManagement() {
                       <Label>Senha</Label>
                       <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Senha inicial" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Área</Label>
-                        <Select value={newUser.area} onValueChange={(v) => setNewUser({ ...newUser, area: v as UserArea })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {AREAS.map(a => <SelectItem key={a} value={a}>{AREA_LABELS[a]}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Role</Label>
-                        <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v as AppRole })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {ALL_ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS_NEW[r]}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Role</Label>
+                      <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v as AppRole })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ALL_ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS_NEW[r]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    {setoresConfig.filter(s => s.ativo).length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Centro de Custo</Label>
+                        <Select value={newUser.centro_custo} onValueChange={(v) => setNewUser({ ...newUser, centro_custo: v })}>
+                          <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum</SelectItem>
+                            {setoresConfig.filter(s => s.ativo).map(s => (
+                              <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
@@ -339,7 +343,7 @@ export default function UserManagement() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Área</TableHead>
+                    <TableHead>Centro de Custo</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -348,14 +352,34 @@ export default function UserManagement() {
                 <TableBody>
                   {paginatedUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">Nenhum usuário encontrado</TableCell>
+                      <TableCell colSpan={7} className="text-center py-8">Nenhum usuário encontrado</TableCell>
                     </TableRow>
                   ) : (
                     paginatedUsers.map((user) => (
                       <TableRow key={user.id} className={!user.ativo ? 'opacity-50' : ''}>
                         <TableCell className="font-medium">{user.nome}</TableCell>
                         <TableCell>{user.email}</TableCell>
-                        <TableCell>{AREA_LABELS[user.area]}</TableCell>
+                        <TableCell>
+                          {user.centro_custo ? (() => {
+                            const setor = setoresConfig.find(s => s.nome === user.centro_custo);
+                            return (
+                              <span
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                style={setor ? {
+                                  background: `${setor.cor}20`,
+                                  color: setor.cor,
+                                  border: `1px solid ${setor.cor}40`,
+                                } : {
+                                  background: 'hsla(0,0%,100%,0.06)',
+                                  color: 'hsl(0,0%,60%)',
+                                  border: '1px solid hsla(0,0%,100%,0.08)',
+                                }}
+                              >
+                                {user.centro_custo}
+                              </span>
+                            );
+                          })() : <span className="text-muted-foreground text-xs">—</span>}
+                        </TableCell>
                         <TableCell>
                           <span
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
@@ -434,26 +458,29 @@ export default function UserManagement() {
                 <Label>Email</Label>
                 <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Área</Label>
-                  <Select value={editForm.area} onValueChange={(v) => setEditForm({ ...editForm, area: v as UserArea })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {AREAS.map(a => <SelectItem key={a} value={a}>{AREA_LABELS[a]}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select value={editForm.role} onValueChange={(v) => setEditForm({ ...editForm, role: v as AppRole })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ALL_ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS_NEW[r]}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select value={editForm.role} onValueChange={(v) => setEditForm({ ...editForm, role: v as AppRole })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ALL_ROLES.map(r => <SelectItem key={r} value={r}>{ROLE_LABELS_NEW[r]}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
+              {setoresConfig.filter(s => s.ativo).length > 0 && (
+                <div className="space-y-2">
+                  <Label>Centro de Custo</Label>
+                  <Select value={editForm.centro_custo} onValueChange={(v) => setEditForm({ ...editForm, centro_custo: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum</SelectItem>
+                      {setoresConfig.filter(s => s.ativo).map(s => (
+                        <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <Switch id="ativo" checked={editForm.ativo} onCheckedChange={(checked) => setEditForm({ ...editForm, ativo: checked })} />
                 <Label htmlFor="ativo">Usuário Ativo</Label>

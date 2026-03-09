@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, UserArea } from '@/types/crm';
+import { Profile } from '@/types/crm';
 import { AppRole } from '@/types/roles';
 import { toast } from 'sonner';
 
@@ -50,22 +50,22 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      id, 
-      nome, 
-      email, 
-      area, 
-      ativo 
-    }: { 
-      id: string; 
-      nome: string; 
-      email: string; 
-      area: UserArea; 
+    mutationFn: async ({
+      id,
+      nome,
+      email,
+      ativo,
+      centro_custo,
+    }: {
+      id: string;
+      nome: string;
+      email: string;
       ativo: boolean;
+      centro_custo?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('profiles')
-        .update({ nome, email, area, ativo })
+        .update({ nome, email, ativo, centro_custo })
         .eq('id', id)
         .select()
         .maybeSingle();
@@ -90,67 +90,27 @@ export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      email, 
-      password, 
-      nome, 
-      area, 
-      role 
-    }: { 
-      email: string; 
-      password: string; 
-      nome: string; 
-      area: UserArea; 
+    mutationFn: async ({
+      email,
+      password,
+      nome,
+      role,
+    }: {
+      email: string;
+      password: string;
+      nome: string;
       role: AppRole;
     }) => {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { nome }
-        }
+      // Uses Edge Function with service_role key so the admin's session
+      // is never affected (supabase.auth.signUp() would replace the session).
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: { email, password, nome, role },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Falha ao criar usuário');
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ area })
-        .eq('id', authData.user.id);
-
-      if (profileError) {
-        console.error('Erro ao atualizar perfil:', profileError);
-      }
-
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', authData.user.id)
-        .maybeSingle();
-
-      if (existingRole) {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .update({ role })
-          .eq('user_id', authData.user.id);
-
-        if (roleError) {
-          console.error('Erro ao atualizar role:', roleError);
-        }
-      } else {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: authData.user.id, role });
-
-        if (roleError) {
-          console.error('Erro ao inserir role:', roleError);
-        }
-      }
-
-      return authData.user;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
@@ -161,6 +121,6 @@ export function useCreateUser() {
     onError: (error) => {
       console.error('Erro ao criar usuário:', error);
       toast.error('Erro ao criar usuário: ' + (error as Error).message);
-    }
+    },
   });
 }

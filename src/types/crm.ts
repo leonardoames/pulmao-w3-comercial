@@ -16,11 +16,12 @@ export interface Profile {
   nome: string;
   email: string;
   role: UserRole;
-  area: UserArea;
+  area_deprecated?: UserArea | null;
   ativo: boolean;
   criado_em: string;
   atualizado_em: string;
   avatar_url?: string | null;
+  centro_custo?: string | null;
 }
 
 export interface Venda {
