@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Search, ArrowDownToLine, ArrowUpFromLine, History, Package, AlertTriangle, Pencil, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Plus, Search, ArrowDownToLine, ArrowUpFromLine, History, Package, AlertTriangle, Pencil, X, ChevronsUpDown } from 'lucide-react';
 import { useAlmoxarifadoItens, useAlmoxarifadoMovimentacoes, useCreateAlmoxarifadoItem, useUpdateAlmoxarifadoItem, useRegistrarMovimentacao, CATEGORIAS_ALMOXARIFADO, UNIDADES_MEDIDA, SUGESTOES_ITENS, AlmoxarifadoItem } from '@/hooks/useAlmoxarifado';
 import { useProfiles } from '@/hooks/useProfiles';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
