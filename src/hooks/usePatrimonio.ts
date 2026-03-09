@@ -158,7 +158,7 @@ export function useCreatePatrimonioBem() {
       const { depAnual } = calcDepreciacao(bem.valor_compra || 0, bem.valor_residual_pct || 10, bem.vida_util_anos || 5);
       const { data, error } = await (supabase as any)
         .from('patrimonio_bens')
-        .insert({ ...bem, tombamento: '', depreciacao_anual: depAnual, criado_por: user?.id })
+        .insert({ ...bem, tombamento: bem.tombamento || '', depreciacao_anual: depAnual, criado_por: user?.id })
         .select()
         .single();
       if (error) throw error;
