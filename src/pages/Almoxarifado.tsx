@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, ArrowDownToLine, ArrowUpFromLine, History, Package, AlertTriangle, Pencil } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Search, ArrowDownToLine, ArrowUpFromLine, History, Package, AlertTriangle, Pencil, X } from 'lucide-react';
 import { useAlmoxarifadoItens, useAlmoxarifadoMovimentacoes, useCreateAlmoxarifadoItem, useUpdateAlmoxarifadoItem, useRegistrarMovimentacao, CATEGORIAS_ALMOXARIFADO, UNIDADES_MEDIDA, SUGESTOES_ITENS, AlmoxarifadoItem } from '@/hooks/useAlmoxarifado';
 import { useProfiles } from '@/hooks/useProfiles';
 import { format } from 'date-fns';
