@@ -58,6 +58,14 @@ const navGroups = [
     ],
   },
   {
+    label: 'Administrativo W3',
+    items: [
+      { path: '/administrativo/dashboard', icon: BarChart3, label: 'Dashboard' },
+      { path: '/administrativo/almoxarifado', icon: Package, label: 'Almoxarifado' },
+      { path: '/administrativo/patrimonio', icon: Building2, label: 'Patrimônio' },
+    ],
+  },
+  {
     label: 'Conteúdo',
     items: [
       { path: '/conteudo/dashboard', icon: BarChart3, label: 'Dashboard de Conteúdo' },
