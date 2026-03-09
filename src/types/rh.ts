@@ -22,6 +22,24 @@ export interface RHColaborador {
   responsavel_id: string | null;
   closer_id: string | null;
   observacoes: string | null;
+  cpf_cnpj: string | null;
+  telefone: string | null;
+  data_termino: string | null;
+  ote_comissao: string | null;
+  chave_pix: string | null;
+  aniversario: string | null;
+  centro_custo: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RHSetorConfig {
+  id: string;
+  nome: string;
+  cor: string;
+  icone: string;
+  ativo: boolean;
+  ordem: number;
   created_at: string;
   updated_at: string;
 }

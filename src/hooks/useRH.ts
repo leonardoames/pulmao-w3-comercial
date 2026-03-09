@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import type { RHColaborador, RHFeedback, RHCicloAvaliacao, RHAvaliacao } from '@/types/rh';
+import type { RHColaborador, RHFeedback, RHCicloAvaliacao, RHAvaliacao, RHSetorConfig } from '@/types/rh';
 
 // ── Colaboradores ──
 export function useRHColaboradores() {
@@ -285,5 +285,79 @@ export function useFeedbacksByColaborador(colaboradorId?: string) {
       return data as RHFeedback[];
     },
     enabled: !!colaboradorId,
+  });
+}
+
+// ── Setores Config ──
+export function useRHSetoresConfig() {
+  return useQuery({
+    queryKey: ['rh-setores-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rh_setores_config' as any)
+        .select('*')
+        .order('ordem');
+      if (error) throw error;
+      return data as unknown as RHSetorConfig[];
+    },
+  });
+}
+
+export function useCreateSetorConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (setor: Partial<RHSetorConfig>) => {
+      const { data, error } = await supabase
+        .from('rh_setores_config' as any)
+        .insert(setor as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rh-setores-config'] });
+      toast.success('Setor criado!');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao criar setor'),
+  });
+}
+
+export function useUpdateSetorConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<RHSetorConfig> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('rh_setores_config' as any)
+        .update(updates as any)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rh-setores-config'] });
+      toast.success('Setor atualizado!');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao atualizar setor'),
+  });
+}
+
+export function useDeleteSetorConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('rh_setores_config' as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rh-setores-config'] });
+      toast.success('Setor removido!');
+    },
+    onError: (e: any) => toast.error(e.message || 'Erro ao remover setor'),
   });
 }

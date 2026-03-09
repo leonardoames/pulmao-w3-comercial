@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatCard } from '@/components/ui/stat-card';
 import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, Link as LinkIcon, RefreshCw } from 'lucide-react';
-import { useRHColaboradores, useCreateColaborador, useImportClosers } from '@/hooks/useRH';
+import { useRHColaboradores, useCreateColaborador, useImportClosers, useRHSetoresConfig } from '@/hooks/useRH';
 import { useClosers } from '@/hooks/useProfiles';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { SETOR_LABELS, STATUS_COLABORADOR_LABELS, STATUS_COLABORADOR_COLORS, TIPO_CONTRATO_LABELS, type SetorRH, type TipoContrato, type StatusColaborador } from '@/types/rh';
@@ -43,7 +43,10 @@ export default function RHColaboradores() {
     nome: '', email: '', cargo: '', setor: 'outro' as SetorRH,
     data_entrada: '', tipo_contrato: 'clt' as TipoContrato, salario: '',
     status: 'ativo' as StatusColaborador, observacoes: '',
+    cpf_cnpj: '', telefone: '', aniversario: '', chave_pix: '', ote_comissao: '',
+    centro_custo: [] as string[],
   });
+  const { data: setoresConfig = [] } = useRHSetoresConfig();
 
   // Closers already imported
   const importedCloserIds = useMemo(
@@ -104,10 +107,16 @@ export default function RHColaboradores() {
       salario: form.salario ? parseFloat(form.salario) : null,
       status: form.status,
       observacoes: form.observacoes || null,
+      cpf_cnpj: form.cpf_cnpj || null,
+      telefone: form.telefone || null,
+      aniversario: form.aniversario || null,
+      chave_pix: form.chave_pix || null,
+      ote_comissao: form.ote_comissao || null,
+      centro_custo: form.centro_custo.length > 0 ? form.centro_custo : null,
     } as any, {
       onSuccess: () => {
         setShowNew(false);
-        setForm({ nome: '', email: '', cargo: '', setor: 'outro', data_entrada: '', tipo_contrato: 'clt', salario: '', status: 'ativo', observacoes: '' });
+        setForm({ nome: '', email: '', cargo: '', setor: 'outro', data_entrada: '', tipo_contrato: 'clt', salario: '', status: 'ativo', observacoes: '', cpf_cnpj: '', telefone: '', aniversario: '', chave_pix: '', ote_comissao: '', centro_custo: [] });
       },
     });
   };
@@ -227,8 +236,14 @@ export default function RHColaboradores() {
           <SheetHeader><SheetTitle>Novo Colaborador</SheetTitle></SheetHeader>
           <div className="space-y-4 mt-4">
             <div><Label>Nome *</Label><Input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} /></div>
-            <div><Label>Email</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
-            <div><Label>Cargo</Label><Input value={form.cargo} onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Email</Label><Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+              <div><Label>Telefone</Label><Input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} placeholder="(00) 00000-0000" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>CPF/CNPJ</Label><Input value={form.cpf_cnpj} onChange={e => setForm(f => ({ ...f, cpf_cnpj: e.target.value }))} /></div>
+              <div><Label>Cargo</Label><Input value={form.cargo} onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))} /></div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Setor</Label>
@@ -245,6 +260,28 @@ export default function RHColaboradores() {
                 </Select>
               </div>
             </div>
+            {/* Centro de Custo */}
+            {setoresConfig.length > 0 && (
+              <div>
+                <Label>Centro de Custo</Label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {setoresConfig.filter(s => s.ativo).map(s => (
+                    <label key={s.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg cursor-pointer text-xs transition-all" style={{
+                      background: form.centro_custo.includes(s.nome) ? `${s.cor}20` : 'hsla(0, 0%, 100%, 0.04)',
+                      color: form.centro_custo.includes(s.nome) ? s.cor : 'hsla(0, 0%, 100%, 0.4)',
+                      border: `1px solid ${form.centro_custo.includes(s.nome) ? `${s.cor}40` : 'transparent'}`,
+                    }}>
+                      <Checkbox
+                        checked={form.centro_custo.includes(s.nome)}
+                        onCheckedChange={() => setForm(f => ({ ...f, centro_custo: f.centro_custo.includes(s.nome) ? f.centro_custo.filter(c => c !== s.nome) : [...f.centro_custo, s.nome] }))}
+                        className="h-3 w-3"
+                      />
+                      {s.nome}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Data de Entrada</Label><Input type="date" value={form.data_entrada} onChange={e => setForm(f => ({ ...f, data_entrada: e.target.value }))} /></div>
               <div>
@@ -255,7 +292,16 @@ export default function RHColaboradores() {
                 </Select>
               </div>
             </div>
-            {isAdmin && <div><Label>Salário</Label><Input type="number" value={form.salario} onChange={e => setForm(f => ({ ...f, salario: e.target.value }))} placeholder="R$ 0,00" /></div>}
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Aniversário</Label><Input value={form.aniversario} onChange={e => setForm(f => ({ ...f, aniversario: e.target.value }))} placeholder="DD-MMM" /></div>
+              <div><Label>Chave Pix</Label><Input value={form.chave_pix} onChange={e => setForm(f => ({ ...f, chave_pix: e.target.value }))} /></div>
+            </div>
+            {isAdmin && (
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Salário</Label><Input type="number" value={form.salario} onChange={e => setForm(f => ({ ...f, salario: e.target.value }))} placeholder="R$ 0,00" /></div>
+                <div><Label>OTE / Comissão</Label><Input value={form.ote_comissao} onChange={e => setForm(f => ({ ...f, ote_comissao: e.target.value }))} placeholder="Ex: R$2.500 + comissão" /></div>
+              </div>
+            )}
             <div><Label>Observações</Label><Input value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} /></div>
             <div className="flex gap-2 pt-4">
               <Button variant="ghost" onClick={() => setShowNew(false)} className="flex-1">Cancelar</Button>

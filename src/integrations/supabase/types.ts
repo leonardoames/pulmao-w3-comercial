@@ -1017,53 +1017,74 @@ export type Database = {
       }
       rh_colaboradores: {
         Row: {
+          aniversario: string | null
           cargo: string | null
+          centro_custo: string[] | null
+          chave_pix: string | null
           closer_id: string | null
+          cpf_cnpj: string | null
           created_at: string | null
           data_entrada: string | null
+          data_termino: string | null
           email: string | null
           foto_url: string | null
           id: string
           nome: string
           observacoes: string | null
+          ote_comissao: string | null
           responsavel_id: string | null
           salario: number | null
           setor: string | null
           status: string | null
+          telefone: string | null
           tipo_contrato: string | null
           updated_at: string | null
         }
         Insert: {
+          aniversario?: string | null
           cargo?: string | null
+          centro_custo?: string[] | null
+          chave_pix?: string | null
           closer_id?: string | null
+          cpf_cnpj?: string | null
           created_at?: string | null
           data_entrada?: string | null
+          data_termino?: string | null
           email?: string | null
           foto_url?: string | null
           id?: string
           nome: string
           observacoes?: string | null
+          ote_comissao?: string | null
           responsavel_id?: string | null
           salario?: number | null
           setor?: string | null
           status?: string | null
+          telefone?: string | null
           tipo_contrato?: string | null
           updated_at?: string | null
         }
         Update: {
+          aniversario?: string | null
           cargo?: string | null
+          centro_custo?: string[] | null
+          chave_pix?: string | null
           closer_id?: string | null
+          cpf_cnpj?: string | null
           created_at?: string | null
           data_entrada?: string | null
+          data_termino?: string | null
           email?: string | null
           foto_url?: string | null
           id?: string
           nome?: string
           observacoes?: string | null
+          ote_comissao?: string | null
           responsavel_id?: string | null
           salario?: number | null
           setor?: string | null
           status?: string | null
+          telefone?: string | null
           tipo_contrato?: string | null
           updated_at?: string | null
         }
@@ -1152,6 +1173,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rh_setores_config: {
+        Row: {
+          ativo: boolean
+          cor: string
+          created_at: string
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cor?: string
+          created_at?: string
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       role_permissions: {
         Row: {
