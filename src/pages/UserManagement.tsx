@@ -314,7 +314,7 @@ export default function UserManagement() {
                     {setoresConfig.filter(s => s.ativo).length > 0 && (
                       <div className="space-y-2">
                         <Label>Centro de Custo</Label>
-                        <Select value={newUser.centro_custo} onValueChange={(v) => setNewUser({ ...newUser, centro_custo: v })}>
+                        <Select value={newUser.centro_custo || '__none__'} onValueChange={(v) => setNewUser({ ...newUser, centro_custo: v === '__none__' ? '' : v })}>
                           <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none__">Nenhum</SelectItem>
