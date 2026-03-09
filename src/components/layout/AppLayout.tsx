@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react';
 
 interface AppLayoutProps {
   children: ReactNode;
+  noPadding?: boolean;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
