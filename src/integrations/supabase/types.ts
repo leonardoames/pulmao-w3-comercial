@@ -916,6 +916,208 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_avaliacoes: {
+        Row: {
+          avaliado_id: string
+          avaliador_id: string
+          ciclo_id: string
+          comentario_geral: string | null
+          created_at: string | null
+          id: string
+          nota_atitude: number | null
+          nota_colaboracao: number | null
+          nota_desenvolvimento: number | null
+          nota_resultado: number | null
+          pontos_fortes: string | null
+          pontos_melhoria: string | null
+          status: string | null
+          tipo_avaliador: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avaliado_id: string
+          avaliador_id: string
+          ciclo_id: string
+          comentario_geral?: string | null
+          created_at?: string | null
+          id?: string
+          nota_atitude?: number | null
+          nota_colaboracao?: number | null
+          nota_desenvolvimento?: number | null
+          nota_resultado?: number | null
+          pontos_fortes?: string | null
+          pontos_melhoria?: string | null
+          status?: string | null
+          tipo_avaliador?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avaliado_id?: string
+          avaliador_id?: string
+          ciclo_id?: string
+          comentario_geral?: string | null
+          created_at?: string | null
+          id?: string
+          nota_atitude?: number | null
+          nota_colaboracao?: number | null
+          nota_desenvolvimento?: number | null
+          nota_resultado?: number | null
+          pontos_fortes?: string | null
+          pontos_melhoria?: string | null
+          status?: string | null
+          tipo_avaliador?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_avaliacoes_avaliado_id_fkey"
+            columns: ["avaliado_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_avaliacoes_ciclo_id_fkey"
+            columns: ["ciclo_id"]
+            isOneToOne: false
+            referencedRelation: "rh_ciclos_avaliacao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_ciclos_avaliacao: {
+        Row: {
+          created_at: string | null
+          data_fim: string
+          data_inicio: string
+          id: string
+          nome: string
+          periodo: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_fim: string
+          data_inicio: string
+          id?: string
+          nome: string
+          periodo?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          nome?: string
+          periodo?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      rh_colaboradores: {
+        Row: {
+          cargo: string | null
+          closer_id: string | null
+          created_at: string | null
+          data_entrada: string | null
+          email: string | null
+          foto_url: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          responsavel_id: string | null
+          salario: number | null
+          setor: string | null
+          status: string | null
+          tipo_contrato: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          closer_id?: string | null
+          created_at?: string | null
+          data_entrada?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          salario?: number | null
+          setor?: string | null
+          status?: string | null
+          tipo_contrato?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          closer_id?: string | null
+          created_at?: string | null
+          data_entrada?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          salario?: number | null
+          setor?: string | null
+          status?: string | null
+          tipo_contrato?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_colaboradores_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_feedbacks: {
+        Row: {
+          autor_id: string
+          colaborador_id: string
+          conteudo: string
+          created_at: string | null
+          id: string
+          tipo: string | null
+          titulo: string | null
+          visibilidade: string | null
+        }
+        Insert: {
+          autor_id: string
+          colaborador_id: string
+          conteudo: string
+          created_at?: string | null
+          id?: string
+          tipo?: string | null
+          titulo?: string | null
+          visibilidade?: string | null
+        }
+        Update: {
+          autor_id?: string
+          colaborador_id?: string
+          conteudo?: string
+          created_at?: string | null
+          id?: string
+          tipo?: string | null
+          titulo?: string | null
+          visibilidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_feedbacks_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           can_edit: boolean
@@ -1414,6 +1616,7 @@ export type Database = {
       can_edit_any_fechamento: { Args: never; Returns: boolean }
       can_edit_comercial: { Args: never; Returns: boolean }
       can_edit_content: { Args: never; Returns: boolean }
+      can_edit_rh: { Args: never; Returns: boolean }
       can_edit_vendas: { Args: never; Returns: boolean }
       can_manage_ote_goals: { Args: never; Returns: boolean }
       can_manage_users: { Args: never; Returns: boolean }

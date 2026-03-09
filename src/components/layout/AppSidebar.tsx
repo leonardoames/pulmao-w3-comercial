@@ -21,6 +21,9 @@ import {
   Camera,
   Package,
   Building2,
+  MessageSquare,
+  Star,
+  BarChart2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -63,6 +66,15 @@ const navGroups = [
       { path: '/administrativo/dashboard', icon: BarChart3, label: 'Dashboard' },
       { path: '/administrativo/almoxarifado', icon: Package, label: 'Almoxarifado' },
       { path: '/administrativo/patrimonio', icon: Building2, label: 'Patrimônio' },
+    ],
+  },
+  {
+    label: 'Recursos Humanos',
+    items: [
+      { path: '/rh/colaboradores', icon: Users, label: 'Colaboradores' },
+      { path: '/rh/feedbacks', icon: MessageSquare, label: 'Feedbacks' },
+      { path: '/rh/avaliacoes', icon: Star, label: 'Avaliações' },
+      { path: '/rh/setores', icon: BarChart2, label: 'Visão por Setor' },
     ],
   },
   {
