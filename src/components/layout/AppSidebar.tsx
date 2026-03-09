@@ -46,6 +46,11 @@ const navGroups = [
       { path: '/meu-fechamento', icon: ClipboardList, label: 'Meu Fechamento' },
       { path: '/meta-ote', icon: Target, label: 'Meta OTE' },
       { path: '/social-selling', icon: Users, label: 'Social Selling' },
+    ],
+  },
+  {
+    label: 'BASE LEADS',
+    items: [
       { path: '/leads', icon: Database, label: 'Base Leads' },
     ],
   },

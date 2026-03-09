@@ -51,7 +51,7 @@ export default function Leads() {
   const [editing, setEditing] = useState<LeadW3 | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
 
-  const { data: leads = [], isLoading } = useLeads({ status: filterStatus, nicho: filterNicho, search });
+  const { data: leads = [], isLoading, isError } = useLeads({ status: filterStatus, nicho: filterNicho, search });
   const createLead = useCreateLead();
   const updateLead = useUpdateLead();
   const autoVincular = useAutoVincularLeads();
@@ -128,7 +128,7 @@ export default function Leads() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-[#0d0d0d] p-6">
+      <div className="p-6 space-y-6">
         <PageHeader
           title="Base Leads W3"
           description="Gestão de leads e mentorados"
@@ -202,6 +202,12 @@ export default function Leads() {
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center text-white/40 py-12">Carregando...</TableCell>
+                </TableRow>
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-yellow-400/70 py-12">
+                    Aguardando sincronização do banco de dados
+                  </TableCell>
                 </TableRow>
               ) : leads.length === 0 ? (
                 <TableRow>
