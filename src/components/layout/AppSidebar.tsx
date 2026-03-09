@@ -69,6 +69,15 @@ const navGroups = [
     ],
   },
   {
+    label: 'Recursos Humanos',
+    items: [
+      { path: '/rh/colaboradores', icon: Users, label: 'Colaboradores' },
+      { path: '/rh/feedbacks', icon: MessageSquare, label: 'Feedbacks' },
+      { path: '/rh/avaliacoes', icon: Star, label: 'Avaliações' },
+      { path: '/rh/setores', icon: BarChart2, label: 'Visão por Setor' },
+    ],
+  },
+  {
     label: 'Conteúdo',
     items: [
       { path: '/conteudo/dashboard', icon: BarChart3, label: 'Dashboard de Conteúdo' },

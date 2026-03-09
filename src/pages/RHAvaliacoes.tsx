@@ -79,7 +79,7 @@ export default function RHAvaliacoes() {
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
-        <PageHeader title="Avaliações 360°" subtitle="Ciclos de avaliação de desempenho">
+        <PageHeader title="Avaliações 360°" description="Ciclos de avaliação de desempenho">
           {isAdmin && <Button onClick={() => setShowNewCiclo(true)} className="bg-primary hover:bg-primary/90"><Plus className="h-4 w-4 mr-2" />Novo Ciclo</Button>}
         </PageHeader>
 

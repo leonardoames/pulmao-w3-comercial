@@ -123,10 +123,10 @@ export default function RHColaboradores() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total Ativos" value={stats.ativos} icon={Users} />
-          <StatCard title="Férias / Afastados" value={stats.feriasAfastados} icon={Briefcase} />
-          <StatCard title="Sem Avaliação Recente" value="—" icon={AlertTriangle} />
-          <StatCard title="Folha Salarial" value={stats.folha !== null ? `R$ ${stats.folha.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'} icon={DollarSign} />
+          <StatCard title="Total Ativos" value={stats.ativos} icon={<Users className="h-5 w-5" />} />
+          <StatCard title="Férias / Afastados" value={stats.feriasAfastados} icon={<Briefcase className="h-5 w-5" />} />
+          <StatCard title="Sem Avaliação Recente" value="—" icon={<AlertTriangle className="h-5 w-5" />} />
+          <StatCard title="Folha Salarial" value={stats.folha !== null ? `R$ ${stats.folha.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'} icon={<DollarSign className="h-5 w-5" />} />
         </div>
 
         {/* Filters */}

@@ -69,7 +69,7 @@ export default function RHSetores() {
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
-        <PageHeader title="Visão por Setor" subtitle="Análise consolidada por área da empresa" />
+        <PageHeader title="Visão por Setor" description="Análise consolidada por área da empresa" />
 
         {/* Sector Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

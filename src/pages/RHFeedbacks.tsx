@@ -75,7 +75,7 @@ export default function RHFeedbacks() {
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
-        <PageHeader title="Feedbacks" subtitle="Registro de feedbacks dos colaboradores">
+        <PageHeader title="Feedbacks" description="Registro de feedbacks dos colaboradores">
           <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><Plus className="h-4 w-4 mr-2" />Novo Feedback</Button>
         </PageHeader>
 
