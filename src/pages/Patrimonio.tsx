@@ -325,6 +325,14 @@ export default function Patrimonio() {
           <SheetHeader><SheetTitle>{editBem ? 'Editar Bem' : 'Cadastrar Novo Bem'}</SheetTitle></SheetHeader>
           <div className="space-y-6 mt-4">
             <Section title="O que é esse bem?">
+              <div>
+                <div className="flex items-center gap-1">
+                  <Label>Código de tombamento</Label>
+                  <Tooltip><TooltipTrigger><HelpCircle className="h-3.5 w-3.5 text-muted-foreground" /></TooltipTrigger><TooltipContent>Código gerado automaticamente. Você pode editar, mas não é recomendado.</TooltipContent></Tooltip>
+                </div>
+                <Input value={form.tombamento || ''} onChange={e => setForm({ ...form, tombamento: e.target.value })} placeholder="W3-0001" className="font-mono" />
+                {!editBem && <p className="text-xs text-muted-foreground mt-1">Próximo código disponível: {form.tombamento}</p>}
+              </div>
               <div><Label>Descrição *</Label><Input value={form.descricao || ''} onChange={e => setForm({ ...form, descricao: e.target.value })} placeholder="Ex: Notebook Dell" /></div>
               <div>
                 <Label>Categoria</Label>
