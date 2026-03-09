@@ -416,6 +416,7 @@ export default function Patrimonio() {
               {(createBem.isPending || updateBem.isPending) ? 'Salvando...' : editBem ? 'Salvar Alterações' : 'Cadastrar Bem'}
             </Button>
           </div>
+          </TooltipProvider>
         </SheetContent>
       </Sheet>
 
