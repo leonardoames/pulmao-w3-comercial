@@ -34,6 +34,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Almoxarifado from "./pages/Almoxarifado";
 import Patrimonio from "./pages/Patrimonio";
 import PatrimonioAmbientes from "./pages/PatrimonioAmbientes";
+import RHColaboradores from "./pages/RHColaboradores";
+import RHColaboradorDetail from "./pages/RHColaboradorDetail";
+import RHFeedbacks from "./pages/RHFeedbacks";
+import RHAvaliacoes from "./pages/RHAvaliacoes";
+import RHSetores from "./pages/RHSetores";
 
 const queryClient = new QueryClient();
 
