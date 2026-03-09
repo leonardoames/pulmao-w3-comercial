@@ -86,7 +86,7 @@ export default function RHColaboradores() {
   };
 
   const handleImportSelected = () => {
-    const selected = closerProfiles.filter(p => selectedClosers.includes(p.id));
+    const selected = newCloserProfiles.filter(p => selectedClosers.includes(p.id));
     if (selected.length > 0) {
       importClosers.mutate(selected.map(p => ({ id: p.id, nome: p.nome })));
     }
