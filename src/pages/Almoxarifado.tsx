@@ -98,12 +98,75 @@ export default function Almoxarifado() {
     });
   };
 
-  const handleEntrada = () => {
+  const resetEntradaState = () => {
+    setMovForm({ item_id: '', quantidade: 0, valor_unitario: 0, data_movimentacao: new Date().toISOString().split('T')[0], observacao: '' });
+    setEntradaSearchTerm('');
+    setEntradaSelectedName('');
+    setEntradaCreatingNew(false);
+    setEntradaNewItem({ categoria: 'Outros', unidade_medida: 'Unidade', estoque_minimo: 0, estoque_maximo: 0 });
+  };
+
+  const handleEntrada = async () => {
     if (movForm.quantidade <= 0) return;
+
+    if (entradaCreatingNew && entradaSelectedName) {
+      // Create item + register movement in one flow
+      setEntradaSubmitting(true);
+      try {
+        const { data: newItemData, error: createErr } = await (supabase as any)
+          .from('almoxarifado_itens')
+          .insert({
+            nome: entradaSelectedName,
+            categoria: entradaNewItem.categoria,
+            unidade_medida: entradaNewItem.unidade_medida,
+            estoque_minimo: entradaNewItem.estoque_minimo,
+            estoque_maximo: entradaNewItem.estoque_maximo,
+            criado_por: user?.id,
+          })
+          .select()
+          .single();
+        if (createErr) throw createErr;
+
+        // Now register the movement
+        const { error: movErr } = await (supabase as any)
+          .from('almoxarifado_movimentacoes')
+          .insert({
+            item_id: newItemData.id,
+            tipo: 'Entrada',
+            quantidade: movForm.quantidade,
+            valor_unitario: movForm.valor_unitario || 0,
+            data_movimentacao: movForm.data_movimentacao || new Date().toISOString().split('T')[0],
+            observacao: movForm.observacao || '',
+            responsavel_user_id: user?.id,
+          });
+        if (movErr) throw movErr;
+
+        // Update item stock
+        await (supabase as any)
+          .from('almoxarifado_itens')
+          .update({
+            quantidade_atual: movForm.quantidade,
+            ultimo_preco: movForm.valor_unitario || 0,
+          })
+          .eq('id', newItemData.id);
+
+        queryClient.invalidateQueries({ queryKey: ['almoxarifado-itens'] });
+        queryClient.invalidateQueries({ queryKey: ['almoxarifado-movimentacoes'] });
+        toast.success('Item criado e entrada registrada!');
+        setShowEntrada(false);
+        resetEntradaState();
+      } catch (err: any) {
+        toast.error(err.message || 'Erro ao registrar entrada');
+      } finally {
+        setEntradaSubmitting(false);
+      }
+      return;
+    }
+
     registrarMov.mutate({ ...movForm, tipo: 'Entrada' }, {
       onSuccess: () => {
         setShowEntrada(false);
-        setMovForm({ item_id: '', quantidade: 0, valor_unitario: 0, data_movimentacao: new Date().toISOString().split('T')[0], observacao: '' });
+        resetEntradaState();
       },
     });
   };
