@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatCard } from '@/components/ui/stat-card';
 import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, Link as LinkIcon, RefreshCw } from 'lucide-react';
-import { useRHColaboradores, useCreateColaborador, useImportClosers } from '@/hooks/useRH';
+import { useRHColaboradores, useCreateColaborador, useImportClosers, useRHSetoresConfig } from '@/hooks/useRH';
 import { useClosers } from '@/hooks/useProfiles';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { SETOR_LABELS, STATUS_COLABORADOR_LABELS, STATUS_COLABORADOR_COLORS, TIPO_CONTRATO_LABELS, type SetorRH, type TipoContrato, type StatusColaborador } from '@/types/rh';
