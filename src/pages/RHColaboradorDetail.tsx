@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Pencil, Save, X, LinkIcon, Star, Phone, CreditCard, Calendar, Gift } from 'lucide-react';
+import { ArrowLeft, Pencil, Save, X, LinkIcon, Star, Phone, CreditCard, Calendar, Gift, UserCheck, UserX, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useRHColaborador, useUpdateColaborador, useFeedbacksByColaborador, useAvaliacoesByColaborador, useRHSetoresConfig } from '@/hooks/useRH';
+import { useProfiles } from '@/hooks/useProfiles';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { SETOR_LABELS, STATUS_COLABORADOR_LABELS, STATUS_COLABORADOR_COLORS, TIPO_CONTRATO_LABELS, TIPO_FEEDBACK_COLORS, TIPO_FEEDBACK_LABELS, type SetorRH, type TipoContrato, type StatusColaborador } from '@/types/rh';
 import { format } from 'date-fns';
@@ -19,7 +21,7 @@ import { ptBR } from 'date-fns/locale';
 export default function RHColaboradorDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: colab, isLoading } = useRHColaborador(id);
+  const { data: colab, isLoading, error } = useRHColaborador(id);
   const { data: feedbacks = [] } = useFeedbacksByColaborador(id);
   const { data: avaliacoes = [] } = useAvaliacoesByColaborador(id);
   const { data: setoresConfig = [] } = useRHSetoresConfig();
@@ -27,19 +29,66 @@ export default function RHColaboradorDetail() {
   const { data: userRole } = useCurrentUserRole();
   const isAdmin = userRole?.role === 'MASTER' || userRole?.role === 'DIRETORIA' || userRole?.role === 'GESTOR_COMERCIAL';
 
+  const { data: profiles = [] } = useProfiles();
+
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [linkingUser, setLinkingUser] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
-  if (isLoading || !colab) {
+  const toggleReveal = (key: string) =>
+    setRevealed(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
+  const renderSensitive = (displayValue: string | null, key: string) => {
+    if (!isAdmin) return null;
+    const shown = revealed.has(key);
+    return (
+      <span className="inline-flex items-center gap-1">
+        <span className={shown ? '' : 'tracking-widest'}>{shown ? (displayValue || '—') : (displayValue ? '•••••••' : '—')}</span>
+        {displayValue && (
+          <button onClick={() => toggleReveal(key)} className="text-muted-foreground hover:text-foreground transition-colors ml-0.5">
+            {shown ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+          </button>
+        )}
+      </span>
+    );
+  };
+
+  if (isLoading) {
     return <AppLayout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div></AppLayout>;
+  }
+
+  if (error || !colab) {
+    return (
+      <AppLayout>
+        <div className="p-6 space-y-4 max-w-4xl">
+          <Button variant="ghost" onClick={() => navigate('/rh/colaboradores')} className="gap-2 text-muted-foreground"><ArrowLeft className="h-4 w-4" />Voltar</Button>
+          <div className="rounded-xl p-5 flex items-center gap-3" style={{ background: 'hsla(0,80%,50%,0.1)', border: '1px solid hsla(0,80%,50%,0.2)', color: 'hsl(0,80%,65%)' }}>
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium">{error ? 'Erro ao carregar colaborador' : 'Colaborador não encontrado'}</p>
+              {error && <p className="text-xs opacity-70">{(error as any).message}</p>}
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
   }
 
   const startEdit = () => {
     setForm({ ...colab });
+    setFormErrors({});
     setEditing(true);
   };
 
   const saveEdit = () => {
+    const errors: Record<string, string> = {};
+    if (!form.nome?.trim()) errors.nome = 'Nome é obrigatório.';
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'E-mail inválido.';
+    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    setFormErrors({});
     updateColaborador.mutate({ id: colab.id, ...form }, { onSuccess: () => setEditing(false) });
   };
 
@@ -82,6 +131,54 @@ export default function RHColaboradorDetail() {
             )}
           </div>
           {isAdmin && !editing && <Button variant="outline" size="sm" onClick={startEdit}><Pencil className="h-4 w-4 mr-1" />Editar</Button>}
+          {isAdmin && !editing && colab.status === 'ativo' && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/40 hover:bg-destructive/10">
+                  <UserX className="h-4 w-4 mr-1" />Inativar
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Inativar colaborador?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {colab.nome} será marcado como inativo. O histórico de feedbacks e avaliações é preservado.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction className="bg-destructive hover:bg-destructive/90"
+                    onClick={() => updateColaborador.mutate({ id: colab.id, status: 'inativo' })}>
+                    Inativar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          {isAdmin && !editing && colab.status === 'inativo' && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-green-500 border-green-500/40 hover:bg-green-500/10">
+                  <UserCheck className="h-4 w-4 mr-1" />Reativar
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reativar colaborador?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {colab.nome} voltará ao status ativo.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction className="bg-green-600 hover:bg-green-700"
+                    onClick={() => updateColaborador.mutate({ id: colab.id, status: 'ativo' })}>
+                    Reativar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
 
         {/* Dados Pessoais */}
@@ -90,8 +187,16 @@ export default function RHColaboradorDetail() {
           {editing ? (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>Nome</Label><Input value={form.nome || ''} onChange={e => setForm((f: any) => ({ ...f, nome: e.target.value }))} /></div>
-                <div><Label>Email</Label><Input value={form.email || ''} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} /></div>
+                <div>
+                  <Label>Nome *</Label>
+                  <Input value={form.nome || ''} onChange={e => setForm((f: any) => ({ ...f, nome: e.target.value }))} className={formErrors.nome ? 'border-destructive' : ''} />
+                  {formErrors.nome && <p className="text-xs text-destructive mt-1">{formErrors.nome}</p>}
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input value={form.email || ''} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} className={formErrors.email ? 'border-destructive' : ''} />
+                  {formErrors.email && <p className="text-xs text-destructive mt-1">{formErrors.email}</p>}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>CPF/CNPJ</Label><Input value={form.cpf_cnpj || ''} onChange={e => setForm((f: any) => ({ ...f, cpf_cnpj: e.target.value }))} placeholder="000.000.000-00" /></div>
@@ -162,17 +267,17 @@ export default function RHColaboradorDetail() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><span className="text-muted-foreground">Email:</span> <span>{colab.email || '—'}</span></div>
               <div><span className="text-muted-foreground">Cargo:</span> <span>{colab.cargo || '—'}</span></div>
-              <div><span className="text-muted-foreground">CPF/CNPJ:</span> <span>{colab.cpf_cnpj || '—'}</span></div>
-              <div className="flex items-center gap-1"><Phone className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Telefone:</span> <span>{colab.telefone || '—'}</span></div>
+              {isAdmin && <div><span className="text-muted-foreground">CPF/CNPJ:</span> {renderSensitive(colab.cpf_cnpj, 'cpf_cnpj')}</div>}
+              {isAdmin && <div className="flex items-center gap-1"><Phone className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Telefone:</span> <span className="ml-1">{renderSensitive(colab.telefone, 'telefone')}</span></div>}
               <div><span className="text-muted-foreground">Setor:</span> <span>{SETOR_LABELS[colab.setor as keyof typeof SETOR_LABELS] || colab.setor}</span></div>
               <div><span className="text-muted-foreground">Contrato:</span> <span>{TIPO_CONTRATO_LABELS[colab.tipo_contrato as keyof typeof TIPO_CONTRATO_LABELS] || colab.tipo_contrato}</span></div>
               <div><span className="text-muted-foreground">Data Entrada:</span> <span>{colab.data_entrada ? format(new Date(colab.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}</span></div>
               <div><span className="text-muted-foreground">Data Término:</span> <span>{colab.data_termino ? format(new Date(colab.data_termino + 'T12:00:00'), 'dd/MM/yyyy') : '—'}</span></div>
               <div><span className="text-muted-foreground">Status:</span> <span>{STATUS_COLABORADOR_LABELS[colab.status as keyof typeof STATUS_COLABORADOR_LABELS]}</span></div>
               <div className="flex items-center gap-1"><Gift className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Aniversário:</span> <span>{colab.aniversario || '—'}</span></div>
-              {isAdmin && <div><span className="text-muted-foreground">Salário:</span> <span>{colab.salario ? `R$ ${colab.salario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span></div>}
-              {isAdmin && <div><span className="text-muted-foreground">OTE/Comissão:</span> <span>{colab.ote_comissao || '—'}</span></div>}
-              {isAdmin && <div className="flex items-center gap-1"><CreditCard className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Chave Pix:</span> <span>{colab.chave_pix || '—'}</span></div>}
+              {isAdmin && <div><span className="text-muted-foreground">Salário:</span> {renderSensitive(colab.salario ? `R$ ${colab.salario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : null, 'salario')}</div>}
+              {isAdmin && <div><span className="text-muted-foreground">OTE/Comissão:</span> {renderSensitive(colab.ote_comissao, 'ote_comissao')}</div>}
+              {isAdmin && <div className="flex items-center gap-1"><CreditCard className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Chave Pix:</span> <span className="ml-1">{renderSensitive(colab.chave_pix, 'chave_pix')}</span></div>}
               {colab.centro_custo && colab.centro_custo.length > 0 && (
                 <div className="col-span-2"><span className="text-muted-foreground">Centro de Custo:</span> <span>{colab.centro_custo.join(', ')}</span></div>
               )}
@@ -189,6 +294,65 @@ export default function RHColaboradorDetail() {
               <Badge variant="outline" className="text-xs">🔗 Dados do Pulmão</Badge>
             </div>
             <p className="text-sm text-muted-foreground">Dados sincronizados automaticamente do módulo comercial.</p>
+          </section>
+        )}
+
+        {/* Conta Pulmão */}
+        {isAdmin && (
+          <section className="rounded-xl p-5 space-y-3" style={{ background: 'hsl(0, 0%, 9%)', border: '1px solid hsla(0, 0%, 100%, 0.07)' }}>
+            <h2 className="text-lg font-semibold">Conta Pulmão</h2>
+            {colab.user_id ? (
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium text-green-400">Conta vinculada</span>
+                  </div>
+                  {(() => { const p = profiles.find(x => x.id === colab.user_id); return p ? (
+                    <p className="text-sm text-muted-foreground pl-6">{p.nome} · {p.email}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground pl-6 font-mono">{colab.user_id}</p>
+                  ); })()}
+                </div>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                  onClick={() => updateColaborador.mutate({ id: colab.id, user_id: null })}
+                  disabled={updateColaborador.isPending}>
+                  <UserX className="h-4 w-4 mr-1" />Desvincular
+                </Button>
+              </div>
+            ) : linkingUser ? (
+              <div className="space-y-3">
+                <Input placeholder="Buscar por nome ou email..." value={userSearch} onChange={e => setUserSearch(e.target.value)} autoFocus />
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {profiles.filter(p => {
+                    const q = userSearch.toLowerCase();
+                    return !q || p.nome.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
+                  }).slice(0, 10).map(p => (
+                    <button key={p.id} onClick={() => { updateColaborador.mutate({ id: colab.id, user_id: p.id }, { onSuccess: () => { setLinkingUser(false); setUserSearch(''); } }); }}
+                      className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/5 flex items-center justify-between transition-colors"
+                      disabled={updateColaborador.isPending}>
+                      <span>{p.nome}</span>
+                      <span className="text-xs text-muted-foreground">{p.email}</span>
+                    </button>
+                  ))}
+                  {profiles.filter(p => { const q = userSearch.toLowerCase(); return !q || p.nome.toLowerCase().includes(q) || p.email.toLowerCase().includes(q); }).length === 0 && (
+                    <p className="text-sm text-muted-foreground px-3 py-2">Nenhum usuário encontrado.</p>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setLinkingUser(false); setUserSearch(''); }}>
+                  <X className="h-4 w-4 mr-1" />Cancelar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <UserX className="h-4 w-4" />Nenhuma conta Pulmão vinculada.
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setLinkingUser(true)}>
+                  <LinkIcon className="h-4 w-4 mr-1" />Vincular conta
+                </Button>
+              </div>
+            )}
           </section>
         )}
 
