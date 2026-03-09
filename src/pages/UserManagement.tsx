@@ -470,7 +470,7 @@ export default function UserManagement() {
               {setoresConfig.filter(s => s.ativo).length > 0 && (
                 <div className="space-y-2">
                   <Label>Centro de Custo</Label>
-                  <Select value={editForm.centro_custo} onValueChange={(v) => setEditForm({ ...editForm, centro_custo: v })}>
+                  <Select value={editForm.centro_custo || '__none__'} onValueChange={(v) => setEditForm({ ...editForm, centro_custo: v === '__none__' ? '' : v })}>
                     <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">Nenhum</SelectItem>
