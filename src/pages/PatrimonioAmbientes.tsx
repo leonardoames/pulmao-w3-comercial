@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, ArrowLeft } from 'lucide-react';
 import { usePatrimonioAmbientes, useCreateAmbiente, useUpdateAmbiente, PatrimonioAmbiente } from '@/hooks/usePatrimonio';
+import { useNavigate } from 'react-router-dom';
 
 export default function PatrimonioAmbientes() {
   const { data: ambientes = [], isLoading } = usePatrimonioAmbientes();
