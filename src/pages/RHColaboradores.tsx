@@ -11,9 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatCard } from '@/components/ui/stat-card';
-import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, Link as LinkIcon } from 'lucide-react';
+import { Users, UserPlus, Briefcase, DollarSign, AlertTriangle, Search, Link as LinkIcon, RefreshCw } from 'lucide-react';
 import { useRHColaboradores, useCreateColaborador, useImportClosers } from '@/hooks/useRH';
-import { useProfiles } from '@/hooks/useProfiles';
+import { useClosers } from '@/hooks/useProfiles';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { SETOR_LABELS, STATUS_COLABORADOR_LABELS, STATUS_COLABORADOR_COLORS, TIPO_CONTRATO_LABELS, type SetorRH, type TipoContrato, type StatusColaborador } from '@/types/rh';
 import { format } from 'date-fns';
@@ -22,7 +22,7 @@ import { ptBR } from 'date-fns/locale';
 export default function RHColaboradores() {
   const navigate = useNavigate();
   const { data: colaboradores = [], isLoading } = useRHColaboradores();
-  const { data: profiles = [] } = useProfiles();
+  const { data: allClosers = [] } = useClosers();
   const { data: userRole } = useCurrentUserRole();
   const createColaborador = useCreateColaborador();
   const importClosers = useImportClosers();
@@ -36,6 +36,7 @@ export default function RHColaboradores() {
   const [showNew, setShowNew] = useState(false);
   const [showImportReview, setShowImportReview] = useState(false);
   const [selectedClosers, setSelectedClosers] = useState<string[]>([]);
+  const [showSyncButton, setShowSyncButton] = useState(false);
 
   // New colaborador form
   const [form, setForm] = useState({
@@ -44,13 +45,24 @@ export default function RHColaboradores() {
     status: 'ativo' as StatusColaborador, observacoes: '',
   });
 
-  // Closers not yet imported
-  const closerProfiles = useMemo(() => {
-    const importedCloserIds = new Set(colaboradores.filter(c => c.closer_id).map(c => c.closer_id));
-    return profiles.filter(p => p.role === 'Closer' && p.ativo && !importedCloserIds.has(p.id));
-  }, [profiles, colaboradores]);
+  // Closers already imported
+  const importedCloserIds = useMemo(
+    () => new Set(colaboradores.filter(c => c.closer_id).map(c => c.closer_id)),
+    [colaboradores]
+  );
 
-  const showImportBanner = !isLoading && isAdmin && closerProfiles.length > 0;
+  // Closers not yet imported
+  const newCloserProfiles = useMemo(
+    () => allClosers.filter(p => !importedCloserIds.has(p.id)),
+    [allClosers, importedCloserIds]
+  );
+
+  const alreadyImportedCount = useMemo(
+    () => allClosers.filter(p => importedCloserIds.has(p.id)).length,
+    [allClosers, importedCloserIds]
+  );
+
+  const showImportBanner = !isLoading && isAdmin && newCloserProfiles.length > 0;
 
   const filteredColabs = useMemo(() => {
     return colaboradores.filter(c => {
@@ -70,11 +82,11 @@ export default function RHColaboradores() {
   }, [colaboradores, isAdmin]);
 
   const handleImportAll = () => {
-    importClosers.mutate(closerProfiles.map(p => ({ id: p.id, nome: p.nome })));
+    importClosers.mutate(newCloserProfiles.map(p => ({ id: p.id, nome: p.nome })));
   };
 
   const handleImportSelected = () => {
-    const selected = closerProfiles.filter(p => selectedClosers.includes(p.id));
+    const selected = newCloserProfiles.filter(p => selectedClosers.includes(p.id));
     if (selected.length > 0) {
       importClosers.mutate(selected.map(p => ({ id: p.id, nome: p.nome })));
     }
@@ -103,19 +115,36 @@ export default function RHColaboradores() {
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
-        <PageHeader title="Colaboradores" description="Gestão de colaboradores da W3">
-          {isAdmin && <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><UserPlus className="h-4 w-4 mr-2" />Novo Colaborador</Button>}
-        </PageHeader>
+        <div className="flex items-center justify-between">
+          <PageHeader title="Colaboradores" description="Gestão de colaboradores da W3">
+            {isAdmin && <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><UserPlus className="h-4 w-4 mr-2" />Novo Colaborador</Button>}
+          </PageHeader>
+        </div>
+
+        {/* Sync Closers Button */}
+        {isAdmin && !showImportBanner && allClosers.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setSelectedClosers(newCloserProfiles.map(p => p.id)); setShowImportReview(true); }}
+            className="text-muted-foreground text-xs"
+          >
+            <RefreshCw className="h-3 w-3 mr-1.5" />
+            Sincronizar closers ({allClosers.length} no sistema, {alreadyImportedCount} importados)
+          </Button>
+        )}
 
         {/* Import Banner */}
         {showImportBanner && (
           <div className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: 'hsla(24, 94%, 53%, 0.1)', border: '1px solid hsla(24, 94%, 53%, 0.2)' }}>
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium">{closerProfiles.length} closers encontrados no sistema. Importar automaticamente como colaboradores?</span>
+              <span className="text-sm font-medium">
+                {allClosers.length} closers encontrados, {alreadyImportedCount} já importados, {newCloserProfiles.length} novos disponíveis
+              </span>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setSelectedClosers(closerProfiles.map(p => p.id)); setShowImportReview(true); }}>Revisar antes</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedClosers(newCloserProfiles.map(p => p.id)); setShowImportReview(true); }}>Revisar antes</Button>
               <Button size="sm" onClick={handleImportAll} disabled={importClosers.isPending} className="bg-primary hover:bg-primary/90">Importar todos</Button>
             </div>
           </div>
@@ -239,14 +268,24 @@ export default function RHColaboradores() {
       {/* Import Review Dialog */}
       <Dialog open={showImportReview} onOpenChange={setShowImportReview}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Revisar Closers para Importar</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Revisar Closers</DialogTitle></DialogHeader>
           <div className="space-y-2 max-h-[300px] overflow-y-auto">
-            {closerProfiles.map(p => (
+            {/* Already imported (grayed out) */}
+            {allClosers.filter(p => importedCloserIds.has(p.id)).map(p => (
+              <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg opacity-50">
+                <Checkbox checked disabled />
+                <span className="text-sm">{p.nome}</span>
+                <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>Já importado</span>
+              </div>
+            ))}
+            {/* New closers */}
+            {newCloserProfiles.map(p => (
               <label key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
                 <Checkbox checked={selectedClosers.includes(p.id)} onCheckedChange={checked => {
                   setSelectedClosers(prev => checked ? [...prev, p.id] : prev.filter(id => id !== p.id));
                 }} />
                 <span className="text-sm">{p.nome}</span>
+                <span className="text-[10px] ml-auto px-2 py-0.5 rounded-full" style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316' }}>Novo</span>
               </label>
             ))}
           </div>
