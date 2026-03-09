@@ -222,6 +222,21 @@ export default function Almoxarifado() {
               <TableBody>
                 {isLoading ? (
                   <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+                ) : !hasItems ? (
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <Package className="h-12 w-12 text-muted-foreground/40" />
+                        <h3 className="font-semibold text-lg">Nenhum item cadastrado ainda</h3>
+                        <p className="text-sm text-muted-foreground text-center max-w-md">
+                          Comece cadastrando os materiais que sua empresa usa. Depois disso, você poderá registrar entradas e saídas.
+                        </p>
+                        <Button onClick={() => setShowNewItem(true)} className="mt-2 gap-1.5" style={{ background: 'hsl(24, 94%, 53%)' }}>
+                          <Plus className="h-4 w-4" /> Cadastrar Primeiro Item
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : filteredItens.length === 0 ? (
                   <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum item encontrado</TableCell></TableRow>
                 ) : filteredItens.map(item => {
