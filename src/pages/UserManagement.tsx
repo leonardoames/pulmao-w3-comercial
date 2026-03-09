@@ -314,10 +314,10 @@ export default function UserManagement() {
                     {setoresConfig.filter(s => s.ativo).length > 0 && (
                       <div className="space-y-2">
                         <Label>Centro de Custo</Label>
-                        <Select value={newUser.centro_custo} onValueChange={(v) => setNewUser({ ...newUser, centro_custo: v })}>
+                        <Select value={newUser.centro_custo || '__none__'} onValueChange={(v) => setNewUser({ ...newUser, centro_custo: v === '__none__' ? '' : v })}>
                           <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="__none__">Nenhum</SelectItem>
                             {setoresConfig.filter(s => s.ativo).map(s => (
                               <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
                             ))}
@@ -470,10 +470,10 @@ export default function UserManagement() {
               {setoresConfig.filter(s => s.ativo).length > 0 && (
                 <div className="space-y-2">
                   <Label>Centro de Custo</Label>
-                  <Select value={editForm.centro_custo} onValueChange={(v) => setEditForm({ ...editForm, centro_custo: v })}>
+                  <Select value={editForm.centro_custo || '__none__'} onValueChange={(v) => setEditForm({ ...editForm, centro_custo: v === '__none__' ? '' : v })}>
                     <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
                       {setoresConfig.filter(s => s.ativo).map(s => (
                         <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
                       ))}
