@@ -598,8 +598,8 @@ export default function RHOrganograma() {
   }
 
   return (
-    <AppLayout>
-      <div className="relative w-full" style={{ height: 'calc(100vh - 64px)' }}>
+    <AppLayout noPadding>
+      <div className="relative w-full" style={{ height: 'calc(100vh - 56px)' }}>
         {/* Floating Toolbar */}
         <div
           className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-2 rounded-xl"
