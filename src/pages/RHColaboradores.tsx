@@ -119,6 +119,30 @@ export default function RHColaboradores() {
     return result;
   }, [newCloserProfiles, colaboradores]);
 
+  // Detect duplicate pairs among ALL existing colaboradores
+  const duplicatePairs = useMemo(() => {
+    const pairs: { a: typeof colaboradores[0]; b: typeof colaboradores[0]; reason: string }[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < colaboradores.length; i++) {
+      for (let j = i + 1; j < colaboradores.length; j++) {
+        const a = colaboradores[i];
+        const b = colaboradores[j];
+        const key = `${a.id}|${b.id}`;
+        if (seen.has(key)) continue;
+        const normA = normalizeName(a.nome);
+        const normB = normalizeName(b.nome);
+        let reason = '';
+        if (normA === normB || normA.includes(normB) || normB.includes(normA)) {
+          reason = 'nome similar';
+        } else if (a.email && b.email && a.email.toLowerCase() === b.email.toLowerCase()) {
+          reason = 'mesmo e-mail';
+        }
+        if (reason) { seen.add(key); pairs.push({ a, b, reason }); }
+      }
+    }
+    return pairs;
+  }, [colaboradores]);
+
   // Users linked to colaboradores (via user_id)
   const linkedUserIds = useMemo(
     () => new Set(colaboradores.filter(c => c.user_id).map(c => c.user_id)),
@@ -246,15 +270,21 @@ export default function RHColaboradores() {
         </div>
 
         {/* Sync Closers Button */}
-        {isAdmin && !showImportBanner && allClosers.length > 0 && (
+        {isAdmin && !showImportBanner && (allClosers.length > 0 || duplicatePairs.length > 0) && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => { setSelectedClosers(newCloserProfiles.map(p => p.id)); setShowImportReview(true); }}
-            className="text-muted-foreground text-xs"
+            className="text-muted-foreground text-xs gap-2"
           >
-            <RefreshCw className="h-3 w-3 mr-1.5" />
-            Sincronizar closers ({allClosers.length} no sistema, {alreadyImportedCount} importados)
+            <RefreshCw className="h-3 w-3" />
+            Sincronizar
+            {allClosers.length > 0 && <span className="opacity-60">{alreadyImportedCount}/{allClosers.length} closers</span>}
+            {duplicatePairs.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/20 text-yellow-400">
+                {duplicatePairs.length} duplicata{duplicatePairs.length !== 1 ? 's' : ''}
+              </span>
+            )}
           </Button>
         )}
 
@@ -658,9 +688,18 @@ export default function RHColaboradores() {
 
       {/* Import Review Dialog */}
       <Dialog open={showImportReview} onOpenChange={setShowImportReview}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Revisar Closers</DialogTitle></DialogHeader>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Sincronizar colaboradores
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+          {/* Closers section */}
+          {(newCloserProfiles.length > 0 || allClosers.filter(p => importedCloserIds.has(p.id)).length > 0) && (
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1">Novos closers</p>
+          )}
             {Object.keys(possibleDuplicates).length > 0 && (
               <div className="flex items-center gap-2 p-3 rounded-lg text-sm" style={{ background: 'hsla(38,92%,50%,0.1)', border: '1px solid hsla(38,92%,50%,0.2)', color: 'hsl(38,92%,60%)' }}>
                 <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -692,6 +731,28 @@ export default function RHColaboradores() {
                 <span className="text-[10px] shrink-0 px-2 py-0.5 rounded-full" style={{ background: 'rgba(249,115,22,0.15)', color: '#F97316' }}>Novo</span>
               </label>
             ))}
+            {/* Existing duplicate pairs section */}
+            {duplicatePairs.length > 0 && (
+              <div className="space-y-2 mt-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1">
+                  Duplicatas detectadas
+                </p>
+                {duplicatePairs.map(({ a, b, reason }) => (
+                  <div key={`${a.id}-${b.id}`} className="flex items-center gap-3 p-2.5 rounded-lg"
+                    style={{ background: 'hsla(38,92%,50%,0.08)', border: '1px solid hsla(38,92%,50%,0.15)' }}>
+                    <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <p className="text-sm font-medium truncate">{a.nome} × {b.nome}</p>
+                      <p className="text-xs text-muted-foreground">{reason} · {a.cargo || '—'} / {b.cargo || '—'}</p>
+                    </div>
+                    <Button size="sm" variant="outline" className="shrink-0 text-xs"
+                      onClick={() => { setShowImportReview(false); setQuickMergeId(a.id); setQuickMergeSearch(b.nome); }}>
+                      <GitMerge className="h-3 w-3 mr-1" />Juntar
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowImportReview(false)}>Cancelar</Button>
