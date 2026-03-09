@@ -115,19 +115,36 @@ export default function RHColaboradores() {
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
-        <PageHeader title="Colaboradores" description="Gestão de colaboradores da W3">
-          {isAdmin && <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><UserPlus className="h-4 w-4 mr-2" />Novo Colaborador</Button>}
-        </PageHeader>
+        <div className="flex items-center justify-between">
+          <PageHeader title="Colaboradores" description="Gestão de colaboradores da W3">
+            {isAdmin && <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90"><UserPlus className="h-4 w-4 mr-2" />Novo Colaborador</Button>}
+          </PageHeader>
+        </div>
+
+        {/* Sync Closers Button */}
+        {isAdmin && !showImportBanner && allClosers.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setSelectedClosers(newCloserProfiles.map(p => p.id)); setShowImportReview(true); }}
+            className="text-muted-foreground text-xs"
+          >
+            <RefreshCw className="h-3 w-3 mr-1.5" />
+            Sincronizar closers ({allClosers.length} no sistema, {alreadyImportedCount} importados)
+          </Button>
+        )}
 
         {/* Import Banner */}
         {showImportBanner && (
           <div className="rounded-xl p-4 flex items-center justify-between gap-4" style={{ background: 'hsla(24, 94%, 53%, 0.1)', border: '1px solid hsla(24, 94%, 53%, 0.2)' }}>
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium">{closerProfiles.length} closers encontrados no sistema. Importar automaticamente como colaboradores?</span>
+              <span className="text-sm font-medium">
+                {allClosers.length} closers encontrados, {alreadyImportedCount} já importados, {newCloserProfiles.length} novos disponíveis
+              </span>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setSelectedClosers(closerProfiles.map(p => p.id)); setShowImportReview(true); }}>Revisar antes</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedClosers(newCloserProfiles.map(p => p.id)); setShowImportReview(true); }}>Revisar antes</Button>
               <Button size="sm" onClick={handleImportAll} disabled={importClosers.isPending} className="bg-primary hover:bg-primary/90">Importar todos</Button>
             </div>
           </div>
