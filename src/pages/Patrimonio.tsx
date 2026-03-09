@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, Search, Eye, Pencil, ArrowRightLeft, Wrench, XCircle, HelpCircle, Settings } from 'lucide-react';
 import {
   usePatrimonioBens, usePatrimonioAmbientes, useCreatePatrimonioBem, useUpdatePatrimonioBem,
