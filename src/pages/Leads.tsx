@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -73,7 +74,9 @@ function getLeadLTV(lead: LeadW3): number {
 }
 
 export default function Leads() {
-  const [search, setSearch] = useState('');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterNicho, setFilterNicho] = useState('all');
   const [selectedLead, setSelectedLead] = useState<LeadW3 | null>(null);
@@ -592,6 +595,13 @@ export default function Leads() {
                             disabled={createProduto.isPending || updateProduto.isPending}>
                             {existing ? 'Salvar alterações' : pf.status === 'nunca_contratou' ? 'Sem contrato' : 'Registrar produto'}
                           </Button>
+                          {(tipo === 'trafego' || tipo === 'marketplace') && existing && (
+                            <Button size="sm" variant="ghost"
+                              className="w-full text-white/40 hover:text-white/70 h-7 text-xs"
+                              onClick={() => navigate(tipo === 'trafego' ? '/trafego-pago/clientes' : '/marketplaces/clientes')}>
+                              Abrir ficha operacional →
+                            </Button>
+                          )}
                         </div>
                       );
                     })}

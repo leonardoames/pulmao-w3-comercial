@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, AlertTriangle, Database } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -261,6 +262,11 @@ export default function MarketplaceClientes() {
                     {receitaEsperada[c.id] != null ? formatCurrency(receitaEsperada[c.id]) : '—'}
                   </TableCell>
                   <TableCell className="text-right">
+                    <Button asChild variant="ghost" size="sm" onClick={e => e.stopPropagation()}>
+                      <Link to={`/leads?search=${encodeURIComponent(c.nome_ecommerce)}`}>
+                        <Database className="h-4 w-4" />
+                      </Link>
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); openEdit(c); }}><Edit className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>

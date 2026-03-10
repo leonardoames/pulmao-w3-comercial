@@ -2,6 +2,66 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+// Sincroniza lead na Base Leads W3 após criar/atualizar cliente de Tráfego (non-blocking)
+async function sincronizarLeadAposClienteTrafego(cliente: {
+  id: string;
+  lead_id?: string | null;
+  cnpj?: string | null;
+  nome_ecommerce: string;
+  nicho?: string | null;
+  data_entrada?: string | null;
+  status: string;
+}) {
+  const produtoStatus = (
+    { Ativo: 'ativo', Pausado: 'congelado', Trial: 'ativo', Cancelado: 'cancelado' } as Record<string, string>
+  )[cliente.status] ?? 'ativo';
+
+  let leadId = cliente.lead_id ?? null;
+
+  if (!leadId) {
+    // 1. Busca por CNPJ
+    if (cliente.cnpj) {
+      const { data } = await supabase.from('leads_w3').select('id').eq('cnpj', cliente.cnpj).maybeSingle();
+      leadId = data?.id ?? null;
+    }
+    // 2. Fallback: busca por nome_negocio
+    if (!leadId) {
+      const { data } = await supabase.from('leads_w3').select('id').ilike('nome_negocio', cliente.nome_ecommerce).maybeSingle();
+      leadId = data?.id ?? null;
+    }
+    // 3. Cria novo lead se não encontrou
+    if (!leadId) {
+      const { data: newLead } = await supabase
+        .from('leads_w3')
+        .insert({
+          codigo: `TP-${Date.now()}`,
+          nome_negocio: cliente.nome_ecommerce,
+          nicho: cliente.nicho ?? null,
+          cnpj: cliente.cnpj ?? null,
+          data_entrada: cliente.data_entrada ?? null,
+          is_cliente_trafego: true,
+          is_cliente_educacao: false,
+          is_cliente_marketplace: false,
+        })
+        .select('id')
+        .single();
+      leadId = newLead?.id ?? null;
+    }
+    // Linka de volta na tabela operacional
+    if (leadId) {
+      await supabase.from('trafego_pago_clientes').update({ lead_id: leadId }).eq('id', cliente.id);
+    }
+  }
+
+  if (leadId) {
+    await supabase.from('leads_w3').update({ is_cliente_trafego: true }).eq('id', leadId);
+    await supabase.from('leads_w3_produtos').upsert(
+      { lead_id: leadId, produto: 'trafego', status: produtoStatus, data_inicio: cliente.data_entrada ?? null },
+      { onConflict: 'lead_id,produto' }
+    );
+  }
+}
+
 export interface TrafegoPagoCliente {
   id: string;
   nome_ecommerce: string;
@@ -20,6 +80,8 @@ export interface TrafegoPagoCliente {
   criado_em: string;
   atualizado_em: string;
   gestor_nome?: string;
+  cnpj?: string | null;
+  lead_id?: string | null;
 }
 
 export interface TrafegoPagoRegistro {
@@ -150,8 +212,13 @@ export function useUpsertTrafegoPagoCliente() {
         return data;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['trafego-pago-clientes'] });
+      if (data) {
+        sincronizarLeadAposClienteTrafego(data as any).catch((err) => {
+          console.error('Lead sync error (trafego, non-blocking):', err);
+        });
+      }
     },
   });
 }
