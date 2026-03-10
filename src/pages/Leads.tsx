@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Link2, Users, TrendingUp, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Link2, Users, TrendingUp, BarChart3, CheckCircle2, GitMerge } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
-  useLeads, useCreateLead, useUpdateLead, useAutoVincularLeads,
+  useLeads, useCreateLead, useUpdateLead, useAutoVincularLeads, useMergeLead,
   useCreateLeadProduto, useUpdateLeadProduto,
   LeadW3, LeadProduto, StatusEducacao, ProdutoTipo, ProdutoStatus,
 } from '@/hooks/useLeads';
@@ -41,6 +42,20 @@ const PRODUTOS_ORDER: ProdutoTipo[] = ['educacao', 'trafego', 'marketplace', 'pa
 const PRODUTO_LABELS: Record<ProdutoTipo, string> = {
   educacao: 'Educação', trafego: 'Tráfego', marketplace: 'Marketplace', pagamentos: 'Pagamentos',
 };
+
+const MERGE_FIELDS_CONFIG: Array<{ label: string; key: string }> = [
+  { label: 'Nome do Negócio',  key: 'nome_negocio' },
+  { label: 'Mentorado',        key: 'nome_mentorado' },
+  { label: 'Nicho',            key: 'nicho' },
+  { label: 'Email',            key: 'email' },
+  { label: 'CNPJ',             key: 'cnpj' },
+  { label: 'Status Educação',  key: 'status_educacao' },
+  { label: 'Data Entrada',     key: 'data_entrada' },
+  { label: 'Valor Total',      key: 'valor_total' },
+  { label: 'Valor Pago',       key: 'valor_pago' },
+  { label: 'NPS',              key: 'nps' },
+  { label: 'Motivo de Saída',  key: 'motivo_saida' },
+];
 
 const PRODUTO_STYLES: Record<ProdutoTipo, { ativo: string; inativo: string; color: string }> = {
   educacao:    { ativo: 'bg-orange-500/20 text-orange-400 border-orange-500/30',  inativo: 'bg-white/5 text-white/25 border-white/10', color: 'text-orange-400' },
@@ -85,10 +100,16 @@ export default function Leads() {
   const [resumeForm, setResumeForm] = useState<typeof EMPTY_FORM | null>(null);
   const [productForms, setProductForms] = useState<Record<string, Partial<LeadProduto>>>({});
 
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeSearch, setMergeSearch] = useState('');
+  const [mergeTarget, setMergeTarget] = useState<LeadW3 | null>(null);
+  const [fieldChoices, setFieldChoices] = useState<Record<string, 'from' | 'to'>>({});
+
   const { data: leads = [], isLoading, isError } = useLeads({ status: filterStatus, nicho: filterNicho, search });
   const createLead = useCreateLead();
   const updateLead = useUpdateLead();
   const autoVincular = useAutoVincularLeads();
+  const mergeLead = useMergeLead();
   const createProduto = useCreateLeadProduto();
   const updateProduto = useUpdateLeadProduto();
 
@@ -523,6 +544,11 @@ export default function Leads() {
                       <Button className="flex-1 bg-orange-500 hover:bg-orange-600 h-8 text-sm"
                         onClick={handleSaveResumo} disabled={updateLead.isPending}>Salvar</Button>
                     </div>
+                    <Button variant="ghost" size="sm"
+                      className="w-full text-white/30 hover:text-red-400 text-xs mt-1"
+                      onClick={() => { setMergeSearch(''); setMergeTarget(null); setMergeOpen(true); }}>
+                      <GitMerge className="h-3 w-3 mr-1" /> Mesclar com outro lead
+                    </Button>
                   </TabsContent>
 
                   {/* TAB PRODUTOS */}
@@ -740,6 +766,177 @@ export default function Leads() {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Dialog Mesclar Leads */}
+        <Dialog open={mergeOpen} onOpenChange={(o) => {
+          setMergeOpen(o);
+          if (!o) { setMergeTarget(null); setMergeSearch(''); setFieldChoices({}); }
+        }}>
+          <DialogContent className="bg-[#1a1a1a] border-white/10 text-white max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Mesclar lead duplicado</DialogTitle>
+              <p className="text-xs text-white/40">
+                <span className="text-red-400">{selectedLead?.nome_negocio}</span> será deletado.
+                Escolha qual lead manter e resolva os campos conflitantes.
+              </p>
+            </DialogHeader>
+
+            {/* Seleção do lead principal */}
+            <div className="space-y-2">
+              <p className="text-xs text-white/50 uppercase tracking-wide">Lead principal (será mantido)</p>
+              {!mergeTarget ? (
+                <>
+                  <Input
+                    placeholder="Digite para buscar..."
+                    className="bg-white/5 border-white/10 text-white"
+                    value={mergeSearch}
+                    onChange={(e) => setMergeSearch(e.target.value)}
+                    autoFocus
+                  />
+                  {mergeSearch.length > 0 && (
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {leads
+                        .filter(l => l.id !== selectedLead?.id && (
+                          l.nome_negocio.toLowerCase().includes(mergeSearch.toLowerCase()) ||
+                          (l.nome_mentorado ?? '').toLowerCase().includes(mergeSearch.toLowerCase())
+                        ))
+                        .slice(0, 8)
+                        .map(l => (
+                          <button key={l.id}
+                            onClick={() => {
+                              setMergeTarget(l);
+                              // Inicializa choices: conflitos default = 'to' (manter lead principal)
+                              const choices: Record<string, 'from' | 'to'> = {};
+                              MERGE_FIELDS_CONFIG.forEach(({ key }) => {
+                                const a = (selectedLead as any)?.[key];
+                                const b = (l as any)[key];
+                                if (a && b && String(a).trim() !== String(b).trim()) choices[key] = 'to';
+                              });
+                              setFieldChoices(choices);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded text-sm bg-white/5 hover:bg-white/10 text-white/80">
+                            <span className="font-medium">{l.nome_negocio}</span>
+                            <span className="text-white/40 text-xs ml-2">{l.codigo}</span>
+                          </button>
+                        ))}
+                      {leads.filter(l => l.id !== selectedLead?.id && l.nome_negocio.toLowerCase().includes(mergeSearch.toLowerCase())).length === 0 && (
+                        <p className="text-center text-white/30 text-xs py-3">Nenhum lead encontrado</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded bg-orange-500/10 border border-orange-500/30">
+                  <span className="text-orange-300 text-sm font-medium">{mergeTarget.nome_negocio}</span>
+                  <span className="text-white/40 text-xs">{mergeTarget.codigo}</span>
+                  <button className="ml-auto text-white/30 hover:text-white/60 text-xs"
+                    onClick={() => { setMergeTarget(null); setMergeSearch(''); setFieldChoices({}); }}>
+                    ✕ trocar
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Resolução de conflitos */}
+            {mergeTarget && (() => {
+              const conflicts = MERGE_FIELDS_CONFIG.filter(({ key }) => {
+                const a = (selectedLead as any)?.[key];
+                const b = (mergeTarget as any)[key];
+                return a && b && String(a).trim() !== String(b).trim();
+              });
+              const autoResolved = MERGE_FIELDS_CONFIG.filter(({ key }) => {
+                const a = (selectedLead as any)?.[key];
+                const b = (mergeTarget as any)[key];
+                return (a && !b) || (!a && b);
+              });
+
+              return (
+                <div className="space-y-4 border-t border-white/10 pt-4">
+                  {conflicts.length > 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-xs text-white/50 uppercase tracking-wide">Campos conflitantes — clique no valor que quer manter</p>
+                      {conflicts.map(({ label, key }) => {
+                        const fromVal = String((selectedLead as any)[key]);
+                        const toVal = String((mergeTarget as any)[key]);
+                        const choice = fieldChoices[key] ?? 'to';
+                        return (
+                          <div key={key}>
+                            <p className="text-xs text-white/40 mb-1">{label}</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button onClick={() => setFieldChoices(c => ({ ...c, [key]: 'from' }))}
+                                className={`text-left px-3 py-2.5 rounded text-xs border transition-colors ${
+                                  choice === 'from'
+                                    ? 'bg-red-500/20 border-red-500/50 text-red-300'
+                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                }`}>
+                                <span className="block text-[10px] opacity-50 mb-1">Este lead (será deletado)</span>
+                                {fromVal}
+                              </button>
+                              <button onClick={() => setFieldChoices(c => ({ ...c, [key]: 'to' }))}
+                                className={`text-left px-3 py-2.5 rounded text-xs border transition-colors ${
+                                  choice === 'to'
+                                    ? 'bg-orange-500/20 border-orange-500/50 text-orange-300'
+                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                }`}>
+                                <span className="block text-[10px] opacity-50 mb-1">Lead principal (será mantido)</span>
+                                {toVal}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-green-400/70 bg-green-500/10 border border-green-500/20 rounded px-3 py-2">
+                      ✓ Nenhum campo conflitante — dados serão mesclados automaticamente.
+                    </p>
+                  )}
+
+                  {autoResolved.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-white/30 uppercase tracking-wide">Auto-resolvidos (um dos lados estava vazio)</p>
+                      {autoResolved.map(({ label, key }) => {
+                        const val = (selectedLead as any)[key] || (mergeTarget as any)[key];
+                        return (
+                          <div key={key} className="flex justify-between text-xs px-2 py-1 rounded bg-white/[0.03]">
+                            <span className="text-white/40">{label}</span>
+                            <span className="text-white/60">{String(val)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            <DialogFooter className="gap-2 pt-2">
+              <Button variant="outline" className="border-white/10 text-white/70" onClick={() => setMergeOpen(false)}>Cancelar</Button>
+              <Button
+                className="bg-red-500/80 hover:bg-red-600 text-white"
+                disabled={!mergeTarget || mergeLead.isPending}
+                onClick={() => {
+                  if (!selectedLead || !mergeTarget) return;
+                  const resolvedFields: Record<string, any> = {};
+                  MERGE_FIELDS_CONFIG.forEach(({ key }) => {
+                    const fromVal = (selectedLead as any)[key];
+                    const toVal = (mergeTarget as any)[key];
+                    if (fromVal && !toVal) {
+                      resolvedFields[key] = fromVal; // auto: preenche vazio
+                    } else if (fromVal && toVal && String(fromVal).trim() !== String(toVal).trim()) {
+                      resolvedFields[key] = fieldChoices[key] === 'from' ? fromVal : toVal;
+                    }
+                  });
+                  mergeLead.mutate(
+                    { fromId: selectedLead.id, toId: mergeTarget.id, resolvedFields },
+                    { onSuccess: () => { setMergeOpen(false); setSelectedLead(null); setMergeTarget(null); setFieldChoices({}); } }
+                  );
+                }}>
+                {mergeLead.isPending ? 'Mesclando...' : 'Confirmar mesclagem'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
