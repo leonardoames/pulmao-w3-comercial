@@ -65,15 +65,15 @@ export function useLeads(filters?: { status?: string; nicho?: string; search?: s
   return useQuery({
     queryKey: ['leads_w3', filters],
     queryFn: async () => {
-      let query = supabase
-        .from('leads_w3')
+      let query = (supabase
+        .from('leads_w3') as any)
         .select('*, produtos:leads_w3_produtos(*)')
         .order('created_at', { ascending: false });
-      if (filters?.status && filters.status !== 'all') query = query.eq('status_educacao', filters.status);
+      if (filters?.status && filters.status !== 'all') query = query.eq('status', filters.status);
       if (filters?.nicho && filters.nicho !== 'all') query = query.eq('nicho', filters.nicho);
       if (filters?.search)
         query = query.or(
-          `nome_negocio.ilike.%${filters.search}%,nome_mentorado.ilike.%${filters.search}%,email.ilike.%${filters.search}%,cnpj.ilike.%${filters.search}%`
+          `nome_negocio.ilike.%${filters.search}%,nome_mentorado.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
         );
       const { data, error } = await query;
       if (error) throw error;
