@@ -129,8 +129,8 @@ export function useCreateLeadProduto() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (produto: CreateLeadProdutoInput) => {
-      const { data, error } = await supabase
-        .from('leads_w3_produtos').insert([produto]).select().single();
+      const { data, error } = await (supabase
+        .from('leads_w3_produtos' as any)).insert([produto]).select().single();
       if (error) throw error;
       return data;
     },
