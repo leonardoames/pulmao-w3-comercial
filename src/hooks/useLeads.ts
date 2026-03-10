@@ -163,6 +163,51 @@ export function useUpdateLeadProduto() {
   });
 }
 
+export function useMergeLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ fromId, toId }: { fromId: string; toId: string }) => {
+      // 1. Busca produtos do lead duplicado
+      const { data: produtos, error: prodErr } = await supabase
+        .from('leads_w3_produtos').select('*').eq('lead_id', fromId);
+      if (prodErr) throw prodErr;
+
+      // 2. Move cada produto pro lead principal (upsert — se já existe, mantém)
+      for (const p of produtos ?? []) {
+        const { id: _id, created_at: _c, updated_at: _u, lead_id: _l, ...rest } = p as any;
+        await supabase.from('leads_w3_produtos').upsert(
+          { ...rest, lead_id: toId },
+          { onConflict: 'lead_id,produto', ignoreDuplicates: true }
+        );
+      }
+
+      // 3. Redireciona FKs das tabelas operacionais
+      await supabase.from('trafego_pago_clientes').update({ lead_id: toId }).eq('lead_id', fromId);
+      await supabase.from('marketplace_clientes').update({ lead_id: toId }).eq('lead_id', fromId);
+
+      // 4. Merge flags booleanas no lead principal
+      const { data: fromLead } = await supabase.from('leads_w3').select('*').eq('id', fromId).maybeSingle();
+      if (fromLead) {
+        await supabase.from('leads_w3').update({
+          is_cliente_educacao:   fromLead.is_cliente_educacao   || undefined,
+          is_cliente_trafego:    fromLead.is_cliente_trafego    || undefined,
+          is_cliente_marketplace: fromLead.is_cliente_marketplace || undefined,
+          updated_at: new Date().toISOString(),
+        }).eq('id', toId);
+      }
+
+      // 5. Deleta o lead duplicado
+      const { error: delErr } = await supabase.from('leads_w3').delete().eq('id', fromId);
+      if (delErr) throw delErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads_w3'] });
+      toast.success('Leads mesclados com sucesso!');
+    },
+    onError: (error: Error) => toast.error('Erro ao mesclar leads: ' + error.message),
+  });
+}
+
 export function useAutoVincularLeads() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Link2, Users, TrendingUp, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Link2, Users, TrendingUp, BarChart3, CheckCircle2, GitMerge } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
-  useLeads, useCreateLead, useUpdateLead, useAutoVincularLeads,
+  useLeads, useCreateLead, useUpdateLead, useAutoVincularLeads, useMergeLead,
   useCreateLeadProduto, useUpdateLeadProduto,
   LeadW3, LeadProduto, StatusEducacao, ProdutoTipo, ProdutoStatus,
 } from '@/hooks/useLeads';
@@ -85,10 +86,15 @@ export default function Leads() {
   const [resumeForm, setResumeForm] = useState<typeof EMPTY_FORM | null>(null);
   const [productForms, setProductForms] = useState<Record<string, Partial<LeadProduto>>>({});
 
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeSearch, setMergeSearch] = useState('');
+  const [mergeTarget, setMergeTarget] = useState<LeadW3 | null>(null);
+
   const { data: leads = [], isLoading, isError } = useLeads({ status: filterStatus, nicho: filterNicho, search });
   const createLead = useCreateLead();
   const updateLead = useUpdateLead();
   const autoVincular = useAutoVincularLeads();
+  const mergeLead = useMergeLead();
   const createProduto = useCreateLeadProduto();
   const updateProduto = useUpdateLeadProduto();
 
@@ -523,6 +529,11 @@ export default function Leads() {
                       <Button className="flex-1 bg-orange-500 hover:bg-orange-600 h-8 text-sm"
                         onClick={handleSaveResumo} disabled={updateLead.isPending}>Salvar</Button>
                     </div>
+                    <Button variant="ghost" size="sm"
+                      className="w-full text-white/30 hover:text-red-400 text-xs mt-1"
+                      onClick={() => { setMergeSearch(''); setMergeTarget(null); setMergeOpen(true); }}>
+                      <GitMerge className="h-3 w-3 mr-1" /> Mesclar com outro lead
+                    </Button>
                   </TabsContent>
 
                   {/* TAB PRODUTOS */}
@@ -740,6 +751,66 @@ export default function Leads() {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Dialog Mesclar Leads */}
+        <Dialog open={mergeOpen} onOpenChange={(o) => { setMergeOpen(o); if (!o) setMergeTarget(null); }}>
+          <DialogContent className="bg-[#1a1a1a] border-white/10 text-white max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">Mesclar lead duplicado</DialogTitle>
+              <p className="text-xs text-white/40">
+                O lead atual (<span className="text-orange-400">{selectedLead?.nome_negocio}</span>) será deletado
+                e todos os seus dados serão movidos para o lead selecionado abaixo.
+              </p>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <Input
+                placeholder="Buscar lead principal..."
+                className="bg-white/5 border-white/10 text-white"
+                value={mergeSearch}
+                onChange={(e) => { setMergeSearch(e.target.value); setMergeTarget(null); }}
+              />
+              <div className="max-h-52 overflow-y-auto space-y-1">
+                {leads
+                  .filter(l => l.id !== selectedLead?.id && (
+                    l.nome_negocio.toLowerCase().includes(mergeSearch.toLowerCase()) ||
+                    (l.nome_mentorado ?? '').toLowerCase().includes(mergeSearch.toLowerCase())
+                  ))
+                  .slice(0, 10)
+                  .map(l => (
+                    <button
+                      key={l.id}
+                      onClick={() => setMergeTarget(l)}
+                      className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                        mergeTarget?.id === l.id
+                          ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300'
+                          : 'bg-white/5 hover:bg-white/10 text-white/80'
+                      }`}>
+                      <span className="font-medium">{l.nome_negocio}</span>
+                      <span className="text-white/40 text-xs ml-2">{l.codigo}</span>
+                    </button>
+                  ))}
+                {mergeSearch && leads.filter(l => l.id !== selectedLead?.id && l.nome_negocio.toLowerCase().includes(mergeSearch.toLowerCase())).length === 0 && (
+                  <p className="text-center text-white/30 text-xs py-4">Nenhum lead encontrado</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" className="border-white/10 text-white/70" onClick={() => setMergeOpen(false)}>Cancelar</Button>
+              <Button
+                className="bg-red-500/80 hover:bg-red-600 text-white"
+                disabled={!mergeTarget || mergeLead.isPending}
+                onClick={() => {
+                  if (!selectedLead || !mergeTarget) return;
+                  mergeLead.mutate(
+                    { fromId: selectedLead.id, toId: mergeTarget.id },
+                    { onSuccess: () => { setMergeOpen(false); setSelectedLead(null); } }
+                  );
+                }}>
+                {mergeLead.isPending ? 'Mesclando...' : `Mesclar → ${mergeTarget?.nome_negocio ?? '...'}`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
