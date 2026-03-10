@@ -35,8 +35,8 @@ async function sincronizarLeadAposVenda(venda: {
       .from('leads_w3')
       .update({ is_cliente_educacao: true, venda_id: venda.id, updated_at: new Date().toISOString() })
       .eq('id', lead.id);
-    await supabase
-      .from('leads_w3_produtos')
+    await (supabase
+      .from('leads_w3_produtos' as any))
       .upsert(
         { lead_id: lead.id, produto: 'educacao', status: 'ativo', data_inicio: venda.data_fechamento ?? null },
         { onConflict: 'lead_id,produto' }
@@ -58,8 +58,8 @@ async function sincronizarLeadAposVenda(venda: {
       .select('id')
       .single();
     if (newLead) {
-      await supabase
-        .from('leads_w3_produtos')
+      await (supabase
+        .from('leads_w3_produtos' as any))
         .insert({
           lead_id: newLead.id,
           produto: 'educacao',
