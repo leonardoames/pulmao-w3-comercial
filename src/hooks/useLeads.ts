@@ -61,6 +61,23 @@ export async function checkDuplicateCNPJ(cnpj: string, excludeId?: string): Prom
   return !!data;
 }
 
+export function useLeadById(id?: string | null) {
+  return useQuery({
+    queryKey: ['leads_w3', 'byId', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from('leads_w3')
+        .select('*, produtos:leads_w3_produtos(*)')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as LeadW3 | null;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useLeads(filters?: { status?: string; nicho?: string; search?: string }) {
   return useQuery({
     queryKey: ['leads_w3', filters],

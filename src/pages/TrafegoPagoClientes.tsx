@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink, Database } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useLeadById, useUpdateLead } from '@/hooks/useLeads';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
 import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
@@ -94,9 +95,25 @@ export default function TrafegoPagoClientes() {
     observacao: '',
   });
 
+  const navigate = useNavigate();
+  const [crmForm, setCrmForm] = useState({ nome_negocio: '', cnpj: '', email: '', nicho: '' });
+
   const { data: clientes, isLoading } = useTrafegoPagoClientes({ search, status: filterStatus, gestor: filterGestor, plataforma: filterPlataforma });
   const { data: registros } = useTrafegoPagoRegistros(editingCliente?.id);
   const { data: closers } = useClosers();
+  const { data: linkedLead } = useLeadById(editingCliente?.lead_id);
+  const updateLead = useUpdateLead();
+
+  useEffect(() => {
+    if (linkedLead) {
+      setCrmForm({
+        nome_negocio: linkedLead.nome_negocio ?? '',
+        cnpj: linkedLead.cnpj ?? '',
+        email: linkedLead.email ?? '',
+        nicho: linkedLead.nicho ?? '',
+      });
+    }
+  }, [linkedLead]);
   const mesAtual = format(new Date(), 'yyyy-MM');
   const mesAtualLabel = format(new Date(), 'MMMM yyyy', { locale: ptBR });
   const { data: allRegsAtual } = useTrafegoPagoAllRegistros(mesAtual);
@@ -466,7 +483,7 @@ export default function TrafegoPagoClientes() {
                     <TableCell>{getRegStatusCell(c)}</TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="ghost" size="sm" onClick={e => e.stopPropagation()}>
-                        <Link to={`/leads?search=${encodeURIComponent(c.nome_ecommerce)}`}>
+                        <Link to={c.lead_id ? `/leads?lead=${c.lead_id}` : `/leads?search=${encodeURIComponent(c.nome_ecommerce)}`}>
                           <Database className="h-4 w-4" />
                         </Link>
                       </Button>
@@ -614,8 +631,63 @@ export default function TrafegoPagoClientes() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
             <TabsList className="w-full">
               <TabsTrigger value="dados" className="flex-1">Dados</TabsTrigger>
-              {editingCliente && <TabsTrigger value="historico" className="flex-1">Histórico Mensal</TabsTrigger>}
+              {editingCliente && <TabsTrigger value="crm" className="flex-1">Base CRM</TabsTrigger>}
+              {editingCliente && <TabsTrigger value="historico" className="flex-1">Histórico</TabsTrigger>}
             </TabsList>
+
+            {editingCliente && (
+              <TabsContent value="crm" className="mt-4 space-y-4">
+                {linkedLead ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-white/40">Lead <span className="text-orange-400 font-mono">{linkedLead.codigo}</span></p>
+                      <Button variant="ghost" size="sm" className="text-xs text-white/50 h-7"
+                        onClick={() => navigate(`/leads?lead=${linkedLead.id}`)}>
+                        <ExternalLink className="h-3 w-3 mr-1" /> Ver lead completo
+                      </Button>
+                    </div>
+                    {linkedLead.produtos && linkedLead.produtos.length > 0 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {linkedLead.produtos.map(p => (
+                          <Badge key={p.id} variant="outline"
+                            className={`text-xs ${p.status === 'ativo' ? 'border-green-500/40 text-green-400' : 'border-white/10 text-white/30'}`}>
+                            {p.produto} · {p.status}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Nome do Negócio (CRM)</Label>
+                      <Input value={crmForm.nome_negocio} onChange={e => setCrmForm(f => ({ ...f, nome_negocio: e.target.value }))} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">CNPJ</Label>
+                        <Input value={crmForm.cnpj} onChange={e => setCrmForm(f => ({ ...f, cnpj: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Email</Label>
+                        <Input value={crmForm.email} onChange={e => setCrmForm(f => ({ ...f, email: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Nicho (CRM)</Label>
+                      <Input value={crmForm.nicho} onChange={e => setCrmForm(f => ({ ...f, nicho: e.target.value }))} />
+                    </div>
+                    <Button size="sm" className="w-full" disabled={updateLead.isPending}
+                      onClick={() => updateLead.mutate({ id: linkedLead.id, ...crmForm })}>
+                      {updateLead.isPending ? 'Salvando...' : 'Salvar na Base CRM'}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center py-10 text-white/30 text-sm space-y-1">
+                    <Database className="h-8 w-8 mx-auto opacity-20 mb-3" />
+                    <p>Nenhum lead vinculado ainda.</p>
+                    <p className="text-xs">Salve o cliente para gerar o vínculo automaticamente.</p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
 
             <TabsContent value="dados" className="space-y-4 mt-4">
               <div className="space-y-1.5">
