@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/ui/page-header';
@@ -105,8 +105,19 @@ export default function Leads() {
   const [mergeTarget, setMergeTarget] = useState<LeadW3 | null>(null);
   const [fieldChoices, setFieldChoices] = useState<Record<string, 'from' | 'to'>>({});
 
+  const targetLeadId = searchParams.get('lead');
+
   const { data: leads = [], isLoading, isError } = useLeads({ status: filterStatus, nicho: filterNicho, search });
   const createLead = useCreateLead();
+
+  // Auto-abre lead específico quando navegado via ?lead=UUID
+  useEffect(() => {
+    if (targetLeadId && leads.length > 0 && !selectedLead) {
+      const target = leads.find(l => l.id === targetLeadId);
+      if (target) handleOpenLead(target);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetLeadId, leads]);
   const updateLead = useUpdateLead();
   const autoVincular = useAutoVincularLeads();
   const mergeLead = useMergeLead();

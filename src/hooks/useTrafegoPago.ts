@@ -54,12 +54,35 @@ async function sincronizarLeadAposClienteTrafego(cliente: {
   }
 
   if (leadId) {
-    await supabase.from('leads_w3').update({ is_cliente_trafego: true }).eq('id', leadId);
+    await supabase.from('leads_w3').update({
+      is_cliente_trafego: true,
+      ...(cliente.nicho ? { nicho: cliente.nicho } : {}),
+    }).eq('id', leadId);
     await supabase.from('leads_w3_produtos').upsert(
       { lead_id: leadId, produto: 'trafego', status: produtoStatus, data_inicio: cliente.data_entrada ?? null },
       { onConflict: 'lead_id,produto' }
     );
   }
+}
+
+// Recalcula e atualiza valor_pago e valor_total em leads_w3_produtos após registro mensal (non-blocking)
+async function atualizarLTVTrafego(clienteId: string) {
+  const { data: cliente } = await supabase
+    .from('trafego_pago_clientes').select('lead_id').eq('id', clienteId).maybeSingle();
+  if (!cliente?.lead_id) return;
+
+  const { data: regs } = await supabase
+    .from('trafego_pago_registros').select('valor_pago, status_pagamento').eq('cliente_id', clienteId);
+
+  const valor_total = (regs ?? []).reduce((s, r) => s + Number(r.valor_pago), 0);
+  const valor_pago = (regs ?? [])
+    .filter(r => r.status_pagamento === 'Pago')
+    .reduce((s, r) => s + Number(r.valor_pago), 0);
+
+  await supabase.from('leads_w3_produtos').upsert(
+    { lead_id: cliente.lead_id, produto: 'trafego', valor_total, valor_pago },
+    { onConflict: 'lead_id,produto' }
+  );
 }
 
 export interface TrafegoPagoCliente {
@@ -256,6 +279,9 @@ export function useUpsertTrafegoPagoRegistro() {
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['trafego-pago-registros', vars.cliente_id] });
       queryClient.invalidateQueries({ queryKey: ['trafego-pago-all-registros'] });
+      atualizarLTVTrafego(vars.cliente_id).catch(err =>
+        console.error('LTV update error (trafego, non-blocking):', err)
+      );
     },
   });
 }
