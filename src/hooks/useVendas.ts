@@ -4,6 +4,72 @@ import { Venda, VendaStatus } from '@/types/crm';
 import { toast } from 'sonner';
 import { vendaSchema, updateVendaSchema } from '@/schemas/validation';
 
+// Sincroniza lead na Base Leads W3 após criar venda (non-blocking)
+async function sincronizarLeadAposVenda(venda: {
+  id: string;
+  nome_empresa: string;
+  nome_lead: string;
+  valor_total?: number;
+  data_fechamento?: string;
+}) {
+  // 1. Busca lead por nome_negocio
+  let { data: lead } = await supabase
+    .from('leads_w3')
+    .select('id')
+    .ilike('nome_negocio', venda.nome_empresa)
+    .maybeSingle();
+
+  // 2. Fallback: busca por nome_mentorado
+  if (!lead) {
+    const { data } = await supabase
+      .from('leads_w3')
+      .select('id')
+      .ilike('nome_mentorado', venda.nome_lead)
+      .maybeSingle();
+    lead = data;
+  }
+
+  if (lead) {
+    // Lead existente: atualiza vínculo e upsert produto educação
+    await supabase
+      .from('leads_w3')
+      .update({ is_cliente_educacao: true, venda_id: venda.id, updated_at: new Date().toISOString() })
+      .eq('id', lead.id);
+    await supabase
+      .from('leads_w3_produtos')
+      .upsert(
+        { lead_id: lead.id, produto: 'educacao', status: 'ativo', data_inicio: venda.data_fechamento ?? null },
+        { onConflict: 'lead_id,produto' }
+      );
+  } else {
+    // Novo lead: cria lead + produto educação
+    const codigo = `AUTO-${Date.now()}`;
+    const { data: newLead } = await supabase
+      .from('leads_w3')
+      .insert({
+        codigo,
+        nome_negocio: venda.nome_empresa,
+        nome_mentorado: venda.nome_lead,
+        is_cliente_educacao: true,
+        is_cliente_trafego: false,
+        is_cliente_marketplace: false,
+        venda_id: venda.id,
+      })
+      .select('id')
+      .single();
+    if (newLead) {
+      await supabase
+        .from('leads_w3_produtos')
+        .insert({
+          lead_id: newLead.id,
+          produto: 'educacao',
+          status: 'ativo',
+          data_inicio: venda.data_fechamento ?? null,
+        });
+    }
+  }
+}
+
 export function useVendas(filters?: {
   status?: VendaStatus;
   closer_id?: string;
@@ -89,6 +155,17 @@ export function useCreateVenda() {
         body: { venda_id: data.id },
       }).catch((err) => {
         console.error('Webhook error (non-blocking):', err);
+      });
+
+      // Sincroniza lead na Base Leads W3 (non-blocking)
+      sincronizarLeadAposVenda({
+        id: data.id,
+        nome_empresa: data.nome_empresa,
+        nome_lead: data.nome_lead,
+        valor_total: data.valor_total,
+        data_fechamento: data.data_fechamento,
+      }).catch((err) => {
+        console.error('Lead sync error (non-blocking):', err);
       });
     },
     onError: (error) => {
