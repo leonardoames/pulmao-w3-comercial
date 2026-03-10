@@ -58,8 +58,8 @@ async function sincronizarLeadAposVenda(venda: {
       .select('id')
       .single();
     if (newLead) {
-      await supabase
-        .from('leads_w3_produtos')
+      await (supabase
+        .from('leads_w3_produtos' as any))
         .insert({
           lead_id: newLead.id,
           produto: 'educacao',

@@ -148,8 +148,8 @@ export function useUpdateLeadProduto() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateLeadProdutoInput) => {
-      const { data, error } = await supabase
-        .from('leads_w3_produtos')
+      const { data, error } = await (supabase
+        .from('leads_w3_produtos' as any))
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id).select().single();
       if (error) throw error;
