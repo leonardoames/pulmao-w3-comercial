@@ -12,7 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink } from 'lucide-react';
+import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink, Database } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
 import { InlineEditCell } from '@/components/ui/inline-edit-cell';
 import { format } from 'date-fns';
@@ -464,6 +465,11 @@ export default function TrafegoPagoClientes() {
                     </TableCell>
                     <TableCell>{getRegStatusCell(c)}</TableCell>
                     <TableCell className="text-right">
+                      <Button asChild variant="ghost" size="sm" onClick={e => e.stopPropagation()}>
+                        <Link to={`/leads?search=${encodeURIComponent(c.nome_ecommerce)}`}>
+                          <Database className="h-4 w-4" />
+                        </Link>
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); openEdit(c); }}>
                         <Edit className="h-4 w-4" />
                       </Button>
