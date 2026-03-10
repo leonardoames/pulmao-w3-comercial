@@ -55,7 +55,7 @@ export interface LeadW3 {
 
 // Verifica duplicata de CNPJ antes de criar/editar
 export async function checkDuplicateCNPJ(cnpj: string, excludeId?: string): Promise<boolean> {
-  let query = supabase.from('leads_w3').select('id').eq('cnpj' as any, cnpj);
+  let query = (supabase.from('leads_w3') as any).select('id').eq('cnpj', cnpj);
   if (excludeId) query = query.neq('id', excludeId);
   const { data } = await query.maybeSingle();
   return !!data;
