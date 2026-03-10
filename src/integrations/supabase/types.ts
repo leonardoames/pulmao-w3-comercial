@@ -538,6 +538,59 @@ export type Database = {
         }
         Relationships: []
       }
+      leads_w3_produtos: {
+        Row: {
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          id: string
+          lead_id: string
+          observacoes: string | null
+          produto: string
+          saldo_devedor: number | null
+          status: string
+          updated_at: string | null
+          valor_pago: number | null
+          valor_total: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          lead_id: string
+          observacoes?: string | null
+          produto: string
+          saldo_devedor?: number | null
+          status?: string
+          updated_at?: string | null
+          valor_pago?: number | null
+          valor_total?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          lead_id?: string
+          observacoes?: string | null
+          produto?: string
+          saldo_devedor?: number | null
+          status?: string
+          updated_at?: string | null
+          valor_pago?: number | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_w3_produtos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_w3"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_investimentos: {
         Row: {
           atualizado_em: string
