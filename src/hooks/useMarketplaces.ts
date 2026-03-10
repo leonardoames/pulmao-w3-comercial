@@ -54,12 +54,35 @@ async function sincronizarLeadAposClienteMarketplace(cliente: {
   }
 
   if (leadId) {
-    await supabase.from('leads_w3').update({ is_cliente_marketplace: true }).eq('id', leadId);
+    await supabase.from('leads_w3').update({
+      is_cliente_marketplace: true,
+      ...(cliente.nicho ? { nicho: cliente.nicho } : {}),
+    }).eq('id', leadId);
     await supabase.from('leads_w3_produtos').upsert(
       { lead_id: leadId, produto: 'marketplace', status: produtoStatus, data_inicio: cliente.data_entrada ?? null },
       { onConflict: 'lead_id,produto' }
     );
   }
+}
+
+// Recalcula e atualiza valor_pago e valor_total em leads_w3_produtos após registro mensal (non-blocking)
+async function atualizarLTVMarketplace(clienteId: string) {
+  const { data: cliente } = await supabase
+    .from('marketplace_clientes').select('lead_id').eq('id', clienteId).maybeSingle();
+  if (!cliente?.lead_id) return;
+
+  const { data: regs } = await supabase
+    .from('marketplace_registros').select('total_a_receber, status_pagamento').eq('cliente_id', clienteId);
+
+  const valor_total = (regs ?? []).reduce((s, r) => s + Number(r.total_a_receber), 0);
+  const valor_pago = (regs ?? [])
+    .filter(r => r.status_pagamento === 'Pago')
+    .reduce((s, r) => s + Number(r.total_a_receber), 0);
+
+  await supabase.from('leads_w3_produtos').upsert(
+    { lead_id: cliente.lead_id, produto: 'marketplace', valor_total, valor_pago },
+    { onConflict: 'lead_id,produto' }
+  );
 }
 
 export interface FaixaPercentual {
@@ -293,6 +316,9 @@ export function useUpsertMarketplaceRegistro() {
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['marketplace-registros', vars.cliente_id] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-all-registros'] });
+      atualizarLTVMarketplace(vars.cliente_id).catch(err =>
+        console.error('LTV update error (marketplace, non-blocking):', err)
+      );
     },
   });
 }
