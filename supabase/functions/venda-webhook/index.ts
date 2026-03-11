@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 
     // Build payload
     const payload = {
-      evento: "nova_venda",
+      evento: eventoType,
       venda: {
         id: venda.id,
         data_fechamento: venda.data_fechamento,
