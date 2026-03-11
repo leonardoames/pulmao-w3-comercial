@@ -234,10 +234,23 @@ export function useUpdateVenda() {
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['vendas'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Venda atualizada com sucesso!');
+
+      // Fire webhook for pago or contrato_assinado changes (non-blocking)
+      const events: string[] = [];
+      if (variables.pago === true) events.push('venda_paga');
+      if (variables.contrato_assinado === true) events.push('contrato_assinado');
+
+      for (const evento of events) {
+        supabase.functions.invoke('venda-webhook', {
+          body: { venda_id: data.id, evento },
+        }).catch((err) => {
+          console.error(`Webhook ${evento} error (non-blocking):`, err);
+        });
+      }
     },
     onError: (error) => {
       toast.error('Erro ao atualizar venda: ' + error.message);

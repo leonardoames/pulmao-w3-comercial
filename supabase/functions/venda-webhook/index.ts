@@ -45,7 +45,6 @@ Deno.serve(async (req) => {
     const { data: webhooks, error: webhooksError } = await serviceClient
       .from("webhooks")
       .select("*")
-      .eq("evento", "nova_venda")
       .eq("ativo", true);
 
     // Fallback to env var if no webhooks in table
@@ -68,13 +67,15 @@ Deno.serve(async (req) => {
     }
 
     // Parse body
-    const { venda_id } = await req.json();
+    const { venda_id, evento: customEvento } = await req.json();
     if (!venda_id) {
       return new Response(JSON.stringify({ error: "venda_id is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const eventoType = customEvento || "nova_venda";
 
     // Fetch full venda data with closer profile
     const { data: venda, error: vendaError } = await serviceClient
@@ -96,7 +97,7 @@ Deno.serve(async (req) => {
 
     // Build payload
     const payload = {
-      evento: "nova_venda",
+      evento: eventoType,
       venda: {
         id: venda.id,
         data_fechamento: venda.data_fechamento,
