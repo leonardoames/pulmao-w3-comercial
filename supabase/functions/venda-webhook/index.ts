@@ -45,7 +45,6 @@ Deno.serve(async (req) => {
     const { data: webhooks, error: webhooksError } = await serviceClient
       .from("webhooks")
       .select("*")
-      .eq("evento", "nova_venda")
       .eq("ativo", true);
 
     // Fallback to env var if no webhooks in table
