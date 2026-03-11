@@ -459,6 +459,7 @@ export type Database = {
       }
       leads_w3: {
         Row: {
+          cnpj: string | null
           codigo: string
           created_at: string
           data_entrada: string | null
@@ -475,7 +476,7 @@ export type Database = {
           nome_negocio: string
           nps: string | null
           saldo_devedor: number | null
-          status: string | null
+          status_educacao: string | null
           tempo_real_meses: number | null
           ticket_medio: number | null
           updated_at: string
@@ -485,6 +486,7 @@ export type Database = {
           vigencia_meses: number | null
         }
         Insert: {
+          cnpj?: string | null
           codigo?: string
           created_at?: string
           data_entrada?: string | null
@@ -501,7 +503,7 @@ export type Database = {
           nome_negocio?: string
           nps?: string | null
           saldo_devedor?: number | null
-          status?: string | null
+          status_educacao?: string | null
           tempo_real_meses?: number | null
           ticket_medio?: number | null
           updated_at?: string
@@ -511,6 +513,7 @@ export type Database = {
           vigencia_meses?: number | null
         }
         Update: {
+          cnpj?: string | null
           codigo?: string
           created_at?: string
           data_entrada?: string | null
@@ -527,7 +530,7 @@ export type Database = {
           nome_negocio?: string
           nps?: string | null
           saldo_devedor?: number | null
-          status?: string | null
+          status_educacao?: string | null
           tempo_real_meses?: number | null
           ticket_medio?: number | null
           updated_at?: string
@@ -621,6 +624,7 @@ export type Database = {
       marketplace_clientes: {
         Row: {
           atualizado_em: string
+          cnpj: string | null
           criado_em: string
           criado_por: string
           data_entrada: string | null
@@ -629,6 +633,7 @@ export type Database = {
           faturamento_ao_entrar: number | null
           gestor_user_id: string | null
           id: string
+          lead_id: string | null
           marketplaces: string[] | null
           modelo_cobranca: Database["public"]["Enums"]["billing_model"]
           nicho: string | null
@@ -640,6 +645,7 @@ export type Database = {
         }
         Insert: {
           atualizado_em?: string
+          cnpj?: string | null
           criado_em?: string
           criado_por: string
           data_entrada?: string | null
@@ -648,6 +654,7 @@ export type Database = {
           faturamento_ao_entrar?: number | null
           gestor_user_id?: string | null
           id?: string
+          lead_id?: string | null
           marketplaces?: string[] | null
           modelo_cobranca?: Database["public"]["Enums"]["billing_model"]
           nicho?: string | null
@@ -659,6 +666,7 @@ export type Database = {
         }
         Update: {
           atualizado_em?: string
+          cnpj?: string | null
           criado_em?: string
           criado_por?: string
           data_entrada?: string | null
@@ -667,6 +675,7 @@ export type Database = {
           faturamento_ao_entrar?: number | null
           gestor_user_id?: string | null
           id?: string
+          lead_id?: string | null
           marketplaces?: string[] | null
           modelo_cobranca?: Database["public"]["Enums"]["billing_model"]
           nicho?: string | null
@@ -689,6 +698,13 @@ export type Database = {
             columns: ["gestor_user_id"]
             isOneToOne: false
             referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_clientes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_w3"
             referencedColumns: ["id"]
           },
         ]
@@ -1458,6 +1474,7 @@ export type Database = {
       trafego_pago_clientes: {
         Row: {
           atualizado_em: string
+          cnpj: string | null
           criado_em: string
           criado_por: string
           data_entrada: string | null
@@ -1465,6 +1482,7 @@ export type Database = {
           faturamento_ao_entrar: number | null
           gestor_user_id: string | null
           id: string
+          lead_id: string | null
           nicho: string | null
           nome_ecommerce: string
           observacoes: string | null
@@ -1476,6 +1494,7 @@ export type Database = {
         }
         Insert: {
           atualizado_em?: string
+          cnpj?: string | null
           criado_em?: string
           criado_por: string
           data_entrada?: string | null
@@ -1483,6 +1502,7 @@ export type Database = {
           faturamento_ao_entrar?: number | null
           gestor_user_id?: string | null
           id?: string
+          lead_id?: string | null
           nicho?: string | null
           nome_ecommerce: string
           observacoes?: string | null
@@ -1494,6 +1514,7 @@ export type Database = {
         }
         Update: {
           atualizado_em?: string
+          cnpj?: string | null
           criado_em?: string
           criado_por?: string
           data_entrada?: string | null
@@ -1501,6 +1522,7 @@ export type Database = {
           faturamento_ao_entrar?: number | null
           gestor_user_id?: string | null
           id?: string
+          lead_id?: string | null
           nicho?: string | null
           nome_ecommerce?: string
           observacoes?: string | null
@@ -1523,6 +1545,13 @@ export type Database = {
             columns: ["gestor_user_id"]
             isOneToOne: false
             referencedRelation: "profiles_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trafego_pago_clientes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads_w3"
             referencedColumns: ["id"]
           },
         ]
