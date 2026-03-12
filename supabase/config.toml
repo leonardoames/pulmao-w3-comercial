@@ -8,3 +8,15 @@ verify_jwt = false
 
 [functions.facebook-ads-insights]
 verify_jwt = false
+
+[functions.admin-create-user]
+verify_jwt = false
+
+[functions.admin-reset-password]
+verify_jwt = false
+
+[functions.venda-webhook]
+verify_jwt = false
+
+[functions.test-webhook]
+verify_jwt = false
