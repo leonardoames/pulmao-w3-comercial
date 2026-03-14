@@ -161,7 +161,6 @@ export default function UserManagement() {
       nome: editForm.nome,
       email: editForm.email,
       ativo: editForm.ativo,
-      centro_custo: editForm.centro_custo || null,
     });
     await updateUserRole.mutateAsync({
       userId: editingUser.id,
