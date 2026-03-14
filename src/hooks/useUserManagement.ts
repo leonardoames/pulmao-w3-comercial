@@ -55,17 +55,15 @@ export function useUpdateProfile() {
       nome,
       email,
       ativo,
-      centro_custo,
     }: {
       id: string;
       nome: string;
       email: string;
       ativo: boolean;
-      centro_custo?: string | null;
     }) => {
       const { data, error } = await supabase
         .from('profiles')
-        .update({ nome, email, ativo, centro_custo })
+        .update({ nome, email, ativo })
         .eq('id', id)
         .select()
         .maybeSingle();
