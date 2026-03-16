@@ -48,7 +48,11 @@ export function OteGoalModal({
   // Load existing goal value when closer/month changes
   useEffect(() => {
     if (existingGoal) {
-      setTargetValue(existingGoal.ote_target_value.toString());
+      const formatted = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(existingGoal.ote_target_value);
+      setTargetValue(formatted);
     } else {
       setTargetValue('');
     }
