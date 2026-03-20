@@ -22,7 +22,7 @@ export default function OteTrackingPage() {
   const [modalOpen, setModalOpen] = useState(false);
   
   const { data: userRole } = useCurrentUserRole();
-  const canManage = useCanManageUsers() || ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR'].includes(userRole?.role || '');
+  const canManage = useCanManageUsers() || ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL'].includes(userRole?.role || '');
   const isCloser = userRole?.role === 'CLOSER';
 
   const [editingCloserId, setEditingCloserId] = useState<string | null>(null);

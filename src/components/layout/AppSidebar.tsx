@@ -26,6 +26,8 @@ import {
   BarChart2,
   GitBranch,
   Database,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,6 +35,7 @@ import { useCurrentUserRole, useIsSocialSelling } from '@/hooks/useUserRoles';
 import { usePermissionChecks, ROUTE_TO_RESOURCE } from '@/hooks/useRolePermissions';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ROLE_LABELS_NEW } from '@/types/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -107,9 +110,11 @@ const navGroups = [
 interface AppSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
+export function AppSidebar({ isOpen = false, onClose, collapsed = false, onToggleCollapse }: AppSidebarProps) {
   const location = useLocation();
   const { profile, signOut, refreshProfile } = useAuth();
   const { data: userRole } = useCurrentUserRole();
@@ -186,20 +191,21 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
   const renderNavLink = (path: string, icon: any, label: string) => {
     const Icon = icon;
     const isActive = location.pathname === path;
-    return (
+
+    const link = (
       <Link
-        key={path}
         to={path}
         onClick={handleLinkClick}
         className={cn(
           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150',
-          isActive ? 'font-semibold' : 'font-normal'
+          isActive ? 'font-semibold' : 'font-normal',
+          collapsed && 'lg:justify-center lg:gap-0 lg:px-0 lg:w-10 lg:mx-auto'
         )}
         style={
           isActive
             ? {
                 background: 'hsla(24, 94%, 53%, 0.18)',
-                borderLeft: '3px solid hsl(24, 94%, 53%)',
+                borderLeft: collapsed ? '3px solid transparent' : '3px solid hsl(24, 94%, 53%)',
                 color: 'hsl(24, 94%, 53%)',
                 fontWeight: 600,
               }
@@ -227,22 +233,34 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
         >
           <Icon className="h-4 w-4" style={{ color: isActive ? 'hsl(24, 94%, 53%)' : 'inherit' }} />
         </div>
-        <span>{label}</span>
+        <span className={cn(collapsed && 'lg:hidden')}>{label}</span>
       </Link>
+    );
+
+    return (
+      <Tooltip key={path}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        {collapsed && (
+          <TooltipContent side="right" className="hidden lg:flex">
+            {label}
+          </TooltipContent>
+        )}
+      </Tooltip>
     );
   };
 
   const renderSystemLink = (path: string, icon: any, label: string) => {
     const Icon = icon;
     const isActive = location.pathname === path;
-    return (
+
+    const link = (
       <Link
-        key={path}
         to={path}
         onClick={handleLinkClick}
         className={cn(
           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150',
-          isActive ? 'font-medium' : 'font-normal'
+          isActive ? 'font-medium' : 'font-normal',
+          collapsed && 'lg:justify-center lg:gap-0 lg:px-0 lg:w-10 lg:mx-auto'
         )}
         style={
           isActive
@@ -272,8 +290,19 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
         >
           <Icon className="h-4 w-4" />
         </div>
-        <span>{label}</span>
+        <span className={cn(collapsed && 'lg:hidden')}>{label}</span>
       </Link>
+    );
+
+    return (
+      <Tooltip key={path}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        {collapsed && (
+          <TooltipContent side="right" className="hidden lg:flex">
+            {label}
+          </TooltipContent>
+        )}
+      </Tooltip>
     );
   };
 
@@ -285,21 +314,41 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-[999] h-screen w-[260px] flex flex-col transition-transform duration-300',
+          'fixed left-0 top-0 z-[999] h-screen flex flex-col transition-all duration-300',
           'lg:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+          collapsed ? 'w-[260px] lg:w-16' : 'w-[260px]'
         )}
         style={{ background: 'hsl(var(--sidebar-background))', borderRight: '1px solid hsla(0, 0%, 100%, 0.06)' }}
       >
-        {/* Logo + Close */}
-        <div className="p-6 flex items-center justify-between" style={{ borderBottom: '1px solid hsla(0, 0%, 100%, 0.06)' }}>
-          <div>
+        {/* Logo + Toggle */}
+        <div
+          className={cn(
+            'flex items-center transition-all duration-300',
+            collapsed ? 'lg:justify-center lg:p-3 p-6 justify-between' : 'p-6 justify-between'
+          )}
+          style={{ borderBottom: '1px solid hsla(0, 0%, 100%, 0.06)' }}
+        >
+          <div className={cn(collapsed && 'lg:hidden')}>
             <h1 className="text-xl font-bold tracking-tight">
               <span className="text-primary">Pulmão</span>{' '}
               <span className="text-foreground">W3</span>
             </h1>
             <p className="text-xs mt-1" style={{ color: 'hsla(0, 0%, 100%, 0.25)' }}>Gestão Integrada</p>
           </div>
+
+          {/* Desktop collapse toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            className="hidden lg:flex text-foreground/60 hover:text-foreground shrink-0"
+            title={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+          </Button>
+
+          {/* Mobile close button */}
           <Button
             variant="ghost"
             size="icon"
@@ -311,65 +360,70 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 overflow-y-auto flex flex-col gap-1">
-          {visibleGroups.map((group) => {
-            const isGroupOpen = openGroup === group.label;
-            return (
-              <div key={group.label}>
-                <button
-                  onClick={() => toggleGroup(group.label)}
-                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-colors duration-150"
-                  style={{
-                    fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em',
-                    textTransform: 'uppercase', color: 'hsla(0, 0%, 100%, 0.25)', marginBottom: '4px',
-                  }}
-                >
-                  <span>{group.label}</span>
-                  <ChevronDown
-                    className="h-3 w-3 transition-transform duration-200 ease-in-out"
-                    style={{ transform: isGroupOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}
-                  />
-                </button>
-                <div
-                  className="overflow-hidden transition-all duration-200 ease-in-out"
-                  style={{
-                    maxHeight: isGroupOpen ? `${group.items.length * 48}px` : '0px',
-                    opacity: isGroupOpen ? 1 : 0,
-                    marginBottom: isGroupOpen ? '8px' : '0px',
-                  }}
-                >
-                  <div className="space-y-0.5">
-                    {group.items.map((item) => renderNavLink(item.path, item.icon, item.label))}
+        <TooltipProvider>
+          <nav className="flex-1 px-3 py-4 overflow-y-auto flex flex-col gap-1">
+            {visibleGroups.map((group) => {
+              const isGroupOpen = openGroup === group.label;
+              return (
+                <div key={group.label}>
+                  <button
+                    onClick={() => toggleGroup(group.label)}
+                    className={cn(
+                      'w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-colors duration-150',
+                      collapsed && 'lg:hidden'
+                    )}
+                    style={{
+                      fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em',
+                      textTransform: 'uppercase', color: 'hsla(0, 0%, 100%, 0.25)', marginBottom: '4px',
+                    }}
+                  >
+                    <span>{group.label}</span>
+                    <ChevronDown
+                      className="h-3 w-3 transition-transform duration-200 ease-in-out"
+                      style={{ transform: isGroupOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                    />
+                  </button>
+                  <div
+                    className="overflow-hidden transition-all duration-200 ease-in-out"
+                    style={collapsed ? undefined : {
+                      maxHeight: isGroupOpen ? `${group.items.length * 48}px` : '0px',
+                      opacity: isGroupOpen ? 1 : 0,
+                      marginBottom: isGroupOpen ? '8px' : '0px',
+                    }}
+                  >
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => renderNavLink(item.path, item.icon, item.label))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </nav>
+              );
+            })}
+          </nav>
 
-        {/* SISTEMA section */}
-        <div className="px-3 pb-2">
-          <div style={{ borderTop: '1px solid hsla(0, 0%, 100%, 0.08)', marginBottom: '8px' }} />
-          <span
-            className="block px-3 mb-2"
-            style={{
-              fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em',
-              textTransform: 'uppercase', color: 'hsla(0, 0%, 100%, 0.2)',
-            }}
-          >
-            Sistema
-          </span>
-          <div className="space-y-0.5">
-            {renderSystemLink('/tv', Tv, 'Modo TV')}
-            {canViewAdmin && renderSystemLink('/painel-admin', Settings, 'Painel Admin')}
+          {/* SISTEMA section */}
+          <div className="px-3 pb-2">
+            <div style={{ borderTop: '1px solid hsla(0, 0%, 100%, 0.08)', marginBottom: '8px' }} />
+            <span
+              className={cn('block px-3 mb-2', collapsed && 'lg:hidden')}
+              style={{
+                fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em',
+                textTransform: 'uppercase', color: 'hsla(0, 0%, 100%, 0.2)',
+              }}
+            >
+              Sistema
+            </span>
+            <div className="space-y-0.5">
+              {renderSystemLink('/tv', Tv, 'Modo TV')}
+              {canViewAdmin && renderSystemLink('/painel-admin', Settings, 'Painel Admin')}
+            </div>
           </div>
-        </div>
+        </TooltipProvider>
 
         {/* User Profile */}
         {profile && (
-          <div className="p-4" style={{ borderTop: '1px solid hsla(0, 0%, 100%, 0.06)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <div className={cn('p-4 transition-all duration-300', collapsed && 'lg:p-2')} style={{ borderTop: '1px solid hsla(0, 0%, 100%, 0.06)' }}>
+            <div className={cn('flex items-center gap-3 mb-4', collapsed && 'lg:mb-0 lg:justify-center')}>
+              <div className="relative group cursor-pointer shrink-0" onClick={() => fileInputRef.current?.click()}>
                 <Avatar className="h-10 w-10 border-2 border-primary/30">
                   <AvatarImage src={profile.avatar_url || undefined} alt={profile.nome} />
                   <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
@@ -387,7 +441,7 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
                   onChange={handleAvatarUpload}
                 />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className={cn('flex-1 min-w-0', collapsed && 'lg:hidden')}>
                 <p className="text-sm font-medium truncate text-foreground">{profile.nome}</p>
                 <p className="text-xs" style={{ color: 'hsla(0, 0%, 100%, 0.35)' }}>
                   {userRole ? ROLE_LABELS_NEW[userRole.role] : 'Carregando...'}
@@ -397,7 +451,7 @@ export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start transition-colors duration-150"
+              className={cn('w-full justify-start transition-colors duration-150', collapsed && 'lg:hidden')}
               style={{ color: 'hsla(0, 0%, 100%, 0.5)' }}
               onClick={signOut}
             >

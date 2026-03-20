@@ -8,7 +8,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, children }: PageHeaderProps) {
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       <div className="flex items-center justify-between gap-4 flex-nowrap overflow-x-auto">
         {/* Left: title + subtitle */}
         <div className="shrink-0">

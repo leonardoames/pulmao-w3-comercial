@@ -117,12 +117,12 @@ interface CreateVendaInput {
   valor_cartao: number;
   valor_boleto_parcela: number;
   quantidade_parcelas_boleto: number;
-  pago?: boolean;
-  contrato_assinado?: boolean;
   enviado_financeiro?: boolean;
   enviado_cs?: boolean;
   observacoes?: string;
   origem_lead?: string | null;
+  link_contrato?: string | null;
+  link_comprovante?: string | null;
 }
 
 export function useCreateVenda() {
@@ -135,10 +135,13 @@ export function useCreateVenda() {
       // Calculate valor_total
       const valor_boleto_total = venda.valor_boleto_parcela * venda.quantidade_parcelas_boleto;
       const valor_total = venda.valor_pix + venda.valor_cartao + valor_boleto_total;
+      // Derive boolean flags from links
+      const pago = !!(venda.link_comprovante && venda.link_comprovante.trim());
+      const contrato_assinado = !!(venda.link_contrato && venda.link_contrato.trim());
 
       const { data, error } = await supabase
         .from('vendas')
-        .insert([{ ...venda, valor_total }])
+        .insert([{ ...venda, valor_total, pago, contrato_assinado }])
         .select()
         .single();
       
@@ -185,13 +188,13 @@ interface UpdateVendaInput {
   valor_cartao?: number;
   valor_boleto_parcela?: number;
   quantidade_parcelas_boleto?: number;
-  pago?: boolean;
-  contrato_assinado?: boolean;
   enviado_financeiro?: boolean;
   enviado_cs?: boolean;
   status?: VendaStatus;
   observacoes?: string;
   origem_lead?: string | null;
+  link_contrato?: string | null;
+  link_comprovante?: string | null;
 }
 
 export function useUpdateVenda() {
@@ -222,9 +225,18 @@ export function useUpdateVenda() {
         valor_total = pix + cartao + (parcela * qtd);
       }
 
+      // Derive boolean flags from links if present
+      const derivedFlags: { pago?: boolean; contrato_assinado?: boolean } = {};
+      if ('link_comprovante' in updates) {
+        derivedFlags.pago = !!(updates.link_comprovante && updates.link_comprovante.trim());
+      }
+      if ('link_contrato' in updates) {
+        derivedFlags.contrato_assinado = !!(updates.link_contrato && updates.link_contrato.trim());
+      }
+
       const { data, error } = await supabase
         .from('vendas')
-        .update({ ...updates, ...(valor_total !== undefined && { valor_total }) })
+        .update({ ...updates, ...(valor_total !== undefined && { valor_total }), ...derivedFlags })
         .eq('id', id)
         .select()
         .maybeSingle();
@@ -241,8 +253,8 @@ export function useUpdateVenda() {
 
       // Fire webhook for pago or contrato_assinado changes (non-blocking)
       const events: string[] = [];
-      if (variables.pago === true) events.push('venda_paga');
-      if (variables.contrato_assinado === true) events.push('contrato_assinado');
+      if ('link_comprovante' in variables && data.pago === true) events.push('venda_paga');
+      if ('link_contrato' in variables && data.contrato_assinado === true) events.push('contrato_assinado');
 
       for (const evento of events) {
         supabase.functions.invoke('venda-webhook', {

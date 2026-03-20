@@ -49,6 +49,8 @@ export interface Venda {
   reembolsado_por?: string;
   reembolsado_em?: string;
   origem_lead?: OrigemLead | null;
+  link_contrato?: string | null;
+  link_comprovante?: string | null;
   closer?: Profile;
 }
 

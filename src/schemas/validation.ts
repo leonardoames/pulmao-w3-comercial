@@ -15,6 +15,8 @@ export const vendaSchema = z.object({
   enviado_financeiro: z.boolean().optional(),
   enviado_cs: z.boolean().optional(),
   observacoes: z.string().max(2000, 'Observações muito longas').optional().nullable(),
+  link_contrato: z.string().optional().nullable(),
+  link_comprovante: z.string().optional().nullable(),
 });
 
 export const updateVendaSchema = vendaSchema.partial().extend({

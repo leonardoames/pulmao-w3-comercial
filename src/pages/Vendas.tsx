@@ -21,7 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento, useIsMaster } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { Venda, ORIGEM_LEAD_OPTIONS, OrigemLead } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote, Pencil, MoreVertical } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote, Pencil, MoreVertical, ExternalLink } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { format } from 'date-fns';
@@ -41,6 +41,8 @@ export default function VendasPage() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedCloserId, setSelectedCloserId] = useState<string>('');
   const [origemLead, setOrigemLead] = useState<string>('');
+  const [linkComprovante, setLinkComprovante] = useState('');
+  const [linkContrato, setLinkContrato] = useState('');
 
   // Quick date filter — default to "Este mês"
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('month');
@@ -184,6 +186,8 @@ export default function VendasPage() {
     setDataVenda(new Date());
     setSelectedCloserId(isCloser ? (profile?.id || '') : '');
     setOrigemLead('');
+    setLinkComprovante('');
+    setLinkContrato('');
     setDialogOpen(true);
   };
 
@@ -193,6 +197,8 @@ export default function VendasPage() {
     setDataVenda(new Date(year, month - 1, day));
     setSelectedCloserId(venda.closer_user_id);
     setOrigemLead(venda.origem_lead ?? '');
+    setLinkComprovante(venda.link_comprovante || '');
+    setLinkContrato(venda.link_contrato || '');
     setDialogOpen(true);
   };
 
@@ -235,7 +241,7 @@ export default function VendasPage() {
       return;
     }
 
-    const data = {
+    const data: Record<string, any> = {
       nome_lead: nomeLead,
       nome_empresa: nomeEmpresa,
       duracao_contrato_meses: duracaoContrato,
@@ -243,13 +249,15 @@ export default function VendasPage() {
       valor_cartao: valorCartao,
       valor_boleto_parcela: valorBoletoParcela,
       quantidade_parcelas_boleto: qtdParcelas,
-      pago: formData.get('pago') === 'on',
-      contrato_assinado: formData.get('contrato_assinado') === 'on',
-      enviado_financeiro: formData.get('enviado_financeiro') === 'on',
-      enviado_cs: formData.get('enviado_cs') === 'on',
+      link_comprovante: linkComprovante.trim() || null,
+      link_contrato: linkContrato.trim() || null,
       observacoes: observacoesRaw || undefined,
       origem_lead: origemLead || null,
     };
+    if (canManageClosers) {
+      data.enviado_financeiro = formData.get('enviado_financeiro') === 'on';
+      data.enviado_cs = formData.get('enviado_cs') === 'on';
+    }
 
     try {
       if (editingVenda) {
@@ -291,6 +299,11 @@ export default function VendasPage() {
       if (!parcela || !qtd) return '-';
       return `${qtd}x ${formatCurrency(parcela)}`;
     };
+    const linkCell = (url: string | null | undefined) => {
+      if (!url) return '—';
+      const short = url.length > 40 ? url.slice(0, 37) + '...' : url;
+      return `<a href="${url}" target="_blank">${short}</a>`;
+    };
 
     const rows = filteredVendas.map(v => {
       const [year, month, day] = v.data_fechamento.split('-').map(Number);
@@ -307,8 +320,8 @@ export default function VendasPage() {
         <td class="r">${formatCurrency(v.valor_cartao)}</td>
         <td class="r">${formatBoleto(v.valor_boleto_parcela, v.quantidade_parcelas_boleto)}</td>
         <td class="r b">${formatCurrency(v.valor_total)}</td>
-        <td class="c">${flag(v.pago)}</td>
-        <td class="c">${flag(v.contrato_assinado)}</td>
+        <td class="c">${linkCell(v.link_comprovante)}</td>
+        <td class="c">${linkCell(v.link_contrato)}</td>
         <td class="c">${flag(v.enviado_financeiro)}</td>
         <td class="c">${flag(v.enviado_cs)}</td>
       </tr>`;
@@ -333,7 +346,7 @@ export default function VendasPage() {
     <table><thead><tr>
       <th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Origem</th><th>Duração</th>
       <th class="r">Pix</th><th class="r">Cartão</th><th class="r">Boleto</th><th class="r">Valor Total</th>
-      <th class="c">Pago</th><th class="c">Contrato</th><th class="c">Financeiro</th><th class="c">CS</th>
+      <th class="c">Comprovante</th><th class="c">Contrato</th><th class="c">Financeiro</th><th class="c">CS</th>
     </tr></thead>
     <tbody>${rows}</tbody></table>
     <script>window.onload=function(){window.print()}<\/script>
@@ -564,40 +577,67 @@ export default function VendasPage() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-6">
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="pago" 
-                      name="pago"
-                      defaultChecked={editingVenda?.pago}
-                    />
-                    <Label htmlFor="pago">Pago</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="contrato_assinado" 
-                      name="contrato_assinado"
-                      defaultChecked={editingVenda?.contrato_assinado}
-                    />
-                    <Label htmlFor="contrato_assinado">Contrato Assinado</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="enviado_financeiro" 
-                      name="enviado_financeiro"
-                      defaultChecked={editingVenda?.enviado_financeiro}
-                    />
-                    <Label htmlFor="enviado_financeiro">Enviado ao Financeiro</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox 
-                      id="enviado_cs" 
-                      name="enviado_cs"
-                      defaultChecked={editingVenda?.enviado_cs}
-                    />
-                    <Label htmlFor="enviado_cs">Enviado ao CS</Label>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="link_comprovante">Comprovante de Pagamento (URL)</Label>
+                  <Input
+                    id="link_comprovante"
+                    type="url"
+                    placeholder="https://..."
+                    value={linkComprovante}
+                    onChange={(e) => setLinkComprovante(e.target.value)}
+                  />
+                  {linkComprovante.trim() && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-success/20 text-success">
+                      Pago ✓
+                    </span>
+                  )}
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="link_contrato">Link do Contrato (URL)</Label>
+                  <Input
+                    id="link_contrato"
+                    type="url"
+                    placeholder="https://..."
+                    value={linkContrato}
+                    onChange={(e) => setLinkContrato(e.target.value)}
+                  />
+                  {linkContrato.trim() && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/20 text-primary">
+                      Contrato ✓
+                    </span>
+                  )}
+                </div>
+
+                {canManageClosers ? (
+                  <div className="flex flex-wrap gap-6">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="enviado_financeiro"
+                        name="enviado_financeiro"
+                        defaultChecked={editingVenda?.enviado_financeiro}
+                      />
+                      <Label htmlFor="enviado_financeiro">Enviado ao Financeiro</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="enviado_cs"
+                        name="enviado_cs"
+                        defaultChecked={editingVenda?.enviado_cs}
+                      />
+                      <Label htmlFor="enviado_cs">Enviado ao CS</Label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${editingVenda?.enviado_financeiro ? 'bg-warning/20 text-warning' : 'bg-muted text-muted-foreground opacity-50'}`}>
+                      Financeiro {editingVenda?.enviado_financeiro ? '✓' : '—'}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${editingVenda?.enviado_cs ? 'bg-info/20 text-info' : 'bg-muted text-muted-foreground opacity-50'}`}>
+                      CS {editingVenda?.enviado_cs ? '✓' : '—'}
+                    </span>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="observacoes">Observações</Label>
@@ -924,19 +964,41 @@ export default function VendasPage() {
                           <div className="flex flex-col gap-1">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.pago ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground opacity-30'}`}>
-                                  <DollarSign className="h-3 w-3" />
-                                </span>
+                                {venda.link_comprovante ? (
+                                  <a
+                                    href={venda.link_comprovante}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-success/20 text-success hover:bg-success/30 transition-colors"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                ) : (
+                                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.pago ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground opacity-30'}`}>
+                                    <DollarSign className="h-3 w-3" />
+                                  </span>
+                                )}
                               </TooltipTrigger>
-                              <TooltipContent>Pagamento confirmado</TooltipContent>
+                              <TooltipContent>{venda.link_comprovante ? 'Ver comprovante de pagamento' : 'Sem comprovante'}</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.contrato_assinado ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground opacity-30'}`}>
-                                  <Edit2 className="h-3 w-3" />
-                                </span>
+                                {venda.link_contrato ? (
+                                  <a
+                                    href={venda.link_contrato}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                ) : (
+                                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${venda.contrato_assinado ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground opacity-30'}`}>
+                                    <Edit2 className="h-3 w-3" />
+                                  </span>
+                                )}
                               </TooltipTrigger>
-                              <TooltipContent>Contrato assinado</TooltipContent>
+                              <TooltipContent>{venda.link_contrato ? 'Ver contrato' : 'Sem contrato'}</TooltipContent>
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -970,31 +1032,23 @@ export default function VendasPage() {
                                 <Edit2 className="h-4 w-4 mr-2" />
                                 Editar
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                updateVenda.mutate({ id: venda.id, pago: !venda.pago });
-                              }}>
-                                <DollarSign className="h-4 w-4 mr-2" />
-                                {venda.pago ? 'Desmarcar pagamento' : 'Pagamento confirmado'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                updateVenda.mutate({ id: venda.id, contrato_assinado: !venda.contrato_assinado });
-                              }}>
-                                <Edit2 className="h-4 w-4 mr-2" />
-                                {venda.contrato_assinado ? 'Desmarcar contrato' : 'Marcar como assinado'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                updateVenda.mutate({ id: venda.id, enviado_financeiro: !venda.enviado_financeiro });
-                              }}>
-                                <Landmark className="h-4 w-4 mr-2" />
-                                {venda.enviado_financeiro ? 'Desmarcar financeiro' : 'Enviado ao financeiro'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                updateVenda.mutate({ id: venda.id, enviado_cs: !venda.enviado_cs });
-                              }}>
-                                <Headphones className="h-4 w-4 mr-2" />
-                                {venda.enviado_cs ? 'Desmarcar CS' : 'Enviado ao CS'}
-                              </DropdownMenuItem>
-                              {(isMaster || canManageClosers) && !isRefunded && (
+                              {canManageClosers && (
+                                <>
+                                  <DropdownMenuItem onClick={() => {
+                                    updateVenda.mutate({ id: venda.id, enviado_financeiro: !venda.enviado_financeiro });
+                                  }}>
+                                    <Landmark className="h-4 w-4 mr-2" />
+                                    {venda.enviado_financeiro ? 'Desmarcar financeiro' : 'Enviado ao financeiro'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    updateVenda.mutate({ id: venda.id, enviado_cs: !venda.enviado_cs });
+                                  }}>
+                                    <Headphones className="h-4 w-4 mr-2" />
+                                    {venda.enviado_cs ? 'Desmarcar CS' : 'Enviado ao CS'}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {(isMaster || canManageClosers || (isCloser && venda.closer_user_id === profile?.id)) && !isRefunded && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => setRefundTarget(venda)} className="text-yellow-500">

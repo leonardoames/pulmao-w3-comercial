@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { Menu } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -9,6 +10,15 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, noPadding = false }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
+
+  const onToggleCollapse = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar-collapsed', String(next));
+      return next;
+    });
+  };
 
   return (
     <div
@@ -38,10 +48,15 @@ export function AppLayout({ children, noPadding = false }: AppLayoutProps) {
         </button>
       )}
 
-      <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AppSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={onToggleCollapse}
+      />
 
       {/* Main content — offset by sidebar width on lg+ */}
-      <main className="w-full lg:pl-[260px]">
+      <main className={cn('w-full transition-all duration-300', collapsed ? 'lg:pl-16' : 'lg:pl-[260px]')}>
         {noPadding ? (
           <div style={{ paddingTop: '56px' }}>
             {children}
@@ -49,11 +64,9 @@ export function AppLayout({ children, noPadding = false }: AppLayoutProps) {
         ) : (
           <div
             className="px-4 pb-6 md:px-6 md:pb-8 lg:px-8"
-            style={{ paddingTop: '72px' }}
+            style={{ paddingTop: '56px' }}
           >
-            <div className="lg:pt-8">
-              {children}
-            </div>
+            {children}
           </div>
         )}
       </main>
