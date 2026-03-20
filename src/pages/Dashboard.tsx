@@ -16,13 +16,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ptBR } from 'date-fns/locale';
 
-import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
+import { useCanAccessAdminPanel, useCanManageUsers } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
 import { OrigemLeadCard } from '@/components/dashboard/OrigemLeadCard';
 import { Venda } from '@/types/crm';
 import { useOteRealized, useOteTeamStats } from '@/hooks/useOteGoals';
+import { OteGoalModal } from '@/components/ote/OteGoalModal';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -63,8 +64,11 @@ export default function DashboardPage() {
   const [selectedCloser, setSelectedCloser] = useState<string>('all');
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date>(new Date());
 
+  const [oteModalOpen, setOteModalOpen] = useState(false);
+
   const queryClient = useQueryClient();
   const canShare = useCanAccessAdminPanel();
+  const canManage = useCanManageUsers();
   const { canView: canViewSection } = usePermissionChecks();
   const { data: closers } = useClosers();
   const { data: stats, isLoading, dataUpdatedAt } = useDashboardStats(filter, customRange, selectedCloser);
@@ -345,6 +349,7 @@ export default function DashboardPage() {
               otePercentAchieved={oteDisplayData.percentAchieved}
               oteBadge={oteDisplayData.badge}
               oteLabel={oteDisplayData.label}
+              onEditMeta={canManage ? () => setOteModalOpen(true) : undefined}
             />
             <div className="flex flex-col gap-4">
               <StatCard
@@ -603,6 +608,14 @@ export default function DashboardPage() {
           <OrigemLeadCard vendas={vendasOrigem} />
         </div>
       )}
+
+      {/* OTE Goal Modal */}
+      <OteGoalModal
+        open={oteModalOpen}
+        onOpenChange={setOteModalOpen}
+        defaultMonth={monthRef}
+        defaultCloserId={closerId}
+      />
     </AppLayout>
   );
 }

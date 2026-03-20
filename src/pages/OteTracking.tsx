@@ -15,6 +15,8 @@ import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Plus, Target, Trophy, TrendingUp, Users, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { RAMPAGEM_LABELS } from '@/types/ote';
 
 export default function OteTrackingPage() {
   const [monthRef, setMonthRef] = useState(format(new Date(), 'yyyy-MM'));
@@ -200,6 +202,8 @@ export default function OteTrackingPage() {
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>Closer</TableHead>
+                  <TableHead>Nível</TableHead>
+                  <TableHead>Rampagem</TableHead>
                   <TableHead className="text-right">Meta OTE</TableHead>
                   <TableHead className="text-right">PIX</TableHead>
                   <TableHead className="text-right">Cartão</TableHead>
@@ -208,6 +212,8 @@ export default function OteTrackingPage() {
                   <TableHead className="text-center">% Atingido</TableHead>
                   <TableHead className="text-right">Faltante</TableHead>
                   <TableHead className="w-24">Progresso</TableHead>
+                  <TableHead className="text-right">Fixo (R$)</TableHead>
+                  <TableHead className="text-right">Remuneração</TableHead>
                   {canManage && <TableHead className="w-10" />}
                 </TableRow>
               </TableHeader>
@@ -226,6 +232,22 @@ export default function OteTrackingPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{row.closerNome}</TableCell>
+                    <TableCell>
+                      {row.nivelLabel ? (
+                        <Badge variant="outline" className="text-xs">{row.nivelLabel}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {row.rampagemKey && row.rampagemKey !== 'none' ? (
+                        <Badge className="text-xs bg-amber-500/20 text-amber-400 border-amber-500/30">
+                          {RAMPAGEM_LABELS[row.rampagemKey as keyof typeof RAMPAGEM_LABELS] || row.rampagemKey}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(row.oteTarget)}</TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {formatCurrency(row.pixSum)}
@@ -254,6 +276,12 @@ export default function OteTrackingPage() {
                         showMarkers={false}
                         height="sm"
                       />
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {formatCurrency(row.salarioFixo || 0)}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency((row.salarioFixo || 0) + row.oteRealized)}
                     </TableCell>
                     {canManage && (
                       <TableCell>

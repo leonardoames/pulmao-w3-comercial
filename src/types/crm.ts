@@ -22,6 +22,8 @@ export interface Profile {
   atualizado_em: string;
   avatar_url?: string | null;
   centro_custo?: string | null;
+  nivel_closer?: string | null;
+  rampagem?: 'none' | 'ramp1' | 'ramp2' | null;
 }
 
 export interface Venda {

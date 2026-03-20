@@ -165,7 +165,7 @@ export function useOteRealized(monthRef: string, closerId?: string) {
         .from('ote_goals')
         .select(`
           *,
-          closer:profiles!ote_goals_closer_user_id_fkey(id, nome)
+          closer:profiles!ote_goals_closer_user_id_fkey(id, nome, nivel_closer, rampagem)
         `)
         .eq('month_ref', monthRef);
 
@@ -175,6 +175,13 @@ export function useOteRealized(monthRef: string, closerId?: string) {
 
       const { data: goals, error: goalsError } = await goalsQuery;
       if (goalsError) throw goalsError;
+
+      // Get closer nivel data
+      const { data: niveis } = await supabase
+        .from('closer_niveis' as any)
+        .select('nivel, label, salario_fixo');
+      const nivelMap = new Map<string, { label: string; salario_fixo: number }>();
+      (niveis || []).forEach((n: any) => nivelMap.set(n.nivel, { label: n.label, salario_fixo: Number(n.salario_fixo) || 0 }));
 
       // Get sales for the month (exclude refunded)
       let salesQuery = supabase
@@ -209,8 +216,11 @@ export function useOteRealized(monthRef: string, closerId?: string) {
       (goals || []).forEach((goal: any) => {
         const closerId = goal.closer_user_id;
         const closerNome = goal.closer?.nome || 'Desconhecido';
+        const nivelKey = goal.closer?.nivel_closer || null;
+        const rampagemKey = goal.closer?.rampagem || null;
+        const nivelData = nivelKey ? nivelMap.get(nivelKey) : undefined;
         const salesData = salesByCloser.get(closerId) || { pixSum: 0, cardSum: 0, boletoSum: 0 };
-        
+
         const oteRealized = calculateOteRealized(salesData.pixSum, salesData.cardSum, salesData.boletoSum);
         const oteTarget = Number(goal.ote_target_value) || 0;
         const percentAchieved = oteTarget > 0 ? (oteRealized / oteTarget) * 100 : 0;
@@ -227,6 +237,10 @@ export function useOteRealized(monthRef: string, closerId?: string) {
           percentAchieved,
           remaining,
           badge: getOteBadge(percentAchieved),
+          nivelKey,
+          nivelLabel: nivelData?.label || null,
+          rampagemKey,
+          salarioFixo: nivelData?.salario_fixo || 0,
         });
       });
 

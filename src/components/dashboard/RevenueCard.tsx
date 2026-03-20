@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { OteProgressBar } from '@/components/ote/OteProgressBar';
 import { OteBadge } from '@/components/ote/OteBadge';
 import { cn } from '@/lib/utils';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface RevenueCardProps {
@@ -33,6 +33,7 @@ interface RevenueCardProps {
   otePercentAchieved: number;
   oteBadge: any;
   oteLabel: string;
+  onEditMeta?: () => void;
 }
 
 const formatCurrency = (value: number) =>
@@ -70,6 +71,7 @@ export function RevenueCard({
   otePercentAchieved,
   oteBadge,
   oteLabel,
+  onEditMeta,
 }: RevenueCardProps) {
   const total = volumeVendas || 1;
   const pctPix = (valorPix / total) * 100;
@@ -258,9 +260,22 @@ export function RevenueCard({
         {/* Meta OTE bar — scale 0-120% */}
         <div className="mb-2">
           <div className="flex items-center justify-between mb-1.5">
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
-              Meta OTE {oteLabel !== 'Time' ? `— ${oteLabel}` : 'do Time'}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
+                Meta OTE {oteLabel !== 'Time' ? `— ${oteLabel}` : 'do Time'}
+              </p>
+              {onEditMeta && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                  onClick={onEditMeta}
+                  title="Editar meta OTE"
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
             {hasOteGoal && (
               <div className="flex items-center gap-2">
                 <OteBadge badge={oteBadge} />

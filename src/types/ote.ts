@@ -1,3 +1,14 @@
+export interface CloserNivel {
+  nivel: string;
+  label: string;
+  taxa_conversao: number;
+  salario_fixo: number;
+  ordem: number;
+}
+
+export const RAMPAGEM_MULTIPLIERS = { none: 1, ramp1: 0.5, ramp2: 0.75 } as const;
+export const RAMPAGEM_LABELS = { none: 'Sem rampagem', ramp1: 'Rampagem 1 (50%)', ramp2: 'Rampagem 2 (75%)' } as const;
+
 export interface OteGoal {
   id: string;
   month_ref: string; // YYYY-MM
@@ -24,6 +35,10 @@ export interface OteRealized {
   percentAchieved: number;
   remaining: number;
   badge: '50%' | '70%' | '100%' | '120%' | null;
+  nivelKey?: string | null;
+  nivelLabel?: string | null;
+  rampagemKey?: string | null;
+  salarioFixo?: number;
 }
 
 export const OTE_MULTIPLIERS = {

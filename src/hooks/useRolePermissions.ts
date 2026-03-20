@@ -56,6 +56,7 @@ const DEFAULT_PERMISSIONS: Partial<Record<AppRole, Record<string, { can_view: bo
     'route:vendas': { can_view: true, can_edit: true },
     'route:meu-fechamento': { can_view: true, can_edit: true },
     'route:meta-ote': { can_view: true, can_edit: true },
+    'route:ote-calculadora': { can_view: false, can_edit: false },
     'route:social-selling': { can_view: true, can_edit: true },
     'route:leads': { can_view: false, can_edit: false },
     'route:trafego-pago-dashboard': { can_view: false, can_edit: false },
@@ -153,6 +154,7 @@ export const RESOURCE_DEFINITIONS: { key: string; label: string; group: string }
   { key: 'route:vendas', label: 'Vendas', group: 'Rotas - W3 Educação' },
   { key: 'route:meu-fechamento', label: 'Meu Fechamento', group: 'Rotas - W3 Educação' },
   { key: 'route:meta-ote', label: 'Meta OTE', group: 'Rotas - W3 Educação' },
+  { key: 'route:ote-calculadora', label: 'Calculadora OTE', group: 'Rotas - W3 Educação' },
   { key: 'route:social-selling', label: 'Social Selling', group: 'Rotas - W3 Educação' },
   { key: 'route:leads', label: 'Base Leads W3', group: 'Rotas - W3 Educação' },
   // Routes - W3 Tráfego Pago
@@ -196,6 +198,7 @@ export const ROUTE_TO_RESOURCE: Record<string, string> = {
   '/vendas': 'route:vendas',
   '/meu-fechamento': 'route:meu-fechamento',
   '/meta-ote': 'route:meta-ote',
+  '/ote-calculadora': 'route:ote-calculadora',
   '/social-selling': 'route:social-selling',
   '/leads': 'route:leads',
   '/trafego-pago/dashboard': 'route:trafego-pago-dashboard',
