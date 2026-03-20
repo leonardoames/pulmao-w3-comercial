@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ptBR } from 'date-fns/locale';
 
-import { useCanAccessAdminPanel, useCanManageUsers, useCurrentUserRole } from '@/hooks/useUserRoles';
+import { useCanAccessAdminPanel } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { RevenueCard } from '@/components/dashboard/RevenueCard';
 import { SectionLabel } from '@/components/dashboard/SectionLabel';
@@ -56,9 +56,8 @@ export default function DashboardPage() {
 
   const queryClient = useQueryClient();
   const canShare = useCanAccessAdminPanel();
-  const { data: _currentRole } = useCurrentUserRole();
-  const canManage = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL'].includes(_currentRole?.role || '');
-  const { canView: canViewSection } = usePermissionChecks();
+  const { canView: canViewSection, canEdit: canEditSection } = usePermissionChecks();
+  const canManage = canEditSection('section:dashboard:receita');
   const { data: closers } = useClosers();
   const { data: stats, isLoading, dataUpdatedAt } = useDashboardStats(filter, customRange, selectedCloser);
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
