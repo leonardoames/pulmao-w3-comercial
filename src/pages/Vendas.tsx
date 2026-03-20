@@ -994,17 +994,19 @@ export default function VendasPage() {
                                 <Headphones className="h-4 w-4 mr-2" />
                                 {venda.enviado_cs ? 'Desmarcar CS' : 'Enviado ao CS'}
                               </DropdownMenuItem>
-                              {isMaster && !isRefunded && (
+                              {(isMaster || canManageClosers) && !isRefunded && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => setRefundTarget(venda)} className="text-yellow-500">
                                     <RotateCcw className="h-4 w-4 mr-2" />
                                     Reembolsar
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => setDeleteTarget(venda)} className="text-destructive">
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Excluir
-                                  </DropdownMenuItem>
+                                  {isMaster && (
+                                    <DropdownMenuItem onClick={() => setDeleteTarget(venda)} className="text-destructive">
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  )}
                                 </>
                               )}
                             </DropdownMenuContent>

@@ -50,12 +50,13 @@ export function useDashboardStats(filter: DateFilter, customRange?: DateRange, c
 
       if (fechamentosError) throw fechamentosError;
 
-      // Vendas no período
+      // Vendas no período (exclui reembolsadas)
       let vendasQuery = supabase
         .from('vendas')
         .select('id, valor_total, valor_pix, valor_cartao, valor_boleto_parcela, quantidade_parcelas_boleto, closer_user_id')
         .gte('data_fechamento', start.toISOString().split('T')[0])
-        .lte('data_fechamento', end.toISOString().split('T')[0]);
+        .lte('data_fechamento', end.toISOString().split('T')[0])
+        .neq('status', 'Reembolsado');
       
       if (closerId && closerId !== 'all') {
         vendasQuery = vendasQuery.eq('closer_user_id', closerId);
@@ -117,7 +118,7 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
   return useQuery({
     queryKey: ['closer-rankings', filter, customRange?.start?.toISOString(), customRange?.end?.toISOString(), closerId],
     queryFn: async () => {
-      // Vendas do dia
+      // Vendas do dia (exclui reembolsadas)
       let vendasDiaQuery = supabase
         .from('vendas')
         .select(`
@@ -126,7 +127,8 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
           closer:profiles!vendas_closer_user_id_fkey(id, nome)
         `)
         .gte('data_fechamento', todayStart.toISOString().split('T')[0])
-        .lte('data_fechamento', todayEnd.toISOString().split('T')[0]);
+        .lte('data_fechamento', todayEnd.toISOString().split('T')[0])
+        .neq('status', 'Reembolsado');
       
       if (closerId && closerId !== 'all') {
         vendasDiaQuery = vendasDiaQuery.eq('closer_user_id', closerId);
@@ -134,7 +136,7 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
       
       const { data: vendasDia } = await vendasDiaQuery;
 
-      // Vendas da semana
+      // Vendas da semana (exclui reembolsadas)
       let vendasSemanaQuery = supabase
         .from('vendas')
         .select(`
@@ -143,7 +145,8 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
           closer:profiles!vendas_closer_user_id_fkey(id, nome)
         `)
         .gte('data_fechamento', weekStart.toISOString().split('T')[0])
-        .lte('data_fechamento', weekEnd.toISOString().split('T')[0]);
+        .lte('data_fechamento', weekEnd.toISOString().split('T')[0])
+        .neq('status', 'Reembolsado');
       
       if (closerId && closerId !== 'all') {
         vendasSemanaQuery = vendasSemanaQuery.eq('closer_user_id', closerId);
@@ -170,7 +173,7 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
       
       const { data: fechamentos } = await fechamentosQuery;
 
-      // Vendas do período para conversão
+      // Vendas do período para conversão (exclui reembolsadas)
       let vendasPeriodoQuery = supabase
         .from('vendas')
         .select(`
@@ -183,7 +186,8 @@ export function useCloserRankings(filter: DateFilter, customRange?: DateRange, c
           closer:profiles!vendas_closer_user_id_fkey(id, nome)
         `)
         .gte('data_fechamento', start.toISOString().split('T')[0])
-        .lte('data_fechamento', end.toISOString().split('T')[0]);
+        .lte('data_fechamento', end.toISOString().split('T')[0])
+        .neq('status', 'Reembolsado');
       
       if (closerId && closerId !== 'all') {
         vendasPeriodoQuery = vendasPeriodoQuery.eq('closer_user_id', closerId);

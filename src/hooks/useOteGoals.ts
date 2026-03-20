@@ -176,12 +176,13 @@ export function useOteRealized(monthRef: string, closerId?: string) {
       const { data: goals, error: goalsError } = await goalsQuery;
       if (goalsError) throw goalsError;
 
-      // Get sales for the month
+      // Get sales for the month (exclude refunded)
       let salesQuery = supabase
         .from('vendas')
         .select('closer_user_id, valor_pix, valor_cartao, valor_boleto_parcela, quantidade_parcelas_boleto')
         .gte('data_fechamento', startDate)
-        .lte('data_fechamento', endDate);
+        .lte('data_fechamento', endDate)
+        .neq('status', 'Reembolsado');
 
       if (closerId) {
         salesQuery = salesQuery.eq('closer_user_id', closerId);

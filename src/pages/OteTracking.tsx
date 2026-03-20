@@ -13,7 +13,7 @@ import { OteBadge } from '@/components/ote/OteBadge';
 import { OteGoalModal } from '@/components/ote/OteGoalModal';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Target, Trophy, TrendingUp, Users } from 'lucide-react';
+import { Plus, Target, Trophy, TrendingUp, Users, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function OteTrackingPage() {
@@ -22,8 +22,10 @@ export default function OteTrackingPage() {
   const [modalOpen, setModalOpen] = useState(false);
   
   const { data: userRole } = useCurrentUserRole();
-  const canManage = useCanManageUsers() || ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL'].includes(userRole?.role || '');
+  const canManage = useCanManageUsers() || ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR'].includes(userRole?.role || '');
   const isCloser = userRole?.role === 'CLOSER';
+
+  const [editingCloserId, setEditingCloserId] = useState<string | null>(null);
 
   const { data: closers } = useClosers();
   const closerId = selectedCloser === 'all' ? undefined : selectedCloser;
@@ -97,7 +99,7 @@ export default function OteTrackingPage() {
 
           {/* Add goal button */}
           {canManage && (
-            <Button onClick={() => setModalOpen(true)} className="gap-2">
+            <Button onClick={() => { setEditingCloserId(null); setModalOpen(true); }} className="gap-2">
               <Plus className="h-4 w-4" />
               Cadastrar Meta
             </Button>
@@ -206,6 +208,7 @@ export default function OteTrackingPage() {
                   <TableHead className="text-center">% Atingido</TableHead>
                   <TableHead className="text-right">Faltante</TableHead>
                   <TableHead className="w-24">Progresso</TableHead>
+                  {canManage && <TableHead className="w-10" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,12 +249,25 @@ export default function OteTrackingPage() {
                       {row.remaining > 0 ? formatCurrency(row.remaining) : '-'}
                     </TableCell>
                     <TableCell>
-                      <OteProgressBar 
-                        percentAchieved={row.percentAchieved} 
+                      <OteProgressBar
+                        percentAchieved={row.percentAchieved}
                         showMarkers={false}
                         height="sm"
                       />
                     </TableCell>
+                    {canManage && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => { setEditingCloserId(row.closerId); setModalOpen(true); }}
+                          title="Editar meta"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -275,8 +291,9 @@ export default function OteTrackingPage() {
       {/* Goal Modal */}
       <OteGoalModal
         open={modalOpen}
-        onOpenChange={setModalOpen}
+        onOpenChange={(open) => { setModalOpen(open); if (!open) setEditingCloserId(null); }}
         defaultMonth={monthRef}
+        defaultCloserId={editingCloserId || undefined}
       />
     </AppLayout>
   );
