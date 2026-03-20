@@ -9,27 +9,11 @@ import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { format, startOfMonth, getDaysInMonth, getDate, isWeekend, eachDayOfInterval, startOfMonth as startOfMonthFn, endOfMonth as endOfMonthFn } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMetaMensal } from "@/hooks/useMetaFaturamento";
 
 const SCREEN_COUNT = 4;
 const ROTATION_INTERVAL = 15000;
 const FADE_DURATION = 600;
-
-function useTvMetaMensal() {
-  return useQuery({
-    queryKey: ["tv-settings", "meta_mensal"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tv_settings")
-        .select("value")
-        .eq("key", "meta_mensal")
-        .maybeSingle();
-      if (error) throw error;
-      return data ? Number(data.value) : 100000;
-    },
-  });
-}
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
@@ -636,8 +620,8 @@ export default function TVModePage() {
 
   const { data: stats, refetch: refetchStats } = useDashboardStats(filter, undefined, "all");
   const { data: rankings, refetch: refetchRankings } = useCloserRankings(filter, undefined, "all");
-  const { data: metaMensalDb } = useTvMetaMensal();
-  const metaMensal = metaMensalDb ?? 100000;
+  const { data: metaMensalDb } = useMetaMensal(monthRef);
+  const metaMensal = metaMensalDb ?? 0;
 
   const { data: ssEntries = [], refetch: refetchSS } = useSocialSellingEntries({
     startDate: filterRange.start,

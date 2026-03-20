@@ -24,6 +24,8 @@ import { OrigemLeadCard } from '@/components/dashboard/OrigemLeadCard';
 import { Venda } from '@/types/crm';
 import { useOteRealized, useOteTeamStats } from '@/hooks/useOteGoals';
 import { OteGoalModal } from '@/components/ote/OteGoalModal';
+import { useMetaMensal } from '@/hooks/useMetaFaturamento';
+import { MetaMensalModal } from '@/components/dashboard/MetaMensalModal';
 
 const filterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
@@ -33,21 +35,6 @@ const filterOptions: { value: DateFilter; label: string }[] = [
   { value: '30days', label: '30 dias' },
   { value: 'custom', label: 'Custom' },
 ];
-
-function useTvMetaMensal() {
-  return useQuery({
-    queryKey: ['tv-settings', 'meta_mensal'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tv_settings')
-        .select('value')
-        .eq('key', 'meta_mensal')
-        .maybeSingle();
-      if (error) throw error;
-      return data ? Number(data.value) : 100000;
-    },
-  });
-}
 
 function getMetaColor(actual: number, expected: number): string {
   const ratio = expected > 0 ? actual / expected : 1;
@@ -65,6 +52,7 @@ export default function DashboardPage() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date>(new Date());
 
   const [oteModalOpen, setOteModalOpen] = useState(false);
+  const [metaMensalModalOpen, setMetaMensalModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const canShare = useCanAccessAdminPanel();
@@ -74,10 +62,10 @@ export default function DashboardPage() {
   const { data: stats, isLoading, dataUpdatedAt } = useDashboardStats(filter, customRange, selectedCloser);
   const { data: rankings } = useCloserRankings(filter, customRange, selectedCloser);
   const { data: noShowByCloser } = useNoShowByCloser(filter, customRange);
-  const { data: metaMensal } = useTvMetaMensal();
 
   // OTE data
   const monthRef = format(new Date(), 'yyyy-MM');
+  const { data: metaMensal } = useMetaMensal(monthRef);
   const closerId = selectedCloser === 'all' ? undefined : selectedCloser;
   const { data: oteData } = useOteRealized(monthRef, closerId);
   const { data: teamStats } = useOteTeamStats(monthRef);
@@ -174,7 +162,7 @@ export default function DashboardPage() {
   const expectedPercent = expectedProportion * 100;
 
   // Meta Mensal calculations
-  const metaMensalValue = metaMensal ?? 100000;
+  const metaMensalValue = metaMensal ?? 0;
   const volumeVendas = stats?.volumeVendas ?? 0;
   const metaMensalPercent = metaMensalValue > 0 ? (volumeVendas / metaMensalValue) * 100 : 0;
 
@@ -350,6 +338,7 @@ export default function DashboardPage() {
               oteBadge={oteDisplayData.badge}
               oteLabel={oteDisplayData.label}
               onEditMeta={canManage ? () => setOteModalOpen(true) : undefined}
+              onEditMetaMensal={canManage ? () => setMetaMensalModalOpen(true) : undefined}
             />
             <div className="flex flex-col gap-4">
               <StatCard
@@ -615,6 +604,13 @@ export default function DashboardPage() {
         onOpenChange={setOteModalOpen}
         defaultMonth={monthRef}
         defaultCloserId={closerId}
+      />
+
+      {/* Meta Mensal Modal */}
+      <MetaMensalModal
+        open={metaMensalModalOpen}
+        onOpenChange={setMetaMensalModalOpen}
+        defaultMonthRef={monthRef}
       />
     </AppLayout>
   );

@@ -34,6 +34,7 @@ interface RevenueCardProps {
   oteBadge: any;
   oteLabel: string;
   onEditMeta?: () => void;
+  onEditMetaMensal?: () => void;
 }
 
 const formatCurrency = (value: number) =>
@@ -72,6 +73,7 @@ export function RevenueCard({
   oteBadge,
   oteLabel,
   onEditMeta,
+  onEditMetaMensal,
 }: RevenueCardProps) {
   const total = volumeVendas || 1;
   const pctPix = (valorPix / total) * 100;
@@ -249,7 +251,20 @@ export function RevenueCard({
         {/* Meta Mensal bar — scale 0-120% */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-1.5">
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
+            <div className="flex items-center gap-1.5">
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>Meta Mensal</p>
+              {onEditMetaMensal && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                  onClick={onEditMetaMensal}
+                  title="Editar meta de faturamento"
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
               {formatCurrencyShort(volumeVendas)} / {formatCurrencyShort(metaMensalValue)}
             </p>
