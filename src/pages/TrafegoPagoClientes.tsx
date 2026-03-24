@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink, Database } from 'lucide-react';
+import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink, Database, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLeadById, useUpdateLead } from '@/hooks/useLeads';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
@@ -27,6 +27,8 @@ import {
   useUpsertTrafegoPagoCliente,
   useUpsertTrafegoPagoRegistro,
   useBatchInsertTrafegoPagoRegistros,
+  useDeleteTrafegoPagoCliente,
+  useTrafegoPagoValorTotal,
   TrafegoPagoCliente,
   TrafegoPagoRegistro,
   useTrafegoPagoAllRegistros,
@@ -65,6 +67,10 @@ export default function TrafegoPagoClientes() {
     observacao: '',
   });
 
+  // Delete confirmation
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingCliente, setDeletingCliente] = useState<TrafegoPagoCliente | null>(null);
+
   // Batch view
   const [batchOpen, setBatchOpen] = useState(false);
   const [batchData, setBatchData] = useState<Record<string, { investimento: string; valor_pago: string; status: string }>>({});
@@ -100,6 +106,7 @@ export default function TrafegoPagoClientes() {
 
   const { data: clientes, isLoading } = useTrafegoPagoClientes({ search, status: filterStatus, gestor: filterGestor, plataforma: filterPlataforma });
   const { data: registros } = useTrafegoPagoRegistros(editingCliente?.id);
+  const { data: valorTotalMap } = useTrafegoPagoValorTotal();
   const { data: closers } = useClosers();
   const { data: linkedLead } = useLeadById(editingCliente?.lead_id);
   const updateLead = useUpdateLead();
@@ -120,6 +127,7 @@ export default function TrafegoPagoClientes() {
   const upsertCliente = useUpsertTrafegoPagoCliente();
   const upsertRegistro = useUpsertTrafegoPagoRegistro();
   const batchInsert = useBatchInsertTrafegoPagoRegistros();
+  const deleteCliente = useDeleteTrafegoPagoCliente();
 
   const gestorMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -229,6 +237,25 @@ export default function TrafegoPagoClientes() {
         setBatchOpen(false);
       },
       onError: (err: any) => toast.error(err.message || 'Erro ao salvar em lote'),
+    });
+  };
+
+  const openDeleteConfirm = (c: TrafegoPagoCliente, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingCliente(c);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteCliente = () => {
+    if (!deletingCliente) return;
+    deleteCliente.mutate(deletingCliente.id, {
+      onSuccess: () => {
+        toast.success(`${deletingCliente.nome_ecommerce} removido!`);
+        setDeleteConfirmOpen(false);
+        setDeletingCliente(null);
+        if (editingCliente?.id === deletingCliente.id) setDrawerOpen(false);
+      },
+      onError: (err: any) => toast.error(err.message || 'Erro ao remover cliente'),
     });
   };
 
@@ -359,6 +386,15 @@ export default function TrafegoPagoClientes() {
             {closers?.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterPlataforma} onValueChange={setFilterPlataforma}>
+          <SelectTrigger className="w-[150px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
+            <SelectValue placeholder="Plataforma" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            {PLATAFORMAS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Button variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-2">
           <Upload className="h-4 w-4" /> Importar CSV
         </Button>
@@ -395,6 +431,7 @@ export default function TrafegoPagoClientes() {
                 <TableHead>Gestor</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Valor MRR</TableHead>
+                <TableHead className="text-right">Valor Total</TableHead>
                 <TableHead>Reg. {format(new Date(), 'MMM/yy', { locale: ptBR })}</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -480,6 +517,9 @@ export default function TrafegoPagoClientes() {
                         displayValue={formatCurrency(Number(c.valor_mrr))}
                       />
                     </TableCell>
+                    <TableCell className="text-right font-semibold" style={{ color: '#22C55E' }}>
+                      {valorTotalMap?.[c.id] != null ? formatCurrency(valorTotalMap[c.id]) : '—'}
+                    </TableCell>
                     <TableCell>{getRegStatusCell(c)}</TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="ghost" size="sm" onClick={e => e.stopPropagation()}>
@@ -490,13 +530,16 @@ export default function TrafegoPagoClientes() {
                       <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); openEdit(c); }}>
                         <Edit className="h-4 w-4" />
                       </Button>
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={e => openDeleteConfirm(c, e)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
               })}
               {(!clientes || clientes.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
                     Nenhum cliente encontrado
                   </TableCell>
                 </TableRow>
@@ -768,6 +811,15 @@ export default function TrafegoPagoClientes() {
               <Button onClick={handleSaveCliente} disabled={upsertCliente.isPending} className="w-full">
                 {editingCliente ? 'Salvar Alterações' : 'Criar Cliente'}
               </Button>
+              {editingCliente && (
+                <Button
+                  variant="outline"
+                  className="w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={e => openDeleteConfirm(editingCliente, e)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Cliente
+                </Button>
+              )}
             </TabsContent>
 
             {editingCliente && (
@@ -867,6 +919,27 @@ export default function TrafegoPagoClientes() {
           </Tabs>
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Remover Cliente
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Tem certeza que deseja remover <strong className="text-foreground">{deletingCliente?.nome_ecommerce}</strong>? Esta ação é irreversível e todos os registros mensais vinculados serão removidos.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteCliente} disabled={deleteCliente.isPending}>
+              {deleteCliente.isPending ? 'Removendo...' : 'Remover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <CSVImportModal open={csvImportOpen} onOpenChange={setCsvImportOpen} />
     </AppLayout>

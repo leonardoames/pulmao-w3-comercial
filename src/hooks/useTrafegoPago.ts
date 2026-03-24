@@ -286,6 +286,40 @@ export function useUpsertTrafegoPagoRegistro() {
   });
 }
 
+export function useDeleteTrafegoPagoCliente() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('trafego_pago_clientes')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trafego-pago-clientes'] });
+    },
+  });
+}
+
+export function useTrafegoPagoValorTotal() {
+  return useQuery({
+    queryKey: ['trafego-pago-valor-total'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('trafego_pago_registros')
+        .select('cliente_id, valor_pago');
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      (data ?? []).forEach(r => {
+        map[r.cliente_id] = (map[r.cliente_id] ?? 0) + Number(r.valor_pago);
+      });
+      return map;
+    },
+  });
+}
+
 export function useBatchInsertTrafegoPagoRegistros() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
