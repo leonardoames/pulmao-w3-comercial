@@ -12,7 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink, Database, Trash2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Search, Edit, AlertTriangle, Upload, AlertCircle, ExternalLink, Database, Trash2, Columns } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLeadById, useUpdateLead } from '@/hooks/useLeads';
 import { CSVImportModal } from '@/components/trafego-pago/CSVImportModal';
@@ -28,7 +30,6 @@ import {
   useUpsertTrafegoPagoRegistro,
   useBatchInsertTrafegoPagoRegistros,
   useDeleteTrafegoPagoCliente,
-  useTrafegoPagoValorTotal,
   TrafegoPagoCliente,
   TrafegoPagoRegistro,
   useTrafegoPagoAllRegistros,
@@ -66,6 +67,18 @@ export default function TrafegoPagoClientes() {
     roas_entregue: '',
     observacao: '',
   });
+
+  // Column visibility
+  const [visibleColumns, setVisibleColumns] = useState({
+    nicho: true,
+    data_entrada: true,
+    gestor: true,
+    status: true,
+    valor_mrr: true,
+    reg_mes: true,
+  });
+  const toggleColumn = (col: keyof typeof visibleColumns) =>
+    setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }));
 
   // Delete confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -106,7 +119,6 @@ export default function TrafegoPagoClientes() {
 
   const { data: clientes, isLoading } = useTrafegoPagoClientes({ search, status: filterStatus, gestor: filterGestor, plataforma: filterPlataforma });
   const { data: registros } = useTrafegoPagoRegistros(editingCliente?.id);
-  const { data: valorTotalMap } = useTrafegoPagoValorTotal();
   const { data: closers } = useClosers();
   const { data: linkedLead } = useLeadById(editingCliente?.lead_id);
   const updateLead = useUpdateLead();
@@ -143,6 +155,10 @@ export default function TrafegoPagoClientes() {
     });
     return map;
   }, [allRegsAtual]);
+
+  const totalMRR = useMemo(() =>
+    (clientes ?? []).reduce((sum, c) => sum + Number(c.valor_mrr ?? 0), 0),
+  [clientes]);
 
   // Missing clients (active without record this month)
   const missingClients = useMemo(() => {
@@ -395,6 +411,32 @@ export default function TrafegoPagoClientes() {
             {PLATAFORMAS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Columns className="h-4 w-4" /> Colunas
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-48 p-3 space-y-2">
+            {([
+              ['nicho', 'Nicho'],
+              ['data_entrada', 'Data Entrada'],
+              ['gestor', 'Gestor'],
+              ['status', 'Status'],
+              ['valor_mrr', 'Valor MRR'],
+              ['reg_mes', 'Reg. Mês'],
+            ] as [keyof typeof visibleColumns, string][]).map(([key, label]) => (
+              <div key={key} className="flex items-center gap-2">
+                <Checkbox
+                  id={`col-${key}`}
+                  checked={visibleColumns[key]}
+                  onCheckedChange={() => toggleColumn(key)}
+                />
+                <label htmlFor={`col-${key}`} className="text-sm cursor-pointer select-none">{label}</label>
+              </div>
+            ))}
+          </PopoverContent>
+        </Popover>
         <Button variant="outline" onClick={() => setCsvImportOpen(true)} className="gap-2">
           <Upload className="h-4 w-4" /> Importar CSV
         </Button>
@@ -402,6 +444,39 @@ export default function TrafegoPagoClientes() {
           <Plus className="h-4 w-4" /> Novo Cliente
         </Button>
       </PageHeader>
+
+      {/* Summary */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <Card>
+          <CardContent className="py-4 px-5">
+            <p className="text-xs text-muted-foreground mb-1">MRR Total</p>
+            <p className="text-2xl font-bold" style={{ color: '#F97316' }}>{formatCurrency(totalMRR)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{clientes?.length ?? 0} cliente{(clientes?.length ?? 0) !== 1 ? 's' : ''} filtrado{(clientes?.length ?? 0) !== 1 ? 's' : ''}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-4 px-5">
+            <p className="text-xs text-muted-foreground mb-1">Clientes Ativos</p>
+            <p className="text-2xl font-bold" style={{ color: '#22C55E' }}>
+              {clientes?.filter(c => c.status === 'Ativo').length ?? 0}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              MRR: {formatCurrency((clientes ?? []).filter(c => c.status === 'Ativo').reduce((s, c) => s + Number(c.valor_mrr ?? 0), 0))}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-4 px-5">
+            <p className="text-xs text-muted-foreground mb-1">Trial / Pausados</p>
+            <p className="text-2xl font-bold" style={{ color: '#FBBF24' }}>
+              {clientes?.filter(c => c.status === 'Trial' || c.status === 'Pausado').length ?? 0}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              MRR: {formatCurrency((clientes ?? []).filter(c => c.status === 'Trial' || c.status === 'Pausado').reduce((s, c) => s + Number(c.valor_mrr ?? 0), 0))}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Banner: missing records */}
       {missingClients.length > 0 && (
@@ -426,13 +501,12 @@ export default function TrafegoPagoClientes() {
             <TableHeader>
               <TableRow>
                 <TableHead>E-commerce</TableHead>
-                <TableHead>Nicho</TableHead>
-                <TableHead>Data Entrada</TableHead>
-                <TableHead>Gestor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Valor MRR</TableHead>
-                <TableHead className="text-right">Valor Total</TableHead>
-                <TableHead>Reg. {format(new Date(), 'MMM/yy', { locale: ptBR })}</TableHead>
+                {visibleColumns.nicho && <TableHead>Nicho</TableHead>}
+                {visibleColumns.data_entrada && <TableHead>Data Entrada</TableHead>}
+                {visibleColumns.gestor && <TableHead>Gestor</TableHead>}
+                {visibleColumns.status && <TableHead>Status</TableHead>}
+                {visibleColumns.valor_mrr && <TableHead className="text-right">Valor MRR</TableHead>}
+                {visibleColumns.reg_mes && <TableHead>Reg. {format(new Date(), 'MMM/yy', { locale: ptBR })}</TableHead>}
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -492,35 +566,42 @@ export default function TrafegoPagoClientes() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      <InlineEditCell value={c.nicho || ''} onSave={v => handleInlineUpdate('nicho', v)} />
-                    </TableCell>
-                    <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
-                      <InlineEditCell
-                        value={c.data_entrada || ''}
-                        type="date"
-                        onSave={v => handleInlineUpdate('data_entrada', v)}
-                        displayValue={c.data_entrada ? format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}
-                      />
-                    </TableCell>
-                    <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{gestorMap[c.gestor_user_id || ''] || '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" style={{ borderColor: STATUS_COLORS[c.status], color: STATUS_COLORS[c.status] }}>
-                        {c.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold" style={{ color: '#F97316' }}>
-                      <InlineEditCell
-                        value={String(c.valor_mrr || 0)}
-                        type="currency"
-                        onSave={v => handleInlineUpdate('valor_mrr', v)}
-                        displayValue={formatCurrency(Number(c.valor_mrr))}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right font-semibold" style={{ color: '#22C55E' }}>
-                      {valorTotalMap?.[c.id] != null ? formatCurrency(valorTotalMap[c.id]) : '—'}
-                    </TableCell>
-                    <TableCell>{getRegStatusCell(c)}</TableCell>
+                    {visibleColumns.nicho && (
+                      <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        <InlineEditCell value={c.nicho || ''} onSave={v => handleInlineUpdate('nicho', v)} />
+                      </TableCell>
+                    )}
+                    {visibleColumns.data_entrada && (
+                      <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        <InlineEditCell
+                          value={c.data_entrada || ''}
+                          type="date"
+                          onSave={v => handleInlineUpdate('data_entrada', v)}
+                          displayValue={c.data_entrada ? format(new Date(c.data_entrada + 'T12:00:00'), 'dd/MM/yyyy') : '—'}
+                        />
+                      </TableCell>
+                    )}
+                    {visibleColumns.gestor && (
+                      <TableCell style={{ color: 'rgba(255,255,255,0.5)' }}>{gestorMap[c.gestor_user_id || ''] || '—'}</TableCell>
+                    )}
+                    {visibleColumns.status && (
+                      <TableCell>
+                        <Badge variant="outline" style={{ borderColor: STATUS_COLORS[c.status], color: STATUS_COLORS[c.status] }}>
+                          {c.status}
+                        </Badge>
+                      </TableCell>
+                    )}
+                    {visibleColumns.valor_mrr && (
+                      <TableCell className="text-right font-semibold" style={{ color: '#F97316' }}>
+                        <InlineEditCell
+                          value={String(c.valor_mrr || 0)}
+                          type="currency"
+                          onSave={v => handleInlineUpdate('valor_mrr', v)}
+                          displayValue={formatCurrency(Number(c.valor_mrr))}
+                        />
+                      </TableCell>
+                    )}
+                    {visibleColumns.reg_mes && <TableCell>{getRegStatusCell(c)}</TableCell>}
                     <TableCell className="text-right">
                       <Button asChild variant="ghost" size="sm" onClick={e => e.stopPropagation()}>
                         <Link to={c.lead_id ? `/leads?lead=${c.lead_id}` : `/leads?search=${encodeURIComponent(c.nome_ecommerce)}`}>
@@ -539,7 +620,7 @@ export default function TrafegoPagoClientes() {
               })}
               {(!clientes || clientes.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={2 + Object.values(visibleColumns).filter(Boolean).length} className="text-center py-12 text-muted-foreground">
                     Nenhum cliente encontrado
                   </TableCell>
                 </TableRow>
