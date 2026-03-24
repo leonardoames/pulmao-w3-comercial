@@ -75,7 +75,7 @@ export default function TrafegoPagoClientes() {
     gestor: true,
     status: true,
     valor_mrr: true,
-    reg_mes: true,
+    reg_mes: false,
   });
   const toggleColumn = (col: keyof typeof visibleColumns) =>
     setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }));
