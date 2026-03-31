@@ -337,7 +337,7 @@ export default function OteCalculadoraPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{row.closer.nome}</span>
                         {hasGoal && row.selected && (
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-400" title="Já possui meta neste mês" />
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
                         )}
                       </div>
                     </TableCell>

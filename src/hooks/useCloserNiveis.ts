@@ -60,7 +60,7 @@ export function useUpdateCloserProfile() {
     mutationFn: async ({ userId, nivel_closer, rampagem }: UpdateCloserProfileInput) => {
       const { error } = await supabase
         .from('profiles')
-        .update({ nivel_closer, rampagem })
+        .update({ nivel_closer: nivel_closer as any, rampagem: rampagem as any })
         .eq('id', userId);
       if (error) throw error;
     },

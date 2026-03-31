@@ -237,7 +237,7 @@ export function useOteRealized(monthRef: string, closerId?: string) {
           closerNome,
           pixSum: salesData.pixSum,
           cardSum: salesData.cardSum,
-          boletoSum: salesData.boletoSum,
+          boletoSum: salesData.boletoShortSum + salesData.boletoLongSum,
           oteRealized,
           oteTarget,
           percentAchieved,

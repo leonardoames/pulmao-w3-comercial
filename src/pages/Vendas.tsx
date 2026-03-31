@@ -241,7 +241,7 @@ export default function VendasPage() {
       return;
     }
 
-    const data: Record<string, any> = {
+    const baseData = {
       nome_lead: nomeLead,
       nome_empresa: nomeEmpresa,
       duracao_contrato_meses: duracaoContrato,
@@ -253,26 +253,22 @@ export default function VendasPage() {
       link_contrato: linkContrato.trim() || null,
       observacoes: observacoesRaw || undefined,
       origem_lead: origemLead || null,
+      closer_user_id: closerUserId,
+      data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
+      ...(canManageClosers ? {
+        enviado_financeiro: formData.get('enviado_financeiro') === 'on',
+        enviado_cs: formData.get('enviado_cs') === 'on',
+      } : {}),
     };
-    if (canManageClosers) {
-      data.enviado_financeiro = formData.get('enviado_financeiro') === 'on';
-      data.enviado_cs = formData.get('enviado_cs') === 'on';
-    }
 
     try {
       if (editingVenda) {
         await updateVenda.mutateAsync({
           id: editingVenda.id,
-          ...data,
-          closer_user_id: closerUserId,
-          data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
+          ...baseData,
         });
       } else {
-        await createVenda.mutateAsync({
-          ...data,
-          closer_user_id: closerUserId,
-          data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
-        });
+        await createVenda.mutateAsync(baseData);
       }
       setDialogOpen(false);
     } catch (error) {

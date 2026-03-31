@@ -41,16 +41,29 @@ export interface OteRealized {
   salarioFixo?: number;
 }
 
+export const OTE_BOLETO_THRESHOLD = 5; // parcelas <= 5 usam mult 1.0
+
 export const OTE_MULTIPLIERS = {
   pix: 1.2,
   card: 1.0,
-  boleto: 0.5,
+  boletoShort: 1.0, // até 5 parcelas
+  boletoLong: 0.5,  // mais de 5 parcelas
 } as const;
 
 export const OTE_THRESHOLDS = [50, 70, 100, 120] as const;
 
-export function calculateOteRealized(pixSum: number, cardSum: number, boletoSum: number): number {
-  return (pixSum * OTE_MULTIPLIERS.pix) + (cardSum * OTE_MULTIPLIERS.card) + (boletoSum * OTE_MULTIPLIERS.boleto);
+export function calculateOteRealized(
+  pixSum: number,
+  cardSum: number,
+  boletoShortSum: number,
+  boletoLongSum: number,
+): number {
+  return (
+    (pixSum * OTE_MULTIPLIERS.pix) +
+    (cardSum * OTE_MULTIPLIERS.card) +
+    (boletoShortSum * OTE_MULTIPLIERS.boletoShort) +
+    (boletoLongSum * OTE_MULTIPLIERS.boletoLong)
+  );
 }
 
 export function getOteBadge(percentAchieved: number): OteRealized['badge'] {
