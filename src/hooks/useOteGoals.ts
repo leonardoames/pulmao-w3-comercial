@@ -225,9 +225,9 @@ export function useOteRealized(monthRef: string, closerId?: string) {
         const nivelKey = goal.closer?.nivel_closer || null;
         const rampagemKey = goal.closer?.rampagem || null;
         const nivelData = nivelKey ? nivelMap.get(nivelKey) : undefined;
-        const salesData = salesByCloser.get(closerId) || { pixSum: 0, cardSum: 0, boletoSum: 0 };
+        const salesData = salesByCloser.get(closerId) || { pixSum: 0, cardSum: 0, boletoShortSum: 0, boletoLongSum: 0 };
 
-        const oteRealized = calculateOteRealized(salesData.pixSum, salesData.cardSum, salesData.boletoSum);
+        const oteRealized = calculateOteRealized(salesData.pixSum, salesData.cardSum, salesData.boletoShortSum, salesData.boletoLongSum);
         const oteTarget = Number(goal.ote_target_value) || 0;
         const percentAchieved = oteTarget > 0 ? (oteRealized / oteTarget) * 100 : 0;
         const remaining = Math.max(0, oteTarget - oteRealized);
