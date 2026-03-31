@@ -113,7 +113,7 @@ export default function OteCalculadoraPage() {
     const pctSum = params.pctPix + params.pctCartao + params.pctBoleto;
     const pixW = pctSum > 0 ? (params.pctPix / pctSum) * OTE_MULTIPLIERS.pix : 0;
     const cartaoW = pctSum > 0 ? (params.pctCartao / pctSum) * OTE_MULTIPLIERS.card : 0;
-    const boletoW = pctSum > 0 ? (params.pctBoleto / pctSum) * OTE_MULTIPLIERS.boleto : 0;
+    const boletoW = pctSum > 0 ? (params.pctBoleto / pctSum) * OTE_MULTIPLIERS.boletoShort : 0;
     const oteWeight = pixW + cartaoW + boletoW;
 
     return rows.map((r) => {
@@ -337,7 +337,7 @@ export default function OteCalculadoraPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{row.closer.nome}</span>
                         {hasGoal && row.selected && (
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-400" title="Já possui meta neste mês" />
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
                         )}
                       </div>
                     </TableCell>
