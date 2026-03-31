@@ -199,14 +199,20 @@ export function useOteRealized(monthRef: string, closerId?: string) {
       if (salesError) throw salesError;
 
       // Aggregate sales by closer
-      const salesByCloser = new Map<string, { pixSum: number; cardSum: number; boletoSum: number }>();
+      const salesByCloser = new Map<string, { pixSum: number; cardSum: number; boletoShortSum: number; boletoLongSum: number }>();
       
       sales?.forEach(sale => {
         const id = sale.closer_user_id;
-        const current = salesByCloser.get(id) || { pixSum: 0, cardSum: 0, boletoSum: 0 };
+        const current = salesByCloser.get(id) || { pixSum: 0, cardSum: 0, boletoShortSum: 0, boletoLongSum: 0 };
         current.pixSum += Number(sale.valor_pix) || 0;
         current.cardSum += Number(sale.valor_cartao) || 0;
-        current.boletoSum += (Number(sale.valor_boleto_parcela) || 0) * (Number(sale.quantidade_parcelas_boleto) || 0);
+        const boletoTotal = (Number(sale.valor_boleto_parcela) || 0) * (Number(sale.quantidade_parcelas_boleto) || 0);
+        const parcelas = Number(sale.quantidade_parcelas_boleto) || 0;
+        if (parcelas > 0 && parcelas <= 5) {
+          current.boletoShortSum += boletoTotal;
+        } else {
+          current.boletoLongSum += boletoTotal;
+        }
         salesByCloser.set(id, current);
       });
 
