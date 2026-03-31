@@ -113,7 +113,7 @@ export default function OteCalculadoraPage() {
     const pctSum = params.pctPix + params.pctCartao + params.pctBoleto;
     const pixW = pctSum > 0 ? (params.pctPix / pctSum) * OTE_MULTIPLIERS.pix : 0;
     const cartaoW = pctSum > 0 ? (params.pctCartao / pctSum) * OTE_MULTIPLIERS.card : 0;
-    const boletoW = pctSum > 0 ? (params.pctBoleto / pctSum) * OTE_MULTIPLIERS.boleto : 0;
+    const boletoW = pctSum > 0 ? (params.pctBoleto / pctSum) * OTE_MULTIPLIERS.boletoShort : 0;
     const oteWeight = pixW + cartaoW + boletoW;
 
     return rows.map((r) => {
