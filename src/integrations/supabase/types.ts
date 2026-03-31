@@ -218,6 +218,33 @@ export type Database = {
           },
         ]
       }
+      closer_niveis: {
+        Row: {
+          atualizado_em: string | null
+          label: string
+          nivel: string
+          ordem: number
+          salario_fixo: number
+          taxa_conversao: number
+        }
+        Insert: {
+          atualizado_em?: string | null
+          label: string
+          nivel: string
+          ordem: number
+          salario_fixo?: number
+          taxa_conversao?: number
+        }
+        Update: {
+          atualizado_em?: string | null
+          label?: string
+          nivel?: string
+          ordem?: number
+          salario_fixo?: number
+          taxa_conversao?: number
+        }
+        Relationships: []
+      }
       content_daily_logs: {
         Row: {
           created_at: string
@@ -765,6 +792,27 @@ export type Database = {
           },
         ]
       }
+      metas_faturamento: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          month_ref: string
+          valor: number
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          month_ref: string
+          valor?: number
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          month_ref?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       ote_goals: {
         Row: {
           atualizado_em: string
@@ -1039,7 +1087,9 @@ export type Database = {
           criado_em: string
           email: string
           id: string
+          nivel_closer: string | null
           nome: string
+          rampagem: string | null
           role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
@@ -1050,7 +1100,9 @@ export type Database = {
           criado_em?: string
           email: string
           id: string
+          nivel_closer?: string | null
           nome: string
+          rampagem?: string | null
           role?: Database["public"]["Enums"]["user_role"]
         }
         Update: {
@@ -1061,10 +1113,20 @@ export type Database = {
           criado_em?: string
           email?: string
           id?: string
+          nivel_closer?: string | null
           nome?: string
+          rampagem?: string | null
           role?: Database["public"]["Enums"]["user_role"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_nivel_closer_fkey"
+            columns: ["nivel_closer"]
+            isOneToOne: false
+            referencedRelation: "closer_niveis"
+            referencedColumns: ["nivel"]
+          },
+        ]
       }
       rh_avaliacoes: {
         Row: {
@@ -1666,6 +1728,8 @@ export type Database = {
           enviado_cs: boolean
           enviado_financeiro: boolean
           id: string
+          link_comprovante: string | null
+          link_contrato: string | null
           motivo_reembolso: string | null
           nome_empresa: string
           nome_lead: string
@@ -1692,6 +1756,8 @@ export type Database = {
           enviado_cs?: boolean
           enviado_financeiro?: boolean
           id?: string
+          link_comprovante?: string | null
+          link_contrato?: string | null
           motivo_reembolso?: string | null
           nome_empresa?: string
           nome_lead?: string
@@ -1718,6 +1784,8 @@ export type Database = {
           enviado_cs?: boolean
           enviado_financeiro?: boolean
           id?: string
+          link_comprovante?: string | null
+          link_contrato?: string | null
           motivo_reembolso?: string | null
           nome_empresa?: string
           nome_lead?: string
