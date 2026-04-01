@@ -1,29 +1,38 @@
 
 
-## Ajuste OTE: Boleto ate 5x conta como 1x
+## Dashboard de Relatório Diário com Screenshot + Webhook n8n
 
-### Regra atual
-Todo boleto usa multiplicador 0.5 no calculo de OTE.
+### O que será criado
 
-### Nova regra
-- Boleto com **ate 5 parcelas**: multiplicador **1.0** (mesmo que cartao)
-- Boleto com **mais de 5 parcelas**: multiplicador **0.5** (mantém)
+Uma nova página `/relatorio-diario` com um dashboard limpo contendo 3 cards de métricas (Social Selling, Conteúdo, Comercial) com dados mock, e um botão para capturar screenshot e enviar via POST para um webhook n8n.
 
-### Arquivos a alterar
+### Arquivos a criar/alterar
 
-**1. `src/types/ote.ts`**
-- Adicionar constante `OTE_BOLETO_THRESHOLD = 5`
-- Alterar `calculateOteRealized` para receber dois parametros de boleto: `boletoShortSum` (<=5x, mult 1.0) e `boletoLongSum` (>5x, mult 0.5)
+**1. Instalar dependência: `html2canvas`**
 
-**2. `src/hooks/useOteGoals.ts`**
-- Na agregacao de vendas (linha ~204), separar boleto em dois buckets baseado em `quantidade_parcelas_boleto <= 5`
-- Passar os dois valores para `calculateOteRealized`
+**2. Criar `src/pages/RelatorioDiario.tsx`**
+- Layout com 3 cards lado a lado (grid 3 colunas):
+  - **Social Selling**: Conexões enviadas, Respostas recebidas, Reuniões agendadas (mock)
+  - **Conteúdo**: Alcance total, Engajamento, Cliques no link (mock)
+  - **Comercial**: Leads Qualificados, Propostas Enviadas, Vendas Fechadas (mock)
+- Cada card com números grandes em destaque, ícones e mini-barras de progresso
+- Uma `ref` na div principal do dashboard
+- Botão "Enviar Relatório" que chama `dispararRelatorioN8n()`:
+  1. Usa `html2canvas` para capturar a div referenciada
+  2. Converte para Base64
+  3. Faz POST para a URL do webhook (constante `WEBHOOK_N8N_URL`)
+  4. Payload: `{ imagem_base64, descricao, data_referencia }`
+- Toast de sucesso/erro
 
-**3. `src/pages/OteCalculadora.tsx`**
-- Ajustar a calculadora para refletir a nova logica (se aplicavel ao simulador)
+**3. Alterar `src/App.tsx`**
+- Adicionar rota `/relatorio-diario` apontando para a nova página
 
-**4. Corrigir build errors existentes**
-- `useCloserNiveis.ts:63` - remover propriedade `nivel_closer` inexistente
-- `OteCalculadora.tsx:340` - remover prop `title` do icone Lucide
-- `Vendas.tsx:271` - corrigir tipo incompleto no `CreateVendaInput`
+**4. Alterar `src/components/layout/AppSidebar.tsx`**
+- Adicionar item de navegação "Relatório Diário" com ícone `FileText` ou `Camera`
+
+### Detalhes técnicos
+
+- A URL do webhook será uma constante no topo do arquivo (`const WEBHOOK_N8N_URL = ""`), pronta para o usuário colar sua URL do n8n
+- Dados mock hardcoded por enquanto, preparados para futura integração com dados reais
+- Design seguindo o padrão visual do projeto (dark theme, cards estilo `#1a1a1a`, orange accent)
 
