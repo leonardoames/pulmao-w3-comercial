@@ -120,6 +120,7 @@ interface CreateVendaInput {
   enviado_financeiro?: boolean;
   enviado_cs?: boolean;
   observacoes?: string;
+  informacoes_adicionais?: string | null;
   origem_lead?: string | null;
   link_contrato?: string | null;
   link_comprovante?: string | null;
@@ -192,6 +193,7 @@ interface UpdateVendaInput {
   enviado_cs?: boolean;
   status?: VendaStatus;
   observacoes?: string;
+  informacoes_adicionais?: string | null;
   origem_lead?: string | null;
   link_contrato?: string | null;
   link_comprovante?: string | null;

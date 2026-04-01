@@ -217,6 +217,7 @@ export default function VendasPage() {
     const nomeLead = (formData.get('nome_lead') as string || '').trim();
     const nomeEmpresa = (formData.get('nome_empresa') as string || '').trim();
     const observacoesRaw = (formData.get('observacoes') as string || '').trim();
+    const informacoesAdicionais = (formData.get('informacoes_adicionais') as string || '').trim();
     const parseCurrency = (val: string | null) => Math.max(0, Number(String(val || '0').replace(',', '.')) || 0);
     const duracaoContrato = Math.max(1, Math.floor(Number(formData.get('duracao_contrato_meses')) || 12));
     const valorPix = parseCurrency(formData.get('valor_pix') as string);
@@ -252,6 +253,7 @@ export default function VendasPage() {
       link_comprovante: linkComprovante.trim() || null,
       link_contrato: linkContrato.trim() || null,
       observacoes: observacoesRaw || undefined,
+      informacoes_adicionais: informacoesAdicionais || null,
       origem_lead: origemLead || null,
       closer_user_id: closerUserId,
       data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
@@ -634,6 +636,17 @@ export default function VendasPage() {
                     </span>
                   </div>
                 )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="informacoes_adicionais">Informações Adicionais</Label>
+                  <Textarea 
+                    id="informacoes_adicionais" 
+                    name="informacoes_adicionais"
+                    defaultValue={(editingVenda as any)?.informacoes_adicionais || ''}
+                    placeholder="Escreva informações adicionais sobre o lead..."
+                    rows={4}
+                  />
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="observacoes">Observações</Label>
