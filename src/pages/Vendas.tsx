@@ -636,6 +636,17 @@ export default function VendasPage() {
                 )}
 
                 <div className="space-y-2">
+                  <Label htmlFor="informacoes_adicionais">Informações Adicionais</Label>
+                  <Textarea 
+                    id="informacoes_adicionais" 
+                    name="informacoes_adicionais"
+                    defaultValue={(editingVenda as any)?.informacoes_adicionais || ''}
+                    placeholder="Escreva informações adicionais sobre o lead..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="observacoes">Observações</Label>
                   <Textarea 
                     id="observacoes" 
