@@ -42,6 +42,7 @@ import RHSetores from "./pages/RHSetores";
 import RHOrganograma from "./pages/RHOrganograma";
 import Leads from "./pages/Leads";
 import OteCalculadora from "./pages/OteCalculadora";
+import RelatorioDiario from "./pages/RelatorioDiario";
 
 const queryClient = new QueryClient();
 
