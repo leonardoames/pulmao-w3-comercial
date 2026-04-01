@@ -15,19 +15,54 @@ import { useOteGoals, useCreateOteGoal, useUpdateOteGoal } from '@/hooks/useOteG
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentUserRole } from '@/hooks/useUserRoles';
 import { NivelConfigModal } from '@/components/ote/NivelConfigModal';
-import { RAMPAGEM_MULTIPLIERS, RAMPAGEM_LABELS, OTE_MULTIPLIERS } from '@/types/ote';
+import { RAMPAGEM_MULTIPLIERS, RAMPAGEM_LABELS } from '@/types/ote';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calculator, Settings, AlertTriangle } from 'lucide-react';
 import { Profile } from '@/types/crm';
 
+// ── Helpers de formatação BR ──────────────────────────────────
+/** Converte string BR "1.234,56" ou número para number */
+const parseBR = (v: string | number): number => {
+  if (typeof v === 'number') return v;
+  return Number(String(v).replace(/\./g, '').replace(',', '.').replace(/[^\d.\-]/g, '')) || 0;
+};
+
+/** Formata número como moeda BR sem símbolo: "1.234" */
+const formatBRInt = (n: number): string =>
+  Math.round(n).toLocaleString('pt-BR');
+
+/** Formata número como moeda BR com símbolo */
+const formatCurrency = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
+
+/** Formata input de moeda BR: adiciona pontos de milhar enquanto digita */
+const formatCurrencyInput = (raw: string): string => {
+  // Remove tudo que não é dígito ou vírgula
+  const clean = raw.replace(/[^\d,]/g, '');
+  const parts = clean.split(',');
+  // Formata parte inteira com pontos de milhar
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  if (parts.length > 1) {
+    return `${intPart},${parts[1].slice(0, 2)}`;
+  }
+  return intPart;
+};
+
+// ── Multiplicadores OTE (fixos para a simulação) ──────────────
+const SIM_MULTIPLIERS = {
+  pix: 1.2,
+  cartao: 1.0,
+  boleto: 0.5,
+} as const;
+
 interface GlobalParams {
   monthRef: string;
   diasUteis: number;
   callsPorDia: number;
-  noshow: number;
-  ticketMedio: number;
-  pctPix: number;
+  noshow: number;       // inteiro: 20 = 20%
+  ticketMedio: string;   // string BR: "5.000"
+  pctPix: number;        // inteiro: 60 = 60%
   pctCartao: number;
   pctBoleto: number;
 }
@@ -52,9 +87,6 @@ function generateMonthOptions() {
   return options;
 }
 
-const formatCurrency = (v: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
-
 export default function OteCalculadoraPage() {
   const { user } = useAuth();
   const { data: userRole } = useCurrentUserRole();
@@ -75,7 +107,7 @@ export default function OteCalculadoraPage() {
     diasUteis: 22,
     callsPorDia: 4,
     noshow: 20,
-    ticketMedio: 5000,
+    ticketMedio: '5.000',
     pctPix: 60,
     pctCartao: 30,
     pctBoleto: 10,
@@ -108,20 +140,25 @@ export default function OteCalculadoraPage() {
     return map;
   }, [niveis]);
 
-  // Compute OTE per closer row
+  // ── Cálculo OTE por closer ──────────────────────────────────
   const computed = useMemo(() => {
+    const ticketMedio = parseBR(params.ticketMedio);
     const pctSum = params.pctPix + params.pctCartao + params.pctBoleto;
-    const pixW = pctSum > 0 ? (params.pctPix / pctSum) * OTE_MULTIPLIERS.pix : 0;
-    const cartaoW = pctSum > 0 ? (params.pctCartao / pctSum) * OTE_MULTIPLIERS.card : 0;
-    const boletoW = pctSum > 0 ? (params.pctBoleto / pctSum) * OTE_MULTIPLIERS.boletoShort : 0;
-    const oteWeight = pixW + cartaoW + boletoW;
+
+    // Peso ponderado OTE = soma( fração_método * multiplicador_método )
+    // Ex: 60% PIX * 1.2 + 30% Cartão * 1.0 + 10% Boleto * 0.5
+    const oteWeight = pctSum > 0
+      ? ((params.pctPix / pctSum) * SIM_MULTIPLIERS.pix) +
+        ((params.pctCartao / pctSum) * SIM_MULTIPLIERS.cartao) +
+        ((params.pctBoleto / pctSum) * SIM_MULTIPLIERS.boleto)
+      : 0;
 
     return rows.map((r) => {
       const nivel = nivelMap.get(r.nivelKey);
-      const taxa = nivel?.taxa_conversao ?? 0;
+      const taxa = nivel?.taxa_conversao ?? 0; // decimal: 0.20 = 20%
       const callsEf = params.diasUteis * params.callsPorDia * (1 - params.noshow / 100);
       const vendas = callsEf * taxa;
-      const receita = vendas * params.ticketMedio;
+      const receita = vendas * ticketMedio;
       const oteSim = receita * oteWeight;
       const rampMult = RAMPAGEM_MULTIPLIERS[r.rampagem];
       const oteFinal = oteSim * rampMult;
@@ -133,7 +170,7 @@ export default function OteCalculadoraPage() {
   const paramsValid =
     params.diasUteis > 0 &&
     params.callsPorDia > 0 &&
-    params.ticketMedio > 0;
+    parseBR(params.ticketMedio) > 0;
 
   const existingGoalMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -141,12 +178,8 @@ export default function OteCalculadoraPage() {
     return map;
   }, [existingGoals]);
 
-  const handleParamChange = (key: keyof GlobalParams, value: string | number) => {
-    if (key === 'monthRef') {
-      setParams((p) => ({ ...p, [key]: value as string }));
-    } else {
-      setParams((p) => ({ ...p, [key]: Number(value) || 0 }));
-    }
+  const handleNumericParam = (key: 'diasUteis' | 'callsPorDia' | 'noshow' | 'pctPix' | 'pctCartao' | 'pctBoleto', value: string) => {
+    setParams((p) => ({ ...p, [key]: Number(value) || 0 }));
   };
 
   const handleRowChange = (closerId: string, field: 'nivelKey' | 'rampagem' | 'selected', value: any) => {
@@ -181,7 +214,6 @@ export default function OteCalculadoraPage() {
       }
     }
     setConfirmOpen(false);
-    // Deselect all
     setRows((prev) => prev.map((r) => ({ ...r, selected: false })));
   };
 
@@ -211,6 +243,13 @@ export default function OteCalculadoraPage() {
         </div>
       </PageHeader>
 
+      {/* Legenda multiplicadores */}
+      <div className="flex flex-wrap gap-4 mb-4 text-xs text-muted-foreground">
+        <span>PIX: <strong className="text-foreground">{SIM_MULTIPLIERS.pix}x</strong></span>
+        <span>Cartão: <strong className="text-foreground">{SIM_MULTIPLIERS.cartao}x</strong></span>
+        <span>Boleto: <strong className="text-foreground">{SIM_MULTIPLIERS.boleto}x</strong></span>
+      </div>
+
       {/* Global Parameters */}
       <Card className="mb-6">
         <CardHeader>
@@ -220,7 +259,7 @@ export default function OteCalculadoraPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <Label>Mês de referência</Label>
-              <Select value={params.monthRef} onValueChange={(v) => handleParamChange('monthRef', v)}>
+              <Select value={params.monthRef} onValueChange={(v) => setParams((p) => ({ ...p, monthRef: v }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -237,7 +276,7 @@ export default function OteCalculadoraPage() {
               <Input
                 type="number" min="1" max="31"
                 value={params.diasUteis}
-                onChange={(e) => handleParamChange('diasUteis', e.target.value)}
+                onChange={(e) => handleNumericParam('diasUteis', e.target.value)}
               />
             </div>
 
@@ -246,7 +285,7 @@ export default function OteCalculadoraPage() {
               <Input
                 type="number" min="1"
                 value={params.callsPorDia}
-                onChange={(e) => handleParamChange('callsPorDia', e.target.value)}
+                onChange={(e) => handleNumericParam('callsPorDia', e.target.value)}
               />
             </div>
 
@@ -255,17 +294,25 @@ export default function OteCalculadoraPage() {
               <Input
                 type="number" min="0" max="100"
                 value={params.noshow}
-                onChange={(e) => handleParamChange('noshow', e.target.value)}
+                onChange={(e) => handleNumericParam('noshow', e.target.value)}
               />
             </div>
 
             <div className="space-y-1.5">
               <Label>Ticket médio (R$)</Label>
               <Input
-                type="number" min="0"
+                type="text"
+                inputMode="decimal"
+                placeholder="5.000"
                 value={params.ticketMedio}
-                onChange={(e) => handleParamChange('ticketMedio', e.target.value)}
+                onChange={(e) => {
+                  const formatted = formatCurrencyInput(e.target.value);
+                  setParams((p) => ({ ...p, ticketMedio: formatted }));
+                }}
               />
+              <span className="text-[10px] text-muted-foreground">
+                = {formatCurrency(parseBR(params.ticketMedio))}
+              </span>
             </div>
 
             <div className="space-y-1.5">
@@ -273,7 +320,7 @@ export default function OteCalculadoraPage() {
               <Input
                 type="number" min="0" max="100"
                 value={params.pctPix}
-                onChange={(e) => handleParamChange('pctPix', e.target.value)}
+                onChange={(e) => handleNumericParam('pctPix', e.target.value)}
               />
             </div>
 
@@ -282,7 +329,7 @@ export default function OteCalculadoraPage() {
               <Input
                 type="number" min="0" max="100"
                 value={params.pctCartao}
-                onChange={(e) => handleParamChange('pctCartao', e.target.value)}
+                onChange={(e) => handleNumericParam('pctCartao', e.target.value)}
               />
             </div>
 
@@ -291,7 +338,7 @@ export default function OteCalculadoraPage() {
               <Input
                 type="number" min="0" max="100"
                 value={params.pctBoleto}
-                onChange={(e) => handleParamChange('pctBoleto', e.target.value)}
+                onChange={(e) => handleNumericParam('pctBoleto', e.target.value)}
               />
             </div>
           </div>
@@ -322,6 +369,7 @@ export default function OteCalculadoraPage() {
                 <TableHead className="text-right">Taxa Conv.</TableHead>
                 <TableHead className="text-right">Calls Ef.</TableHead>
                 <TableHead className="text-right">Vendas Est.</TableHead>
+                <TableHead className="text-right">Receita</TableHead>
                 <TableHead className="text-right">OTE Simulada</TableHead>
                 <TableHead className="text-right">OTE Final</TableHead>
               </TableRow>
@@ -383,6 +431,9 @@ export default function OteCalculadoraPage() {
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       {row.vendas.toFixed(1)}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {formatCurrency(row.receita)}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(row.oteSim)}
