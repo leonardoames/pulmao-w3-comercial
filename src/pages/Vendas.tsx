@@ -253,6 +253,7 @@ export default function VendasPage() {
       link_comprovante: linkComprovante.trim() || null,
       link_contrato: linkContrato.trim() || null,
       observacoes: observacoesRaw || undefined,
+      informacoes_adicionais: informacoesAdicionais || null,
       origem_lead: origemLead || null,
       closer_user_id: closerUserId,
       data_fechamento: format(dataVenda, 'yyyy-MM-dd'),
