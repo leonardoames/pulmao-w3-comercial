@@ -107,6 +107,12 @@ const navGroups = [
       { path: '/marketing/dashboard', icon: BarChart3, label: 'Visão Geral' },
     ],
   },
+  {
+    label: 'Relatórios',
+    items: [
+      { path: '/relatorio-diario', icon: Camera, label: 'Relatório Diário' },
+    ],
+  },
 ];
 
 interface AppSidebarProps {

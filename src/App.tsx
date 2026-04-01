@@ -42,6 +42,7 @@ import RHSetores from "./pages/RHSetores";
 import RHOrganograma from "./pages/RHOrganograma";
 import Leads from "./pages/Leads";
 import OteCalculadora from "./pages/OteCalculadora";
+import RelatorioDiario from "./pages/RelatorioDiario";
 
 const queryClient = new QueryClient();
 
@@ -165,6 +166,7 @@ function AppRoutes() {
       <Route path="/marketing/ai" element={<Navigate to="/conteudo/ai" replace />} />
       <Route path="/marketing/ai/novo" element={<Navigate to="/conteudo/ai/novo" replace />} />
       <Route path="/marketing/ai/:id" element={<Navigate to="/conteudo/ai" replace />} />
+      <Route path="/relatorio-diario" element={<ProtectedRoute routePath="/relatorio-diario"><RelatorioDiario /></ProtectedRoute>} />
       <Route path="/shared/:token" element={<SharedDashboard />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
