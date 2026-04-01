@@ -217,6 +217,7 @@ export default function VendasPage() {
     const nomeLead = (formData.get('nome_lead') as string || '').trim();
     const nomeEmpresa = (formData.get('nome_empresa') as string || '').trim();
     const observacoesRaw = (formData.get('observacoes') as string || '').trim();
+    const informacoesAdicionais = (formData.get('informacoes_adicionais') as string || '').trim();
     const parseCurrency = (val: string | null) => Math.max(0, Number(String(val || '0').replace(',', '.')) || 0);
     const duracaoContrato = Math.max(1, Math.floor(Number(formData.get('duracao_contrato_meses')) || 12));
     const valorPix = parseCurrency(formData.get('valor_pix') as string);
