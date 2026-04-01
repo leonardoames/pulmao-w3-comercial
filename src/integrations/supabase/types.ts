@@ -1728,6 +1728,7 @@ export type Database = {
           enviado_cs: boolean
           enviado_financeiro: boolean
           id: string
+          informacoes_adicionais: string | null
           link_comprovante: string | null
           link_contrato: string | null
           motivo_reembolso: string | null
@@ -1756,6 +1757,7 @@ export type Database = {
           enviado_cs?: boolean
           enviado_financeiro?: boolean
           id?: string
+          informacoes_adicionais?: string | null
           link_comprovante?: string | null
           link_contrato?: string | null
           motivo_reembolso?: string | null
@@ -1784,6 +1786,7 @@ export type Database = {
           enviado_cs?: boolean
           enviado_financeiro?: boolean
           id?: string
+          informacoes_adicionais?: string | null
           link_comprovante?: string | null
           link_contrato?: string | null
           motivo_reembolso?: string | null

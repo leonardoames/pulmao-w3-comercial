@@ -142,7 +142,11 @@ export default function OteCalculadoraPage() {
   }, [existingGoals]);
 
   const handleParamChange = (key: keyof GlobalParams, value: string | number) => {
-    setParams((p) => ({ ...p, [key]: typeof value === 'string' ? value : Number(value) }));
+    if (key === 'monthRef') {
+      setParams((p) => ({ ...p, [key]: value as string }));
+    } else {
+      setParams((p) => ({ ...p, [key]: Number(value) || 0 }));
+    }
   };
 
   const handleRowChange = (closerId: string, field: 'nivelKey' | 'rampagem' | 'selected', value: any) => {

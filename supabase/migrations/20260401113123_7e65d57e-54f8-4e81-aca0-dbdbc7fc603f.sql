@@ -1,0 +1,1 @@
+ALTER TABLE public.vendas ADD COLUMN informacoes_adicionais text;
