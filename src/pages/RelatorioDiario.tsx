@@ -20,8 +20,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-// Cole aqui a URL do seu webhook n8n
-const WEBHOOK_N8N_URL = '';
+import { supabase } from '@/integrations/supabase/client';
 
 // ── Mock data ──────────────────────────────────────────────
 const socialSellingData = [
