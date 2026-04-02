@@ -1,38 +1,48 @@
 
 
-## Dashboard de Relatório Diário com Screenshot + Webhook n8n
+## Relatório Diário com Dados Reais do Banco
 
-### O que será criado
+Atualmente a página `/relatorio-diario` usa dados mock (hardcoded). O plano é substituir por dados reais das 3 tabelas do sistema, filtrando pelo mês atual.
 
-Uma nova página `/relatorio-diario` com um dashboard limpo contendo 3 cards de métricas (Social Selling, Conteúdo, Comercial) com dados mock, e um botão para capturar screenshot e enviar via POST para um webhook n8n.
+### Métricas por Área
 
-### Arquivos a criar/alterar
+**Social Selling** (tabela `social_selling`):
+- Conversas Iniciadas (soma do mês) — meta: 100/dia × dias úteis
+- Convites Enviados (soma do mês) — meta: 30/dia × dias úteis
+- Formulários Preenchidos (soma do mês) — meta: 20/dia × dias úteis
+- Agendamentos (soma do mês) — meta: 10/dia × dias úteis
+- Taxa de Conversão: Agendamentos / Conversas (%)
 
-**1. Instalar dependência: `html2canvas`**
+**Conteúdo** (tabela `content_daily_logs` + `content_post_items`):
+- Posts Publicados (soma do mês) — meta: 6/dia × dias
+- Stories Realizados (soma do mês) — meta: 10/dia × dias
+- Vídeos YouTube (soma do mês)
+- Seguidores @leo (último registro do mês)
+- Seguidores @w3 (último registro do mês)
 
-**2. Criar `src/pages/RelatorioDiario.tsx`**
-- Layout com 3 cards lado a lado (grid 3 colunas):
-  - **Social Selling**: Conexões enviadas, Respostas recebidas, Reuniões agendadas (mock)
-  - **Conteúdo**: Alcance total, Engajamento, Cliques no link (mock)
-  - **Comercial**: Leads Qualificados, Propostas Enviadas, Vendas Fechadas (mock)
-- Cada card com números grandes em destaque, ícones e mini-barras de progresso
-- Uma `ref` na div principal do dashboard
-- Botão "Enviar Relatório" que chama `dispararRelatorioN8n()`:
-  1. Usa `html2canvas` para capturar a div referenciada
-  2. Converte para Base64
-  3. Faz POST para a URL do webhook (constante `WEBHOOK_N8N_URL`)
-  4. Payload: `{ imagem_base64, descricao, data_referencia }`
-- Toast de sucesso/erro
+**Comercial** (tabelas `vendas` + `fechamentos`):
+- Faturamento do Mês (soma `valor_total` vendas ativas)
+- Vendas Fechadas (count)
+- Calls Realizadas (soma `calls_realizadas`)
+- No-Show (soma `no_show`)
+- Taxa de Conversão: Vendas / Calls (%)
 
-**3. Alterar `src/App.tsx`**
-- Adicionar rota `/relatorio-diario` apontando para a nova página
+### Arquivos a alterar
 
-**4. Alterar `src/components/layout/AppSidebar.tsx`**
-- Adicionar item de navegação "Relatório Diário" com ícone `FileText` ou `Camera`
+**1. `src/pages/RelatorioDiario.tsx`**
+- Remover todo mock data
+- Adicionar queries ao banco para buscar dados do mês atual das 3 tabelas
+- Agregar os valores (soma, contagem, último registro)
+- Calcular metas proporcionais ao número de dias úteis do mês
+- Manter o layout de 3 cards com `MetricRow` + Progress
+- Adicionar filtro de mês (reutilizar `MonthYearSelector`)
+- Manter a funcionalidade de screenshot + webhook intacta
+- Adicionar estado de loading enquanto os dados carregam
 
 ### Detalhes técnicos
 
-- A URL do webhook será uma constante no topo do arquivo (`const WEBHOOK_N8N_URL = ""`), pronta para o usuário colar sua URL do n8n
-- Dados mock hardcoded por enquanto, preparados para futura integração com dados reais
-- Design seguindo o padrão visual do projeto (dark theme, cards estilo `#1a1a1a`, orange accent)
+- Queries usam `supabase.from('social_selling').select('*').gte('data', startOfMonth).lte('data', endOfMonth)` e similares para as outras tabelas
+- Metas diárias vêm das constantes já existentes em `SOCIAL_SELLING_GOALS` e das metas de conteúdo
+- Meta de faturamento vem da tabela `metas_faturamento` (campo `month_ref`)
+- O payload do webhook passa a incluir os dados numéricos reais além da imagem
 
