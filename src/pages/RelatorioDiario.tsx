@@ -5,56 +5,53 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { MonthYearSelector } from '@/components/MonthYearSelector';
 import {
   Users,
   MessageSquare,
   CalendarCheck,
-  Eye,
-  Heart,
-  MousePointerClick,
-  UserCheck,
   FileText,
   DollarSign,
   Send,
   Loader2,
+  Eye,
+  Heart,
+  MousePointerClick,
+  UserCheck,
+  Video,
+  PhoneCall,
+  UserX,
+  TrendingUp,
+  Instagram,
 } from 'lucide-react';
-
 import { supabase } from '@/integrations/supabase/client';
+import { useRelatorioDiario } from '@/hooks/useRelatorioDiario';
 
-// ── Mock data ──────────────────────────────────────────────
-const socialSellingData = [
-  { label: 'Conexões Enviadas', value: 147, goal: 200, icon: Users },
-  { label: 'Respostas Recebidas', value: 42, goal: 80, icon: MessageSquare },
-  { label: 'Reuniões Agendadas', value: 12, goal: 20, icon: CalendarCheck },
-];
+const SS_ICONS = [Users, MessageSquare, FileText, CalendarCheck, TrendingUp];
+const CT_ICONS = [Instagram, Eye, Video, Heart, Heart];
+const CM_ICONS = [DollarSign, UserCheck, PhoneCall, UserX, TrendingUp];
 
-const conteudoData = [
-  { label: 'Alcance Total', value: '23.4K', numValue: 23400, goal: 30000, icon: Eye },
-  { label: 'Engajamento', value: '1.8K', numValue: 1800, goal: 3000, icon: Heart },
-  { label: 'Cliques no Link', value: '312', numValue: 312, goal: 500, icon: MousePointerClick },
-];
-
-const comercialData = [
-  { label: 'Leads Qualificados', value: 38, goal: 50, icon: UserCheck },
-  { label: 'Propostas Enviadas', value: 15, goal: 25, icon: FileText },
-  { label: 'Vendas Fechadas', value: 6, goal: 10, icon: DollarSign },
-];
-
-// ── Metric row inside a card ───────────────────────────────
 function MetricRow({
   label,
   value,
   goal,
   icon: Icon,
+  isInfo,
+  isPercentage,
+  numValue,
 }: {
   label: string;
   value: string | number;
   goal: number;
   icon: React.ElementType;
+  isInfo?: boolean;
+  isPercentage?: boolean;
+  numValue?: number;
 }) {
-  const numVal = typeof value === 'number' ? value : Number(String(value).replace(/[^\d]/g, ''));
-  const pct = Math.min(Math.round((numVal / goal) * 100), 100);
+  const resolvedNum = numValue ?? (typeof value === 'number' ? value : Number(String(value).replace(/[^\d]/g, '')));
+  const pct = isInfo || isPercentage || goal <= 0 ? null : Math.min(Math.round((resolvedNum / goal) * 100), 100);
 
   return (
     <div className="flex items-center gap-4 py-3">
@@ -69,97 +66,96 @@ function MetricRow({
           {label}
         </p>
         <div className="flex items-end gap-2 mt-1">
-          <span className="text-2xl font-bold text-foreground">{value}</span>
-          <span className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
-            / {goal.toLocaleString('pt-BR')}
-          </span>
+          <span className="text-2xl font-bold text-foreground">{typeof value === 'number' ? value.toLocaleString('pt-BR') : value}</span>
+          {!isInfo && !isPercentage && goal > 0 && (
+            <span className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              / {goal.toLocaleString('pt-BR')}
+            </span>
+          )}
         </div>
-        <Progress value={pct} className="mt-2 h-1.5" />
+        {pct !== null && <Progress value={pct} className="mt-2 h-1.5" />}
       </div>
-      <span className="text-sm font-semibold" style={{ color: pct >= 100 ? '#22C55E' : '#F97316' }}>
-        {pct}%
-      </span>
+      {pct !== null && (
+        <span className="text-sm font-semibold" style={{ color: pct >= 100 ? '#22C55E' : '#F97316' }}>
+          {pct}%
+        </span>
+      )}
     </div>
   );
 }
 
-// ── Section card ───────────────────────────────────────────
 function SectionCard({
   title,
   metrics,
+  icons,
+  loading,
 }: {
   title: string;
-  metrics: { label: string; value: string | number; goal: number; icon: React.ElementType; numValue?: number }[];
+  metrics: { label: string; value: string | number; goal: number; isInfo?: boolean; isPercentage?: boolean; numValue?: number }[];
+  icons: React.ElementType[];
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-lg">{title}</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{title}</CardTitle>
-      </CardHeader>
+      <CardHeader className="pb-2"><CardTitle className="text-lg">{title}</CardTitle></CardHeader>
       <CardContent className="divide-y divide-border/40">
-        {metrics.map((m) => (
-          <MetricRow
-            key={m.label}
-            label={m.label}
-            value={m.value}
-            goal={m.goal}
-            icon={m.icon}
-          />
+        {metrics.map((m, i) => (
+          <MetricRow key={m.label} icon={icons[i] || Users} {...m} />
         ))}
       </CardContent>
     </Card>
   );
 }
 
-// ── Page ───────────────────────────────────────────────────
 export default function RelatorioDiario() {
   const dashRef = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
+  const [monthRef, setMonthRef] = useState(() => format(new Date(), 'yyyy-MM'));
+
+  const report = useRelatorioDiario(monthRef);
 
   async function dispararRelatorioN8n() {
     if (!dashRef.current) return;
-
     setSending(true);
     try {
-      // Buscar webhooks ativos do tipo relatorio_diario
       const { data: webhooks, error: whError } = await supabase
         .from('webhooks')
         .select('url')
         .eq('evento', 'relatorio_diario')
         .eq('ativo', true);
-
       if (whError) throw whError;
-
       if (!webhooks || webhooks.length === 0) {
         toast.error('Nenhum webhook de Relatório Diário ativo. Configure no Painel Admin → Webhooks.');
         setSending(false);
         return;
       }
 
-      const canvas = await html2canvas(dashRef.current, {
-        backgroundColor: '#0a0a0a',
-        scale: 2,
-      });
+      const canvas = await html2canvas(dashRef.current, { backgroundColor: '#0a0a0a', scale: 2 });
       const imagem_base64 = canvas.toDataURL('image/png');
 
       const payload = {
         imagem_base64,
         descricao: 'Relatório Diário Consolidado - Social Selling, Conteúdo e Comercial',
         data_referencia: format(new Date(), 'yyyy-MM-dd'),
+        dados: report.rawData,
       };
 
-      // Disparar para todos os webhooks ativos em paralelo
       const results = await Promise.allSettled(
-        webhooks.map((wh) =>
-          fetch(wh.url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          })
-        )
+        webhooks.map(wh => fetch(wh.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }))
       );
 
-      const failed = results.filter((r) => r.status === 'rejected');
+      const failed = results.filter(r => r.status === 'rejected');
       if (failed.length > 0) {
         toast.warning(`Enviado para ${results.length - failed.length}/${results.length} webhooks.`);
       } else {
@@ -176,25 +172,26 @@ export default function RelatorioDiario() {
   return (
     <AppLayout>
       <div className="space-y-6 p-4 md:p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Relatório Diário</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {format(new Date(), "dd/MM/yyyy '—' EEEE")}
             </p>
           </div>
-          <Button onClick={dispararRelatorioN8n} disabled={sending}>
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {sending ? 'Enviando…' : 'Enviar Relatório'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <MonthYearSelector value={monthRef} onChange={setMonthRef} />
+            <Button onClick={dispararRelatorioN8n} disabled={sending || report.isLoading}>
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sending ? 'Enviando…' : 'Enviar Relatório'}
+            </Button>
+          </div>
         </div>
 
-        {/* Dashboard capturável */}
         <div ref={dashRef} className="grid gap-6 md:grid-cols-3">
-          <SectionCard title="Social Selling" metrics={socialSellingData} />
-          <SectionCard title="Conteúdo" metrics={conteudoData} />
-          <SectionCard title="Comercial" metrics={comercialData} />
+          <SectionCard title="Social Selling" metrics={report.socialSelling.metrics} icons={SS_ICONS} loading={report.isLoading} />
+          <SectionCard title="Conteúdo" metrics={report.conteudo.metrics} icons={CT_ICONS} loading={report.isLoading} />
+          <SectionCard title="Comercial" metrics={report.comercial.metrics} icons={CM_ICONS} loading={report.isLoading} />
         </div>
       </div>
     </AppLayout>
