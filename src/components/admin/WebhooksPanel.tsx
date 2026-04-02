@@ -263,6 +263,7 @@ export function WebhooksPanel() {
                   <SelectContent>
                     <SelectItem value="nova_venda">Nova Venda</SelectItem>
                     <SelectItem value="relatorio_diario">Relatório Diário</SelectItem>
+                    <SelectItem value="formulario">Formulário</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
