@@ -117,15 +117,25 @@ export default function RelatorioDiario() {
   const [sending, setSending] = useState(false);
 
   async function dispararRelatorioN8n() {
-    if (!WEBHOOK_N8N_URL) {
-      toast.error('Configure a URL do webhook n8n na constante WEBHOOK_N8N_URL.');
-      return;
-    }
-
     if (!dashRef.current) return;
 
     setSending(true);
     try {
+      // Buscar webhooks ativos do tipo relatorio_diario
+      const { data: webhooks, error: whError } = await supabase
+        .from('webhooks')
+        .select('url')
+        .eq('evento', 'relatorio_diario')
+        .eq('ativo', true);
+
+      if (whError) throw whError;
+
+      if (!webhooks || webhooks.length === 0) {
+        toast.error('Nenhum webhook de Relatório Diário ativo. Configure no Painel Admin → Webhooks.');
+        setSending(false);
+        return;
+      }
+
       const canvas = await html2canvas(dashRef.current, {
         backgroundColor: '#0a0a0a',
         scale: 2,
@@ -138,15 +148,23 @@ export default function RelatorioDiario() {
         data_referencia: format(new Date(), 'yyyy-MM-dd'),
       };
 
-      const res = await fetch(WEBHOOK_N8N_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      // Disparar para todos os webhooks ativos em paralelo
+      const results = await Promise.allSettled(
+        webhooks.map((wh) =>
+          fetch(wh.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        )
+      );
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      toast.success('Relatório enviado com sucesso!');
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length > 0) {
+        toast.warning(`Enviado para ${results.length - failed.length}/${results.length} webhooks.`);
+      } else {
+        toast.success(`Relatório enviado para ${results.length} webhook(s)!`);
+      }
     } catch (err: any) {
       console.error(err);
       toast.error('Falha ao enviar relatório: ' + (err?.message || 'Erro desconhecido'));
