@@ -1,4 +1,5 @@
 import { useRef, useEffect, forwardRef } from 'react';
+import DOMPurify from 'dompurify';
 import { TwitterProfile, TweetTheme } from './types';
 
 interface TweetPreviewProps {
@@ -29,7 +30,12 @@ const TweetPreview = forwardRef<HTMLDivElement, TweetPreviewProps>(
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
-        contentRef.current.innerHTML = parseEmojis(escaped);
+        const parsed = parseEmojis(escaped);
+        const sanitized = DOMPurify.sanitize(parsed, {
+          ALLOWED_TAGS: ['img', 'span'],
+          ALLOWED_ATTR: ['src', 'alt', 'class', 'draggable', 'style'],
+        });
+        contentRef.current.innerHTML = sanitized;
       }
     }, [text]);
 

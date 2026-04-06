@@ -1189,6 +1189,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rh_avaliacoes_avaliado_id_fkey"
+            columns: ["avaliado_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "rh_avaliacoes_ciclo_id_fkey"
             columns: ["ciclo_id"]
             isOneToOne: false
@@ -1311,6 +1318,13 @@ export type Database = {
             referencedRelation: "rh_colaboradores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "rh_colaboradores_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rh_feedbacks: {
@@ -1352,6 +1366,13 @@ export type Database = {
             referencedRelation: "rh_colaboradores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "rh_feedbacks_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rh_organograma_positions: {
@@ -1385,6 +1406,13 @@ export type Database = {
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "rh_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_organograma_positions_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -1934,6 +1962,69 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"] | null
         }
         Relationships: []
+      }
+      rh_colaboradores_safe: {
+        Row: {
+          cargo: string | null
+          centro_custo: string[] | null
+          created_at: string | null
+          data_entrada: string | null
+          email: string | null
+          foto_url: string | null
+          id: string | null
+          nome: string | null
+          responsavel_id: string | null
+          setor: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          centro_custo?: string[] | null
+          created_at?: string | null
+          data_entrada?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string | null
+          nome?: string | null
+          responsavel_id?: string | null
+          setor?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          centro_custo?: string[] | null
+          created_at?: string | null
+          data_entrada?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string | null
+          nome?: string | null
+          responsavel_id?: string | null
+          setor?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_colaboradores_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_colaboradores_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "rh_colaboradores_safe"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
