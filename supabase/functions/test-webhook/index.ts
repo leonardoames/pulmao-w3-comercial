@@ -108,10 +108,10 @@ Deno.serve(async (req) => {
     };
 
     // Send to specific webhook URL
-    const encodedPayload = encodeURIComponent(JSON.stringify(payload));
-    const separator = webhook_url.includes("?") ? "&" : "?";
-    const webhookRes = await fetch(`${webhook_url}${separator}data=${encodedPayload}`, {
-      method: "GET",
+    const webhookRes = await fetch(webhook_url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
 
     const responseText = await webhookRes.text();
