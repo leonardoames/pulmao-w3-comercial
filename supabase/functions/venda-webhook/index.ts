@@ -29,9 +29,8 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await anonClient.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -41,20 +40,30 @@ Deno.serve(async (req) => {
     // Use service role client for data access
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch active webhooks for 'nova_venda' event from the webhooks table
-    const { data: webhooks, error: webhooksError } = await serviceClient
+    // Parse body first so we can filter webhooks by evento
+    const { venda_id, evento: customEvento } = await req.json();
+    if (!venda_id) {
+      return new Response(JSON.stringify({ error: "venda_id is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const eventoType = customEvento || "nova_venda";
+
+    // Fetch active webhooks filtered by evento
+    const { data: webhooks } = await serviceClient
       .from("webhooks")
-      .select("*")
-      .eq("ativo", true);
+      .select("url")
+      .eq("ativo", true)
+      .eq("evento", eventoType);
 
     // Fallback to env var if no webhooks in table
     const envWebhookUrl = Deno.env.get("VENDA_WEBHOOK_URL");
 
     const webhookUrls: string[] = [];
     if (webhooks && webhooks.length > 0) {
-      for (const wh of webhooks) {
-        webhookUrls.push(wh.url);
-      }
+      for (const wh of webhooks) webhookUrls.push(wh.url);
     } else if (envWebhookUrl) {
       webhookUrls.push(envWebhookUrl);
     }
@@ -65,17 +74,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Parse body
-    const { venda_id, evento: customEvento } = await req.json();
-    if (!venda_id) {
-      return new Response(JSON.stringify({ error: "venda_id is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const eventoType = customEvento || "nova_venda";
 
     // Fetch full venda data with closer profile
     const { data: venda, error: vendaError } = await serviceClient
