@@ -16,8 +16,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'rec
 import { DateFilter, DateRange } from '@/hooks/useDashboard';
 import { format, subDays, startOfMonth, differenceInDays, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, FileText, Film, CalendarCheck } from 'lucide-react';
+import { CalendarIcon, FileText, Film, CalendarCheck, RefreshCw, Instagram } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useInstagramDailyMetrics, useInstagramPostInsights, useInstagramSync } from '@/hooks/useInstagram';
 
 const POSTS_PER_DAY = 6;
 const STORIES_PER_DAY = 10;
@@ -86,6 +88,10 @@ export default function ConteudoDashboard() {
     responsibleFilter !== 'all' ? responsibleFilter : undefined
   );
 
+  const { data: igMetrics = [] } = useInstagramDailyMetrics(startDate, endDate);
+  const { data: igPosts = [] } = useInstagramPostInsights(undefined, 20);
+  const syncInstagram = useInstagramSync();
+
   const daysInPeriod = useMemo(() => differenceInDays(parseISO(endDate), parseISO(startDate)) + 1, [startDate, endDate]);
 
   const sortedLogs = useMemo(() => [...logs].sort((a, b) => a.date.localeCompare(b.date)), [logs]);
@@ -139,6 +145,27 @@ export default function ConteudoDashboard() {
     });
   }, [allDays, logMap]);
 
+  const avgEngagement = useMemo(() => {
+    const posts = igPosts.filter(p => p.media_type !== 'STORY');
+    return posts.length > 0
+      ? Math.round(posts.reduce((s, p) => s + p.likes + p.comments + p.saves, 0) / posts.length)
+      : 0;
+  }, [igPosts]);
+
+  const leoLatest = useMemo(() =>
+    [...igMetrics]
+      .filter(m => (m.instagram_accounts as any)?.account_label === 'Leo')
+      .sort((a, b) => b.date.localeCompare(a.date))[0],
+    [igMetrics]
+  );
+
+  const w3Latest = useMemo(() =>
+    [...igMetrics]
+      .filter(m => (m.instagram_accounts as any)?.account_label === 'W3')
+      .sort((a, b) => b.date.localeCompare(a.date))[0],
+    [igMetrics]
+  );
+
   const postsChartConfig = {
     posts: { label: 'Posts Publicados', color: 'hsl(var(--primary))' },
     stories: { label: 'Stories', color: 'hsl(var(--warning))' },
@@ -171,6 +198,16 @@ export default function ConteudoDashboard() {
   return (
     <AppLayout>
       <PageHeader title="Dashboard de Conteúdo" description="Visão geral do desempenho de conteúdo">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => syncInstagram.mutate()}
+          disabled={syncInstagram.isPending}
+          className="gap-2"
+        >
+          <RefreshCw className={cn('h-4 w-4', syncInstagram.isPending && 'animate-spin')} />
+          {syncInstagram.isPending ? 'Sincronizando...' : 'Sincronizar Instagram'}
+        </Button>
         <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
           <SelectTrigger className="w-[180px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
             <SelectValue placeholder="Responsável" />
@@ -376,6 +413,99 @@ export default function ConteudoDashboard() {
           icon={<CalendarCheck className="h-5 w-5" />}
         />
       </div>
+
+      {/* BLOCO Instagram — Métricas */}
+      <SectionLabel title="Instagram" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <Card>
+          <CardContent className="p-6">
+            <p className="section-label-text mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Seguidores @leo</p>
+            <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>
+              {leoLatest ? leoLatest.followers_count.toLocaleString('pt-BR') : '—'}
+            </p>
+            {leoLatest && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Atualizado em {format(new Date(leoLatest.date + 'T12:00:00'), 'dd/MM')}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <p className="section-label-text mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Seguidores @w3</p>
+            <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>
+              {w3Latest ? w3Latest.followers_count.toLocaleString('pt-BR') : '—'}
+            </p>
+            {w3Latest && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Atualizado em {format(new Date(w3Latest.date + 'T12:00:00'), 'dd/MM')}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <p className="section-label-text mb-2" style={{ color: 'rgba(255,255,255,0.4)' }}>Engajamento Médio / Post</p>
+            <p style={{ fontSize: '36px', fontWeight: 700, color: '#F97316' }}>
+              {avgEngagement > 0 ? avgEngagement.toLocaleString('pt-BR') : '—'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">likes + comentários + salvamentos</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mb-8">
+        <CardHeader className="pb-2 flex flex-row items-center gap-2">
+          <Instagram className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium">Posts recentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {igPosts.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground text-sm">
+              Nenhum dado ainda. Clique em "Sincronizar Instagram" após configurar o token.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Conta</TableHead>
+                    <TableHead className="text-xs">Tipo</TableHead>
+                    <TableHead className="text-xs">Data</TableHead>
+                    <TableHead className="text-xs text-center">Likes</TableHead>
+                    <TableHead className="text-xs text-center">Comentários</TableHead>
+                    <TableHead className="text-xs text-center">Shares</TableHead>
+                    <TableHead className="text-xs text-center">Salvamentos</TableHead>
+                    <TableHead className="text-xs text-center">Alcance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {igPosts.map(post => (
+                    <TableRow key={post.id}>
+                      <TableCell className="text-xs">
+                        @{(post.instagram_accounts as any)?.username ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="outline" className="text-xs">{post.media_type}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {post.published_at ? format(new Date(post.published_at), 'dd/MM/yyyy') : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-center">{post.likes.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs text-center">{post.comments.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs text-center">{post.shares.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs text-center">{post.saves.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs text-center">{post.reach.toLocaleString('pt-BR')}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* BLOCO 3 — Histórico */}
       <SectionLabel title="Histórico" />

@@ -26,6 +26,7 @@ import {
   useContentPostItems,
 } from '@/hooks/useContentTracking';
 import { supabase } from '@/integrations/supabase/client';
+import { useLatestFollowersCount } from '@/hooks/useInstagram';
 
 interface AdditionalPost {
   platform: 'instagram' | 'youtube';
@@ -64,6 +65,7 @@ export function DailyLogModal({ open, onOpenChange, editLog }: DailyLogModalProp
   const { data: existingItems = [] } = useContentPostItems(editLog ? editLog.date : undefined);
   const upsertLog = useUpsertContentDailyLog();
   const replaceItems = useReplaceContentPostItems();
+  const { data: latestFollowers } = useLatestFollowersCount();
 
   // Populate form when editing
   useEffect(() => {
@@ -76,9 +78,9 @@ export function DailyLogModal({ open, onOpenChange, editLog }: DailyLogModalProp
       setFollowersW3(String(editLog.followers_w3));
       setNotes(editLog.notes || '');
     } else if (open) {
-      resetForm();
+      resetForm(latestFollowers);
     }
-  }, [editLog, open]);
+  }, [editLog, open, latestFollowers]);
 
   // Populate required statuses and additional posts from existing items
   useEffect(() => {
@@ -101,15 +103,15 @@ export function DailyLogModal({ open, onOpenChange, editLog }: DailyLogModalProp
     }
   }, [editLog, existingItems]);
 
-  const resetForm = () => {
+  const resetForm = (followers?: { leo: number; w3: number }) => {
     setDate(new Date());
     setResponsibleName('Otto');
     setRequiredStatuses(DAILY_REQUIRED_TEMPLATE.map(() => 'pendente'));
     setAdditionalPosts([]);
     setStoriesCount('0');
     setYoutubeCount('0');
-    setFollowersLeo('0');
-    setFollowersW3('0');
+    setFollowersLeo(String(followers?.leo ?? 0));
+    setFollowersW3(String(followers?.w3 ?? 0));
     setNotes('');
   };
 
