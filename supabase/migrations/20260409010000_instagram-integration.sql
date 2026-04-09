@@ -68,14 +68,6 @@ CREATE POLICY "service_write_instagram_daily_metrics" ON instagram_daily_metrics
 CREATE POLICY "service_write_instagram_post_insights" ON instagram_post_insights
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
--- Seed: preencher instagram_user_id corretos após obter o token
--- Para obter: GET https://graph.facebook.com/v25.0/me/accounts?access_token=TOKEN
--- Depois: GET https://graph.facebook.com/v25.0/{page_id}?fields=instagram_business_account&access_token=TOKEN
-INSERT INTO public.instagram_accounts (username, instagram_user_id, account_label)
-VALUES
-  ('leonardo_ames', 'FILL_IN_INSTAGRAM_USER_ID_LEO', 'Leo'),
-  ('FILL_IN_W3_USERNAME', 'FILL_IN_INSTAGRAM_USER_ID_W3', 'W3')
-ON CONFLICT (instagram_user_id) DO NOTHING;
 
 -- pg_cron: sync diário às 07:00 BRT (10:00 UTC)
 -- Se falhar, configure via Supabase Dashboard > Edge Functions > instagram-sync > Schedules
