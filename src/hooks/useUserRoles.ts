@@ -61,6 +61,11 @@ export function useIsSocialSelling() {
   return isRoleSocialSelling(userRole.role);
 }
 
+export function useIsCS() {
+  const { data: userRole } = useCurrentUserRole();
+  return userRole?.role === 'CS';
+}
+
 export function useAllUserRoles() {
   return useQuery({
     queryKey: ['all-user-roles'],

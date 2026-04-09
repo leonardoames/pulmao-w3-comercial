@@ -1,4 +1,4 @@
-export type AppRole = 'MASTER' | 'DIRETORIA' | 'GESTOR_COMERCIAL' | 'SDR' | 'CLOSER' | 'SOCIAL_SELLING' | 'ANALISTA_CONTEUDO' | 'GESTOR_TRAFEGO' | 'GESTOR_MARKETPLACE' | 'ADMINISTRATIVO';
+export type AppRole = 'MASTER' | 'DIRETORIA' | 'GESTOR_COMERCIAL' | 'SDR' | 'CLOSER' | 'SOCIAL_SELLING' | 'ANALISTA_CONTEUDO' | 'GESTOR_TRAFEGO' | 'GESTOR_MARKETPLACE' | 'ADMINISTRATIVO' | 'CS';
 
 export interface UserRole {
   id: string;
@@ -19,9 +19,10 @@ export const ROLE_LABELS_NEW: Record<AppRole, string> = {
   GESTOR_TRAFEGO: 'Gestor de Tráfego',
   GESTOR_MARKETPLACE: 'Gestor de Marketplace',
   ADMINISTRATIVO: 'Administrativo',
+  CS: 'CS',
 };
 
-export const ALL_ROLES: AppRole[] = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR', 'CLOSER', 'SOCIAL_SELLING', 'ANALISTA_CONTEUDO', 'GESTOR_TRAFEGO', 'GESTOR_MARKETPLACE', 'ADMINISTRATIVO'];
+export const ALL_ROLES: AppRole[] = ['MASTER', 'DIRETORIA', 'GESTOR_COMERCIAL', 'SDR', 'CLOSER', 'SOCIAL_SELLING', 'ANALISTA_CONTEUDO', 'GESTOR_TRAFEGO', 'GESTOR_MARKETPLACE', 'ADMINISTRATIVO', 'CS'];
 
 // Check if role can manage closers (select any closer for fechamento/vendas)
 export const canRoleManageClosers = (role: AppRole): boolean => {
@@ -49,4 +50,5 @@ export const ROLE_COLORS: Record<AppRole, { bg: string; text: string; border: st
   GESTOR_TRAFEGO:     { bg: 'hsla(25,80%,50%,0.15)',  text: 'hsl(25,80%,70%)',  border: 'hsla(25,80%,50%,0.3)' },
   GESTOR_MARKETPLACE: { bg: 'hsla(290,60%,55%,0.15)', text: 'hsl(290,60%,75%)', border: 'hsla(290,60%,55%,0.3)' },
   ADMINISTRATIVO:     { bg: 'hsla(220,15%,50%,0.15)', text: 'hsl(220,15%,70%)', border: 'hsla(220,15%,50%,0.3)' },
+  CS:                 { bg: 'hsla(200,70%,45%,0.15)', text: 'hsl(200,70%,65%)', border: 'hsla(200,70%,45%,0.3)' },
 };
