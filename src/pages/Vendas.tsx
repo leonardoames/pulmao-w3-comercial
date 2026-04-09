@@ -21,9 +21,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsCloser, useCanEditAnyFechamento, useIsMaster } from '@/hooks/useUserRoles';
 import { usePermissionChecks } from '@/hooks/useRolePermissions';
 import { Venda, ORIGEM_LEAD_OPTIONS, OrigemLead } from '@/types/crm';
-import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, StickyNote, Pencil, MoreVertical, ExternalLink } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Plus, Edit2, Check, X, Search, CalendarIcon, Landmark, Headphones, Filter, RotateCcw, FileDown, Trash2, AlertTriangle, Pencil, MoreVertical, ExternalLink, ChevronDown, ChevronRight, FileText, ScrollText } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -103,6 +102,12 @@ export default function VendasPage() {
   const [deleteTarget, setDeleteTarget] = useState<Venda | null>(null);
   const [refundTarget, setRefundTarget] = useState<Venda | null>(null);
   const [refundReason, setRefundReason] = useState('');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const toggleRow = (id: string) => setExpandedRows(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
 
   const hasActiveFilters = quickFilter !== 'month' || duracaoFilter !== 'all' || valorFilter !== 'all' || flagPago || flagContrato || flagFinanceiro || flagCS || !!customDateFrom || !!customDateTo || filtroOrigem !== 'Todas';
 
@@ -307,12 +312,14 @@ export default function VendasPage() {
       const [year, month, day] = v.data_fechamento.split('-').map(Number);
       const dataFormatted = `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
       const closerNome = (v.closer as any)?.nome || '-';
+      const esc = (s: string | null | undefined) => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const truncate = (s: string | null | undefined, n = 120) => { const t = esc(s); return t.length > n ? t.slice(0, n) + '…' : t; };
       return `<tr>
         <td>${dataFormatted}</td>
-        <td>${v.nome_lead}</td>
-        <td>${v.nome_empresa}</td>
-        <td>${closerNome}</td>
-        <td>${v.origem_lead || '—'}</td>
+        <td>${esc(v.nome_lead)}</td>
+        <td>${esc(v.nome_empresa)}</td>
+        <td>${esc(closerNome)}</td>
+        <td>${esc(v.origem_lead)}</td>
         <td>${v.duracao_contrato_meses}m</td>
         <td class="r">${formatCurrency(v.valor_pix)}</td>
         <td class="r">${formatCurrency(v.valor_cartao)}</td>
@@ -322,6 +329,8 @@ export default function VendasPage() {
         <td class="c">${linkCell(v.link_contrato)}</td>
         <td class="c">${flag(v.enviado_financeiro)}</td>
         <td class="c">${flag(v.enviado_cs)}</td>
+        <td class="notes">${truncate(v.observacoes)}</td>
+        <td class="notes">${truncate(v.informacoes_adicionais)}</td>
       </tr>`;
     }).join('');
 
@@ -337,6 +346,7 @@ export default function VendasPage() {
       .r{text-align:right}
       .c{text-align:center}
       .b{font-weight:bold}
+      .notes{white-space:pre-wrap;max-width:200px;font-size:10px;color:#555}
       @media print{body{padding:0}}
     </style></head><body>
     <h1>Relatório de Vendas</h1>
@@ -345,6 +355,7 @@ export default function VendasPage() {
       <th>Data</th><th>Lead</th><th>Empresa</th><th>Closer</th><th>Origem</th><th>Duração</th>
       <th class="r">Pix</th><th class="r">Cartão</th><th class="r">Boleto</th><th class="r">Valor Total</th>
       <th class="c">Comprovante</th><th class="c">Contrato</th><th class="c">Financeiro</th><th class="c">CS</th>
+      <th>Observações</th><th>Inf. Adicionais</th>
     </tr></thead>
     <tbody>${rows}</tbody></table>
     <script>window.onload=function(){window.print()}<\/script>
@@ -871,6 +882,7 @@ export default function VendasPage() {
           <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8 px-2"></TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead style={{ minWidth: 200 }}>Cliente</TableHead>
                 <TableHead className="hidden md:table-cell">Duração</TableHead>
@@ -899,8 +911,23 @@ export default function VendasPage() {
                 filteredVendas?.map(venda => {
                   const valorBoletoTotal = venda.valor_boleto_parcela * venda.quantidade_parcelas_boleto;
                   const isRefunded = venda.status === 'Reembolsado';
+                  const isExpanded = expandedRows.has(venda.id);
+                  const hasDetails = !!(venda.observacoes || venda.informacoes_adicionais || venda.link_comprovante || venda.link_contrato);
                   return (
-                    <TableRow key={venda.id} style={isRefunded ? { background: 'rgba(234,179,8,0.04)' } : undefined}>
+                    <>
+                    <TableRow key={venda.id} style={isRefunded ? { background: 'rgba(234,179,8,0.04)' } : undefined} className={isExpanded ? 'border-b-0' : undefined}>
+                      <TableCell className="w-8 px-2">
+                        <button
+                          onClick={() => toggleRow(venda.id)}
+                          className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${hasDetails ? 'hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer' : 'opacity-20 cursor-default'}`}
+                          disabled={!hasDetails}
+                          aria-label={isExpanded ? 'Recolher detalhes' : 'Expandir detalhes'}
+                        >
+                          {isExpanded
+                            ? <ChevronDown className="h-3.5 w-3.5" />
+                            : <ChevronRight className="h-3.5 w-3.5" />}
+                        </button>
+                      </TableCell>
                       <TableCell className="font-medium whitespace-nowrap">
                         {(() => {
                           const [year, month, day] = venda.data_fechamento.split('-').map(Number);
@@ -908,23 +935,9 @@ export default function VendasPage() {
                         })()}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <p className="font-medium">{venda.nome_lead}</p>
-                            <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
-                          </div>
-                          {venda.observacoes && (
-                            <HoverCard openDelay={200}>
-                              <HoverCardTrigger asChild>
-                                <span className="inline-flex shrink-0 cursor-default">
-                                  <StickyNote className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                                </span>
-                              </HoverCardTrigger>
-                              <HoverCardContent side="right" className="max-w-xs whitespace-pre-wrap text-sm">
-                                {venda.observacoes}
-                              </HoverCardContent>
-                            </HoverCard>
-                          )}
+                        <div>
+                          <p className="font-medium">{venda.nome_lead}</p>
+                          <p className="text-sm text-muted-foreground">{venda.nome_empresa}</p>
                         </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{venda.duracao_contrato_meses} meses</TableCell>
@@ -1077,6 +1090,98 @@ export default function VendasPage() {
                         </TableCell>
                       )}
                     </TableRow>
+                    {/* Expanded detail row */}
+                    {isExpanded && hasDetails && (
+                      <TableRow key={`${venda.id}-detail`} className="hover:bg-transparent">
+                        <TableCell colSpan={10} className="p-0 border-b">
+                          <div className="px-5 py-4 bg-muted/20 border-t border-border/40">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                              {/* Documentos */}
+                              <div className="space-y-2">
+                                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Documentos</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {venda.link_comprovante ? (
+                                    <a
+                                      href={venda.link_comprovante}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-success/15 text-success hover:bg-success/25 transition-colors border border-success/20"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                      Ver Comprovante
+                                    </a>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/40 border border-border/40">
+                                      <DollarSign className="h-3 w-3" />
+                                      Sem comprovante
+                                    </span>
+                                  )}
+                                  {venda.link_contrato ? (
+                                    <a
+                                      href={venda.link_contrato}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors border border-primary/20"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                      Ver Contrato
+                                    </a>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground/40 border border-border/40">
+                                      <Edit2 className="h-3 w-3" />
+                                      Sem contrato
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Status flags */}
+                              <div className="space-y-2">
+                                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${venda.pago ? 'bg-success/15 text-success border-success/20' : 'text-muted-foreground/40 border-border/40'}`}>
+                                    <DollarSign className="h-3 w-3" />
+                                    {venda.pago ? 'Pago' : 'Não pago'}
+                                  </span>
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${venda.contrato_assinado ? 'bg-primary/15 text-primary border-primary/20' : 'text-muted-foreground/40 border-border/40'}`}>
+                                    <Edit2 className="h-3 w-3" />
+                                    {venda.contrato_assinado ? 'Contrato assinado' : 'Contrato pendente'}
+                                  </span>
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${venda.enviado_financeiro ? 'bg-warning/15 text-warning border-warning/20' : 'text-muted-foreground/40 border-border/40'}`}>
+                                    <Landmark className="h-3 w-3" />
+                                    {venda.enviado_financeiro ? 'Financeiro ✓' : 'Financeiro pendente'}
+                                  </span>
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${venda.enviado_cs ? 'bg-info/15 text-info border-info/20' : 'text-muted-foreground/40 border-border/40'}`}>
+                                    <Headphones className="h-3 w-3" />
+                                    {venda.enviado_cs ? 'CS ✓' : 'CS pendente'}
+                                  </span>
+                                </div>
+                              </div>
+                              {/* Observações */}
+                              {venda.observacoes && (
+                                <div className="space-y-1.5">
+                                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                    <ScrollText className="h-3 w-3" />
+                                    Observações
+                                  </p>
+                                  <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">{venda.observacoes}</p>
+                                </div>
+                              )}
+                              {/* Informações Adicionais */}
+                              {venda.informacoes_adicionais && (
+                                <div className="space-y-1.5">
+                                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                    <FileText className="h-3 w-3" />
+                                    Informações Adicionais
+                                  </p>
+                                  <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">{venda.informacoes_adicionais}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    </>
                   );
                 })
               )}

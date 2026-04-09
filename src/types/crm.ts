@@ -53,6 +53,7 @@ export interface Venda {
   origem_lead?: OrigemLead | null;
   link_contrato?: string | null;
   link_comprovante?: string | null;
+  informacoes_adicionais?: string | null;
   closer?: Profile;
 }
 
