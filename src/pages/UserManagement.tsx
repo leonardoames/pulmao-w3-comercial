@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { Plus, Pencil, Shield, Users, Lock, KeyRound, Webhook, ChevronLeft, ChevronRight, ArrowUpDown, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUsersWithRoles, useUpdateProfile, useCreateUser } from '@/hooks/useUserManagement';
 import { useUpdateUserRole, useCurrentUserRole } from '@/hooks/useUserRoles';
@@ -42,6 +42,7 @@ import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { RolePermissionsPanel } from '@/components/admin/RolePermissionsPanel';
 import { WebhooksPanel } from '@/components/admin/WebhooksPanel';
+import { InstagramAccountsPanel } from '@/components/admin/InstagramAccountsPanel';
 
 const PAGE_SIZE = 10;
 
@@ -209,6 +210,12 @@ export default function UserManagement() {
               <TabsTrigger value="webhooks" className="gap-2">
                 <Webhook className="h-4 w-4" />
                 Webhooks
+              </TabsTrigger>
+            )}
+            {canManageUsers && (
+              <TabsTrigger value="instagram" className="gap-2">
+                <Instagram className="h-4 w-4" />
+                Instagram
               </TabsTrigger>
             )}
           </TabsList>
@@ -437,6 +444,11 @@ export default function UserManagement() {
           {canManageUsers && (
             <TabsContent value="webhooks" className="mt-6">
               <WebhooksPanel />
+            </TabsContent>
+          )}
+          {canManageUsers && (
+            <TabsContent value="instagram" className="mt-6">
+              <InstagramAccountsPanel />
             </TabsContent>
           )}
         </Tabs>
