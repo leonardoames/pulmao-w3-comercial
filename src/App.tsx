@@ -43,6 +43,7 @@ import RHOrganograma from "./pages/RHOrganograma";
 import Leads from "./pages/Leads";
 import OteCalculadora from "./pages/OteCalculadora";
 import RelatorioDiario from "./pages/RelatorioDiario";
+import InstagramCallback from "./pages/InstagramCallback";
 
 const queryClient = new QueryClient();
 
@@ -168,6 +169,7 @@ function AppRoutes() {
       <Route path="/marketing/ai/:id" element={<Navigate to="/conteudo/ai" replace />} />
       <Route path="/relatorio-diario" element={<ProtectedRoute routePath="/relatorio-diario"><RelatorioDiario /></ProtectedRoute>} />
       <Route path="/shared/:token" element={<SharedDashboard />} />
+      <Route path="/instagram/callback" element={<InstagramCallback />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
