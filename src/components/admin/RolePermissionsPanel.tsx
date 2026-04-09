@@ -35,6 +35,7 @@ const ROLE_ICONS: Record<AppRole, React.ComponentType<{ className?: string; styl
   GESTOR_TRAFEGO: BarChart2,
   GESTOR_MARKETPLACE: ShoppingBag,
   ADMINISTRATIVO: Settings,
+  CS: Headphones,
 };
 
 type LocalPerms = Record<string, { can_view: boolean; can_edit: boolean }>;

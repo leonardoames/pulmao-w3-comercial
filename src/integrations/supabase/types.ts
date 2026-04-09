@@ -484,6 +484,142 @@ export type Database = {
           },
         ]
       }
+      instagram_accounts: {
+        Row: {
+          access_token: string | null
+          account_label: string
+          created_at: string
+          id: string
+          instagram_user_id: string
+          is_active: boolean
+          token_expires_at: string | null
+          username: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_label: string
+          created_at?: string
+          id?: string
+          instagram_user_id: string
+          is_active?: boolean
+          token_expires_at?: string | null
+          username: string
+        }
+        Update: {
+          access_token?: string | null
+          account_label?: string
+          created_at?: string
+          id?: string
+          instagram_user_id?: string
+          is_active?: boolean
+          token_expires_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      instagram_daily_metrics: {
+        Row: {
+          account_id: string
+          date: string
+          followers_count: number
+          id: string
+          media_count: number
+          profile_views: number
+          reach: number
+          synced_at: string
+        }
+        Insert: {
+          account_id: string
+          date: string
+          followers_count?: number
+          id?: string
+          media_count?: number
+          profile_views?: number
+          reach?: number
+          synced_at?: string
+        }
+        Update: {
+          account_id?: string
+          date?: string
+          followers_count?: number
+          id?: string
+          media_count?: number
+          profile_views?: number
+          reach?: number
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_daily_metrics_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_post_insights: {
+        Row: {
+          account_id: string
+          caption: string | null
+          comments: number
+          id: string
+          instagram_media_id: string
+          likes: number
+          media_type: string
+          permalink: string | null
+          profile_visits: number
+          published_at: string | null
+          reach: number
+          saves: number
+          shares: number
+          synced_at: string
+          views: number
+        }
+        Insert: {
+          account_id: string
+          caption?: string | null
+          comments?: number
+          id?: string
+          instagram_media_id: string
+          likes?: number
+          media_type: string
+          permalink?: string | null
+          profile_visits?: number
+          published_at?: string | null
+          reach?: number
+          saves?: number
+          shares?: number
+          synced_at?: string
+          views?: number
+        }
+        Update: {
+          account_id?: string
+          caption?: string | null
+          comments?: number
+          id?: string
+          instagram_media_id?: string
+          likes?: number
+          media_type?: string
+          permalink?: string | null
+          profile_visits?: number
+          published_at?: string | null
+          reach?: number
+          saves?: number
+          shares?: number
+          synced_at?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_post_insights_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads_w3: {
         Row: {
           cnpj: string | null
@@ -2068,6 +2204,7 @@ export type Database = {
         | "GESTOR_TRAFEGO"
         | "GESTOR_MARKETPLACE"
         | "ADMINISTRATIVO"
+        | "CS"
       billing_model: "percentual_faixas" | "fixo_percentual" | "somente_fixo"
       call_plataforma: "GoogleMeet" | "Zoom" | "Outro"
       call_status:
@@ -2262,6 +2399,7 @@ export const Constants = {
         "GESTOR_TRAFEGO",
         "GESTOR_MARKETPLACE",
         "ADMINISTRATIVO",
+        "CS",
       ],
       billing_model: ["percentual_faixas", "fixo_percentual", "somente_fixo"],
       call_plataforma: ["GoogleMeet", "Zoom", "Outro"],
